@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { z } from 'zod'
+import { canEditCourseWithRetry } from '@/lib/collaboration/permissions'
 
 const updateCourseSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title too long').optional(),
@@ -96,12 +97,18 @@ export async function PUT(
 
     const { id } = await params
 
-    // Check if course exists and belongs to user
-    const existingCourse = await prisma.courses.findFirst({
-      where: {
-        id,
-        author_id: session.user.id,
-      },
+    // Check if user can edit this course (author or collaborator)
+    const canEdit = await canEditCourseWithRetry(session.user.id, id)
+    if (!canEdit) {
+      return NextResponse.json(
+        { error: 'Course not found or you do not have permission to edit it' },
+        { status: 404 }
+      )
+    }
+
+    // Fetch the existing course for validation
+    const existingCourse = await prisma.courses.findUnique({
+      where: { id },
     })
 
     if (!existingCourse) {
@@ -111,38 +118,45 @@ export async function PUT(
     const body = await request.json()
     const validatedData = updateCourseSchema.parse(body)
 
-    // If slug is being updated, check uniqueness
+    // If slug is being updated, check uniqueness for the course author
     if (validatedData.slug && validatedData.slug !== existingCourse.slug) {
       const slugExists = await prisma.courses.findFirst({
         where: {
           slug: validatedData.slug,
-          author_id: session.user.id,
+          author_id: existingCourse.author_id, // Check against original author, not current user
           id: { not: id },
         },
       })
 
       if (slugExists) {
         return NextResponse.json(
-          { error: 'A course with this slug already exists' },
+          { error: 'A course with this slug already exists for this author' },
           { status: 400 }
         )
       }
     }
 
-    // Verify all modules belong to the author if modules are being updated
+    // Verify all modules belong to or are accessible by the user (author or collaborator)
     if (validatedData.modules) {
       if (validatedData.modules.length > 0) {
         const moduleIds = validatedData.modules.map(m => m.moduleId)
         const userModules = await prisma.modules.findMany({
           where: {
             id: { in: moduleIds },
-            author_id: session.user.id,
+            OR: [
+              { author_id: session.user.id },
+              {
+                collaborators: {
+                  some: { user_id: session.user.id }
+                }
+              }
+            ]
           },
         })
 
         if (userModules.length !== moduleIds.length) {
           return NextResponse.json(
-            { error: 'Some modules do not exist or do not belong to you' },
+            { error: 'Some modules do not exist or you do not have access to them' },
             { status: 400 }
           )
         }
@@ -250,19 +264,25 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Check if course exists and belongs to user
-    const course = await prisma.courses.findFirst({
-      where: {
-        id,
-        author_id: session.user.id,
-      },
+    // Check if user can edit this course (author or collaborator)
+    const canEdit = await canEditCourseWithRetry(session.user.id, id)
+    if (!canEdit) {
+      return NextResponse.json(
+        { error: 'Course not found or you do not have permission to delete it' },
+        { status: 404 }
+      )
+    }
+
+    // Verify course exists
+    const course = await prisma.courses.findUnique({
+      where: { id },
     })
 
     if (!course) {
       return NextResponse.json({ error: 'Course not found' }, { status: 404 })
     }
 
-    // Delete course (cascade will handle course-module relationships)
+    // Delete course (cascade will handle course-module relationships and collaborators)
     await prisma.courses.delete({
       where: { id },
     })

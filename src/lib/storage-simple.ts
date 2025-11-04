@@ -1,7 +1,6 @@
-import fs from 'fs';
-import path from 'path';
+import { supabase, MEDIA_BUCKET } from './supabase';
 
-// Simple file validation for local uploads
+// File validation for uploads
 export const validateFile = (file: File, config: any): { valid: boolean; error?: string } => {
   // Check file size
   if (file.size > config.maxFileSize) {
@@ -22,30 +21,38 @@ export const validateFile = (file: File, config: any): { valid: boolean; error?:
   return { valid: true };
 };
 
-// Simple local file upload
+// Upload file to Supabase Storage
 export const uploadFile = async (file: File): Promise<{ url: string; path: string }> => {
   try {
-    // Create uploads directory if it doesn't exist
-    const uploadDir = './public/uploads';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
     // Generate unique filename
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 15);
-    const extension = path.extname(file.name);
-    const filename = `${timestamp}_${randomStr}${extension}`;
-    const filepath = path.join(uploadDir, filename);
+    const fileExt = file.name.split('.').pop();
+    const filename = `${timestamp}_${randomStr}.${fileExt}`;
+    const filePath = `uploads/${filename}`;
 
-    // Convert File to Buffer and save
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    fs.writeFileSync(filepath, buffer);
+    // Upload to Supabase Storage (pass File directly, not ArrayBuffer)
+    const { data, error } = await supabase.storage
+      .from(MEDIA_BUCKET)
+      .upload(filePath, file, {
+        contentType: file.type,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      throw new Error(`Supabase upload failed: ${error.message}`);
+    }
+
+    // Get public URL for the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from(MEDIA_BUCKET)
+      .getPublicUrl(filePath);
 
     return {
-      url: `/uploads/${filename}`,
-      path: filename
+      url: publicUrl,
+      path: filePath
     };
   } catch (error) {
     console.error('Upload error:', error);

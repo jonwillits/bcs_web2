@@ -34,6 +34,14 @@ export async function GET(
                 sort_order: true,
                 created_at: true,
                 updated_at: true,
+                module_media: {
+                  include: {
+                    media_files: true,
+                  },
+                  orderBy: {
+                    created_at: 'desc',
+                  },
+                },
               },
             },
           },
@@ -85,6 +93,15 @@ export async function GET(
           sortOrder: cm.modules.sort_order,
           createdAt: cm.modules.created_at,
           updatedAt: cm.modules.updated_at,
+          resources: cm.modules.module_media.map(mm => ({
+            id: mm.media_files.id,
+            name: mm.media_files.original_name,
+            filename: mm.media_files.filename,
+            size: Number(mm.media_files.file_size),
+            mimeType: mm.media_files.mime_type,
+            url: mm.media_files.storage_path,
+            uploadedAt: mm.created_at,
+          })),
         }
       })),
       _count: {

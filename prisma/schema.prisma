@@ -24,18 +24,19 @@ model course_modules {
 }
 
 model courses {
-  id             String           @id
+  id             String                 @id
   title          String
-  slug           String           @unique
+  slug           String                 @unique
   description    String?
   author_id      String
-  status         String           @default("draft")
-  featured       Boolean          @default(false)
+  status         String                 @default("draft")
+  featured       Boolean                @default(false)
   tags           String[]
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @updatedAt
+  created_at     DateTime               @default(now())
+  updated_at     DateTime               @updatedAt
   course_modules course_modules[]
-  users          users            @relation(fields: [author_id], references: [id], onDelete: Restrict)
+  users          users                  @relation(fields: [author_id], references: [id], onDelete: Restrict)
+  collaborators  course_collaborators[]
 
   @@index([author_id])
   @@index([slug])
@@ -73,24 +74,25 @@ model module_media {
 }
 
 model modules {
-  id               String           @id
+  id               String                 @id
   title            String
   slug             String
   content          String?
   description      String?
   author_id        String
   parent_module_id String?
-  sort_order       Int              @default(0)
+  sort_order       Int                    @default(0)
   module_number    String?
-  status           String           @default("draft")
-  tags             String[]         @default([])
-  created_at       DateTime         @default(now())
-  updated_at       DateTime         @updatedAt
+  status           String                 @default("draft")
+  tags             String[]               @default([])
+  created_at       DateTime               @default(now())
+  updated_at       DateTime               @updatedAt
   course_modules   course_modules[]
   module_media     module_media[]
-  users            users            @relation(fields: [author_id], references: [id], onDelete: Restrict)
-  modules          modules?         @relation("modulesTomodules", fields: [parent_module_id], references: [id])
-  other_modules    modules[]        @relation("modulesTomodules")
+  users            users                  @relation(fields: [author_id], references: [id], onDelete: Restrict)
+  modules          modules?               @relation("modulesTomodules", fields: [parent_module_id], references: [id])
+  other_modules    modules[]              @relation("modulesTomodules")
+  collaborators    module_collaborators[]
 
   @@unique([parent_module_id, sort_order])
   @@index([author_id])
@@ -109,121 +111,223 @@ model sessions {
 }
 
 model users {
-  id                     String        @id
-  email                  String        @unique
-  password_hash          String
-  name                   String
-  role                   String        @default("faculty")
+  id            String @id
+  email         String @unique
+  password_hash String
+  name          String
+  role          String @default("faculty")
 
   // Profile fields
-  about                  String?       @db.Text
-  speciality             String?
-  interested_fields      String[]      @default([])
-  university             String?
-  avatar_url             String?
+  about             String?  @db.Text
+  speciality        String?
+  interested_fields String[] @default([])
+  university        String?
+  avatar_url        String?
 
   // Academic & Social Links
-  google_scholar_url     String?
-  personal_website_url   String?
-  linkedin_url           String?
-  twitter_url            String?
-  github_url             String?
+  google_scholar_url   String?
+  personal_website_url String?
+  linkedin_url         String?
+  twitter_url          String?
+  github_url           String?
 
   // Email verification
-  email_verified         Boolean       @default(false)
-  email_verified_at      DateTime?
-  email_verification_token String?     @unique
+  email_verified                   Boolean   @default(false)
+  email_verified_at                DateTime?
+  email_verification_token         String?   @unique
   email_verification_token_expires DateTime?
-  last_verification_email_sent_at DateTime?
+  last_verification_email_sent_at  DateTime?
 
   // Password reset
-  password_reset_token   String?       @unique
+  password_reset_token   String?   @unique
   password_reset_expires DateTime?
 
-  created_at             DateTime      @default(now())
-  updated_at             DateTime      @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  courses                courses[]
-  media_files            media_files[]
-  modules                modules[]
-  sessions               sessions[]
-  playgrounds            playgrounds[]
-  playground_templates   playground_templates[]
+  courses              courses[]
+  media_files          media_files[]
+  modules              modules[]
+  sessions             sessions[]
+  playgrounds          playgrounds[]
+  playground_templates playground_templates[]
+
+  // Collaboration relations
+  course_collaborations_as_user    course_collaborators[]   @relation("CourseCollaborator")
+  course_collaborations_as_inviter course_collaborators[]   @relation("CourseInviter")
+  module_collaborations_as_user    module_collaborators[]   @relation("ModuleCollaborator")
+  module_collaborations_as_inviter module_collaborators[]   @relation("ModuleInviter")
+  collaboration_activities         collaboration_activity[]
 }
 
 // ==================== PLAYGROUND BUILDER MODELS ====================
 
 model playground_templates {
-  id                String   @id @default(cuid())
-  name              String
-  description       String
-  category          String   // neural_networks, physics, algorithms, etc.
-  thumbnail         String?
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  category    String // neural_networks, physics, algorithms, data_viz, etc.
+  thumbnail   String?
 
-  // Default configuration (stored as JSON)
-  default_controls       Json    // ControlConfig[]
-  default_visualization  Json    // VisualizationConfig
-  code_template          String  @db.Text
+  // App type (shinylive, pyodide, etc.)
+  app_type String @default("shinylive")
 
-  // Required libraries
-  python_libraries  String[]
-  js_libraries      String[]
+  // Shinylive fields (primary approach)
+  source_code  String?  @db.Text // Full Shiny app.py code
+  requirements String[] @default([]) // Python packages (e.g., ["plotly", "numpy"])
+
+  // Legacy fields (optional, for backward compatibility)
+  default_controls      Json? // ControlConfig[] (deprecated)
+  default_visualization Json? // VisualizationConfig (deprecated)
+  code_template         String? @db.Text // (deprecated, use source_code)
+
+  // Required libraries (legacy)
+  python_libraries String[] @default([])
+  js_libraries     String[] @default([])
 
   // Metadata
-  author_id         String?
-  version           String   @default("1.0.0")
-  tags              String[]
-  is_public         Boolean  @default(true)
+  author_id String?
+  version   String   @default("1.0.0")
+  tags      String[]
+  is_public Boolean  @default(true)
 
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   // Relations
-  author            users?   @relation(fields: [author_id], references: [id], onDelete: SetNull)
-  playgrounds       playgrounds[]
+  author      users?        @relation(fields: [author_id], references: [id], onDelete: SetNull)
+  playgrounds playgrounds[]
 
   @@index([category])
   @@index([author_id])
   @@index([is_public])
+  @@index([app_type])
 }
 
 model playgrounds {
-  id                String   @id @default(cuid())
-  title             String
-  description       String   @db.Text
-  category          String
+  id          String @id @default(cuid())
+  title       String
+  description String @db.Text
+  category    String
 
   // Ownership & Permissions
-  created_by        String
-  organization_id   String?
-  is_public         Boolean  @default(false)
-  share_url         String   @unique @default(cuid())
+  created_by      String
+  organization_id String?
+  is_public       Boolean @default(false)
+  share_url       String  @unique @default(cuid())
+
+  // App type (shinylive, pyodide, etc.)
+  app_type String @default("shinylive")
+
+  // Shinylive fields (primary approach)
+  source_code  String?  @db.Text // Full Shiny app.py code
+  requirements String[] @default([]) // Python packages
 
   // Template & Configuration
-  template_id       String?
-  controls          Json     // ControlConfig[]
-  visualization     Json     // VisualizationConfig
-  code_config       Json     // CodeConfig (language, content, libraries)
+  template_id String?
+
+  // Legacy fields (optional, for backward compatibility)
+  controls      Json? // ControlConfig[] (deprecated)
+  visualization Json? // VisualizationConfig (deprecated)
+  code_config   Json? // CodeConfig (deprecated)
 
   // Metadata
-  published_at      DateTime?
-  version           Int      @default(1)
+  published_at DateTime?
+  version      Int       @default(1)
 
   // Analytics
-  view_count        Int      @default(0)
-  fork_count        Int      @default(0)
-  rating            Float?
+  view_count Int    @default(0)
+  fork_count Int    @default(0)
+  rating     Float?
 
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
   // Relations
-  author            users    @relation(fields: [created_by], references: [id], onDelete: Cascade)
-  template          playground_templates? @relation(fields: [template_id], references: [id], onDelete: SetNull)
+  author   users                 @relation(fields: [created_by], references: [id], onDelete: Cascade)
+  template playground_templates? @relation(fields: [template_id], references: [id], onDelete: SetNull)
 
   @@index([created_by])
   @@index([template_id])
   @@index([category])
   @@index([is_public])
   @@index([share_url])
+  @@index([app_type])
+}
+
+// ==================== COLLABORATION MODELS ====================
+
+model course_collaborators {
+  id        String @id @default(cuid())
+  course_id String
+  user_id   String
+
+  // Metadata
+  added_by String? // Nullable - preserves collaboration if inviter deleted
+  added_at DateTime @default(now())
+
+  // Activity metrics (for analytics)
+  last_accessed DateTime @default(now())
+  edit_count    Int      @default(0)
+
+  // Relations
+  course       courses @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  collaborator users   @relation("CourseCollaborator", fields: [user_id], references: [id], onDelete: Cascade)
+  inviter      users?  @relation("CourseInviter", fields: [added_by], references: [id], onDelete: SetNull)
+
+  // Constraints
+  @@unique([course_id, user_id]) // Prevent duplicate collaborators
+  @@index([course_id]) // Fast lookup by course
+  @@index([user_id]) // Fast lookup by user
+  @@index([added_by]) // For audit trails
+}
+
+model module_collaborators {
+  id        String @id @default(cuid())
+  module_id String
+  user_id   String
+
+  // Metadata
+  added_by String?
+  added_at DateTime @default(now())
+
+  // Activity metrics
+  last_accessed DateTime @default(now())
+  edit_count    Int      @default(0)
+
+  // Relations
+  module       modules @relation(fields: [module_id], references: [id], onDelete: Cascade)
+  collaborator users   @relation("ModuleCollaborator", fields: [user_id], references: [id], onDelete: Cascade)
+  inviter      users?  @relation("ModuleInviter", fields: [added_by], references: [id], onDelete: SetNull)
+
+  // Constraints
+  @@unique([module_id, user_id])
+  @@index([module_id])
+  @@index([user_id])
+  @@index([added_by])
+}
+
+model collaboration_activity {
+  id          String @id @default(cuid())
+  entity_type String // 'course' | 'module'
+  entity_id   String // Course or module ID
+  user_id     String
+
+  // Action details
+  action      String // 'created' | 'updated' | 'published' | 'deleted' | 'invited_user' | 'removed_user'
+  description String @db.Text // Human-readable
+
+  // Detailed change log (JSON for flexibility)
+  changes Json? // { field: 'title', from: 'Old', to: 'New', ... }
+
+  created_at DateTime @default(now())
+
+  // Relations
+  user users @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Performance indexes
+  @@index([entity_type, entity_id, created_at(sort: Desc)]) // Primary query pattern
+  @@index([user_id, created_at(sort: Desc)]) // User activity history
+  @@index([action]) // Filter by action type
+  @@index([created_at(sort: Desc)]) // Cleanup old records
 }

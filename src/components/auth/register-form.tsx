@@ -26,7 +26,15 @@ export function RegisterForm() {
   const router = useRouter();
 
   const validatePassword = (password: string) => {
-    return password.length >= 8;
+    // Match server-side validation: min 8, max 128, uppercase, lowercase, number, special char
+    const minLength = password.length >= 8;
+    const maxLength = password.length <= 128;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[@$!%*?&]/.test(password);
+
+    return minLength && maxLength && hasUppercase && hasLowercase && hasNumber && hasSpecialChar;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,7 +65,7 @@ export function RegisterForm() {
     }
 
     if (!validatePassword(formData.password)) {
-      setError("Password must be at least 8 characters long");
+      setError("Password must be 8-128 characters and include uppercase, lowercase, number, and special character (@$!%*?&)");
       setIsLoading(false);
       return;
     }
@@ -84,6 +92,13 @@ export function RegisterForm() {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle Zod validation errors with detailed field-specific messages
+        if (data.details && Array.isArray(data.details) && data.details.length > 0) {
+          const errorMessages = data.details.map((detail: { field: string; message: string }) =>
+            `${detail.field}: ${detail.message}`
+          ).join('; ');
+          throw new Error(errorMessages);
+        }
         throw new Error(data.error || "Registration failed");
       }
 
@@ -155,11 +170,14 @@ export function RegisterForm() {
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Dr. John Smith"
+                  placeholder="Jane Smith"
                   required
                   disabled={isLoading}
                   className="border-neural-light/30 focus:border-neural-primary"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Letters, spaces, hyphens, and apostrophes only
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -204,7 +222,7 @@ export function RegisterForm() {
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Password must be at least 8 characters long
+                  Must be 8-128 characters with at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)
                 </p>
               </div>
 

@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { withDatabaseRetry } from '@/lib/retry'
 import { z } from 'zod'
+import { canEditModuleWithRetry } from '@/lib/collaboration/permissions'
 
 // Helper function to check if a module is an ancestor of another module
 async function checkIfModuleIsAncestor(moduleId: string, potentialDescendantId: string): Promise<boolean> {
@@ -48,12 +49,18 @@ export async function GET(
     if (!id || typeof id !== 'string' || id.trim() === '') {
       return NextResponse.json({ error: 'Invalid module ID' }, { status: 400 })
     }
+    // Check if user can access this module (author or collaborator)
+    const canAccess = await canEditModuleWithRetry(session.user.id, id)
+    if (!canAccess) {
+      return NextResponse.json(
+        { error: 'Module not found or you do not have permission to access it' },
+        { status: 404 }
+      )
+    }
+
     const foundModule = await withDatabaseRetry(async () => {
-      return prisma.modules.findFirst({
-        where: {
-          id,
-          author_id: session.user.id,
-        },
+      return prisma.modules.findUnique({
+        where: { id },
         include: {
           users: {
             select: {
@@ -91,7 +98,8 @@ export async function GET(
     })
 
     if (!foundModule) {
-      return NextResponse.json({ error: 'Module not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Module not found' }, { status: 404 }
+      )
     }
 
     return NextResponse.json({ module: foundModule })
@@ -124,12 +132,19 @@ export async function PUT(
     }
 
     const { id } = await params
-    // Check if module exists and belongs to user
-    const existingModule = await prisma.modules.findFirst({
-      where: {
-        id,
-        author_id: session.user.id,
-      },
+
+    // Check if user can edit this module (author or collaborator)
+    const canEdit = await canEditModuleWithRetry(session.user.id, id)
+    if (!canEdit) {
+      return NextResponse.json(
+        { error: 'Module not found or you do not have permission to edit it' },
+        { status: 404 }
+      )
+    }
+
+    // Fetch the existing module
+    const existingModule = await prisma.modules.findUnique({
+      where: { id },
     })
 
     if (!existingModule) {
@@ -141,19 +156,19 @@ export async function PUT(
     const validatedData = updateModuleSchema.parse(body)
     console.log('Validated data:', JSON.stringify(validatedData, null, 2))
 
-    // If slug is being updated, check uniqueness
+    // If slug is being updated, check uniqueness for the module author
     if (validatedData.slug && validatedData.slug !== existingModule.slug) {
       const slugExists = await prisma.modules.findFirst({
         where: {
           slug: validatedData.slug,
-          author_id: session.user.id,
+          author_id: existingModule.author_id, // Check against original author
           id: { not: id },
         },
       })
 
       if (slugExists) {
         return NextResponse.json(
-          { error: 'A module with this slug already exists' },
+          { error: 'A module with this slug already exists for this author' },
           { status: 400 }
         )
       }
@@ -268,12 +283,19 @@ export async function DELETE(
     }
 
     const { id } = await params
-    // Check if module exists and belongs to user
-    const moduleToDelete = await prisma.modules.findFirst({
-      where: {
-        id,
-        author_id: session.user.id,
-      },
+
+    // Check if user can delete this module (author or collaborator)
+    const canEdit = await canEditModuleWithRetry(session.user.id, id)
+    if (!canEdit) {
+      return NextResponse.json(
+        { error: 'Module not found or you do not have permission to delete it' },
+        { status: 404 }
+      )
+    }
+
+    // Fetch the module to delete
+    const moduleToDelete = await prisma.modules.findUnique({
+      where: { id },
       include: {
         _count: {
           select: {

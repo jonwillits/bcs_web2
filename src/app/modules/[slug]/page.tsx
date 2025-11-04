@@ -44,6 +44,14 @@ async function getModuleBySlug(slug: string) {
           sort_order: 'asc',
         },
       },
+      module_media: {
+        include: {
+          media_files: true,
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      },
     },
   })
 
@@ -93,6 +101,15 @@ export default async function ModulePage({ params }: ModulePageProps) {
       ...subModule,
       sortOrder: subModule.sort_order // Map sort_order to sortOrder for component compatibility
     })), // Map other_modules to subModules for component compatibility
+    resources: foundModule.module_media.map(mm => ({
+      id: mm.media_files.id,
+      name: mm.media_files.original_name,
+      filename: mm.media_files.filename,
+      size: Number(mm.media_files.file_size),
+      mimeType: mm.media_files.mime_type,
+      url: mm.media_files.storage_path,
+      uploadedAt: mm.created_at.toISOString(),
+    })),
   }
 
   return (

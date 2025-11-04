@@ -32,6 +32,7 @@ This directory contains all project documentation for the University of Illinois
 ### 📈 **Planning & Roadmap**
 - [`FEATURE_PROPOSALS.md`](FEATURE_PROPOSALS.md) - Comprehensive feature proposals and 6-month roadmap
 - [`COLLABORATION_FEATURE_ANALYSIS.md`](COLLABORATION_FEATURE_ANALYSIS.md) - Faculty collaboration implementation options (5 approaches analyzed)
+- [`STUDENT_SYSTEM_PROPOSAL.md`](STUDENT_SYSTEM_PROPOSAL.md) - Student registration, enrollment, and progress tracking system proposal
 
 ---
 

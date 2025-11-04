@@ -41,9 +41,17 @@ next-env.d.ts
 # Prisma
 prisma/migrations/
 
+# Database Backups
+*.sql
+*.dump
+database_backup*.sql
+
 # Editor
 .vscode/
 .idea/
+
+# MCP Servers
+.playwright-mcp/
 
 # OS
 Thumbs.db

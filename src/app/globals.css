@@ -825,3 +825,17 @@ Inspired by official UI brand colors: Illini Orange and Illini Blue
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   margin: 2rem 0;
 }
+/* Image captions - Note: CSS ::after doesn't work on img elements
+   TODO: Wrap images in figure elements client-side or modify TipTap extension */
+.neural-content img[title]:not([title=""]) {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.5rem;
+}
+
+/* Style for images with captions to show title on hover */
+.neural-content img[title]:not([title=""]) {
+  cursor: help;
+  border: 2px solid hsl(var(--neural-primary) / 0.2);
+}

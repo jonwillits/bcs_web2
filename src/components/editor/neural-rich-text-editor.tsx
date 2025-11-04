@@ -3,7 +3,7 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Heading from '@tiptap/extension-heading'
-import Image from '@tiptap/extension-image'
+import ResizableImageExtension from 'tiptap-extension-resize-image'
 import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import { useCallback, useEffect, useState, useRef } from 'react'
@@ -47,6 +47,7 @@ interface NeuralRichTextEditorProps {
   autoSaveDelay?: number
   className?: string
   moduleId?: string
+  onEditorReady?: (insertImage: (url: string, alt?: string, caption?: string) => void) => void
 }
 
 export function NeuralRichTextEditor({
@@ -57,7 +58,8 @@ export function NeuralRichTextEditor({
   autoSave = true,
   autoSaveDelay = 2000,
   className = '',
-  moduleId
+  moduleId,
+  onEditorReady
 }: NeuralRichTextEditorProps) {
   const [isMounted, setIsMounted] = useState(false)
   const [wordCount, setWordCount] = useState(0)
@@ -75,7 +77,7 @@ export function NeuralRichTextEditor({
       Heading.configure({
         levels: [1, 2, 3],
       }),
-      Image.configure({
+      ResizableImageExtension.configure({
         HTMLAttributes: {
           class: 'max-w-full rounded-lg shadow-neural my-4',
         },
@@ -121,6 +123,22 @@ export function NeuralRichTextEditor({
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // Expose insertImage function to parent component
+  useEffect(() => {
+    if (editor && onEditorReady) {
+      const insertImage = (url: string, alt?: string, caption?: string) => {
+        // Insert image with caption stored in title attribute
+        editor.chain().focus().setImage({
+          src: url,
+          alt: alt || '',
+          title: caption || '' // Store caption in title for now
+        }).run()
+      }
+      onEditorReady(insertImage)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor])
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {

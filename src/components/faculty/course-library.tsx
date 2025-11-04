@@ -49,8 +49,9 @@ interface Course {
   }
 }
 
-async function fetchCourses(): Promise<Course[]> {
-  const response = await fetch('/api/courses?authorOnly=true')
+async function fetchCourses(type: 'authored' | 'collaborated'): Promise<Course[]> {
+  const queryParam = type === 'authored' ? 'authorOnly=true' : 'collaboratorOnly=true'
+  const response = await fetch(`/api/courses?${queryParam}`)
   if (!response.ok) {
     throw new Error('Failed to fetch courses')
   }
@@ -62,10 +63,11 @@ export function CourseLibrary() {
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all')
+  const [activeTab, setActiveTab] = useState<'authored' | 'collaborated'>('authored')
 
   const { data: courses = [], isLoading, error } = useQuery({
-    queryKey: ['courses', 'authorOnly'],
-    queryFn: fetchCourses,
+    queryKey: ['courses', activeTab],
+    queryFn: () => fetchCourses(activeTab),
   })
 
   const filteredCourses = courses.filter(course => {
@@ -210,6 +212,26 @@ export function CourseLibrary() {
             </Card>
           </div>
 
+          {/* Tabs */}
+          <div className="flex items-center space-x-2 mb-6">
+            <NeuralButton
+              variant={activeTab === 'authored' ? 'neural' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('authored')}
+            >
+              <BookOpen className="mr-2 h-4 w-4" />
+              My Courses
+            </NeuralButton>
+            <NeuralButton
+              variant={activeTab === 'collaborated' ? 'neural' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('collaborated')}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Shared with Me
+            </NeuralButton>
+          </div>
+
           {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1">
@@ -337,15 +359,15 @@ export function CourseLibrary() {
                           <Eye className="h-4 w-4" />
                         </NeuralButton>
                       </Link>
-                      <NeuralButton 
-                        variant="neural" 
-                        size="sm" 
-                        disabled
-                        title="Course editing coming soon"
-                      >
-                        <Edit className="mr-1 h-4 w-4" />
-                        Edit
-                      </NeuralButton>
+                      <Link href={`/faculty/courses/edit/${course.id}`}>
+                        <NeuralButton
+                          variant="neural"
+                          size="sm"
+                        >
+                          <Edit className="mr-1 h-4 w-4" />
+                          Edit
+                        </NeuralButton>
+                      </Link>
                     </div>
                   </div>
                 </CardContent>

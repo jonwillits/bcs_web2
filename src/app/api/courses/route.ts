@@ -153,6 +153,7 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured')
     const status = searchParams.get('status')
     const authorOnly = searchParams.get('authorOnly')
+    const collaboratorOnly = searchParams.get('collaboratorOnly')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
 
@@ -170,6 +171,76 @@ export async function GET(request: NextRequest) {
 
       const whereClause = {
         author_id: session.user.id,
+        ...(status && { status }),
+      }
+
+      const [courses, totalCount] = await withDatabaseRetry(async () => {
+        return await Promise.all([
+          prisma.courses.findMany({
+            where: whereClause,
+            include: {
+              users: {
+                select: {
+                  name: true,
+                  email: true,
+                },
+              },
+              course_modules: {
+                include: {
+                  modules: {
+                    select: {
+                      id: true,
+                      title: true,
+                      slug: true,
+                      description: true,
+                      status: true,
+                    },
+                  },
+                },
+                orderBy: {
+                  sort_order: 'asc',
+                },
+              },
+              _count: {
+                select: {
+                  course_modules: true,
+                },
+              },
+            },
+            orderBy: {
+              updated_at: 'desc',
+            },
+            skip,
+            take: validLimit,
+          }),
+          prisma.courses.count({ where: whereClause }),
+        ]);
+      }, { maxAttempts: 3, baseDelayMs: 500 })
+
+      return NextResponse.json({
+        courses,
+        pagination: {
+          page: validPage,
+          limit: validLimit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / validLimit),
+        }
+      })
+    }
+
+    // If collaboratorOnly is specified, require authentication
+    if (collaboratorOnly === 'true') {
+      const session = await auth()
+      if (!session?.user || session.user.role !== 'faculty') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      const whereClause = {
+        collaborators: {
+          some: {
+            user_id: session.user.id,
+          }
+        },
         ...(status && { status }),
       }
 
