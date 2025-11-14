@@ -164,7 +164,7 @@ export function FacultySearchInput({
       {showDropdown && filteredResults.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto"
+          className="absolute z-[110] w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto"
         >
           {filteredResults.map((user, index) => (
             <button
@@ -218,7 +218,7 @@ export function FacultySearchInput({
 
       {/* No results message */}
       {query.length >= 2 && !isLoading && filteredResults.length === 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg p-4 text-center text-sm text-muted-foreground">
+        <div className="absolute z-[110] w-full mt-1 bg-background border border-border rounded-lg shadow-lg p-4 text-center text-sm text-muted-foreground">
           No faculty members found matching &quot;{query}&quot;
         </div>
       )}

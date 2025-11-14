@@ -1,9 +1,17 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { StandaloneModuleViewer } from '@/components/public/standalone-module-viewer'
 import { PublicLayout } from '@/components/layouts/app-layout'
+import { ModuleTreeSidebar } from '@/components/modules/module-tree-sidebar'
+import { ModuleBreadcrumbs } from '@/components/modules/module-breadcrumbs'
+import { ModuleNavigationCards } from '@/components/modules/module-navigation-cards'
+import { MobileModuleDrawer } from '@/components/modules/mobile-module-drawer'
+import {
+  getModuleBreadcrumbs,
+  getModuleSiblings,
+  getStandaloneModuleTree,
+} from '@/lib/modules/hierarchy-helpers'
 
 interface ModulePageProps {
   params: Promise<{ slug: string }>
@@ -89,19 +97,24 @@ export default async function ModulePage({ params }: ModulePageProps) {
     notFound()
   }
 
+  // Fetch hierarchical navigation data
+  const breadcrumbs = await getModuleBreadcrumbs(foundModule.id)
+  const siblings = await getModuleSiblings(foundModule.id)
+  const { tree } = await getStandaloneModuleTree(foundModule.id)
+
   // Type cast the module data to ensure proper TypeScript types
   const moduleData = {
     ...foundModule,
     status: foundModule.status as 'draft' | 'published',
     createdAt: foundModule.created_at.toISOString(),
     updatedAt: foundModule.updated_at.toISOString(),
-    author: foundModule.users, // Map users to author for component compatibility
-    parentModule: foundModule.modules, // Map modules to parentModule for component compatibility
-    subModules: foundModule.other_modules.map(subModule => ({
+    author: foundModule.users,
+    parentModule: foundModule.modules,
+    subModules: foundModule.other_modules.map((subModule) => ({
       ...subModule,
-      sortOrder: subModule.sort_order // Map sort_order to sortOrder for component compatibility
-    })), // Map other_modules to subModules for component compatibility
-    resources: foundModule.module_media.map(mm => ({
+      sortOrder: subModule.sort_order,
+    })),
+    resources: foundModule.module_media.map((mm) => ({
       id: mm.media_files.id,
       name: mm.media_files.original_name,
       filename: mm.media_files.filename,
@@ -115,26 +128,47 @@ export default async function ModulePage({ params }: ModulePageProps) {
   return (
     <PublicLayout>
       <div className="container mx-auto px-6 py-8">
-        {/* Breadcrumb */}
+        {/* Breadcrumb Navigation */}
         <div className="mb-6">
-          <nav className="text-sm text-muted-foreground">
-            <Link href="/" className="hover:text-foreground">Home</Link>
-            {foundModule.modules && (
-              <>
-                <span className="mx-2">/</span>
-                <Link href={`/modules/${foundModule.modules.slug}`} className="hover:text-foreground">
-                  {foundModule.modules.title}
-                </Link>
-              </>
-            )}
-            <span className="mx-2">/</span>
-            <span className="text-foreground font-medium">{foundModule.title}</span>
-          </nav>
+          <ModuleBreadcrumbs breadcrumbs={breadcrumbs} baseUrl="/modules" />
         </div>
 
-        {/* Module Content */}
-        <StandaloneModuleViewer module={moduleData} />
+        {/* Main Layout: Sidebar + Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+          {/* Tree Navigation Sidebar - Hidden on mobile, shown on desktop */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-20 h-[calc(100vh-6rem)] border rounded-lg bg-card">
+              <ModuleTreeSidebar
+                tree={tree}
+                currentModuleId={foundModule.id}
+                baseUrl="/modules"
+              />
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="min-w-0">
+            <StandaloneModuleViewer module={moduleData} />
+
+            {/* Navigation Cards */}
+            <div className="mt-8">
+              <ModuleNavigationCards
+                parentModule={foundModule.modules}
+                previousModule={siblings.previous}
+                nextModule={siblings.next}
+                baseUrl="/modules"
+              />
+            </div>
+          </main>
+        </div>
       </div>
+
+      {/* Mobile Drawer Navigation */}
+      <MobileModuleDrawer
+        tree={tree}
+        currentModuleId={foundModule.id}
+        baseUrl="/modules"
+      />
     </PublicLayout>
   )
 }

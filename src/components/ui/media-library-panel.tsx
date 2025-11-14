@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,19 @@ export function MediaLibraryPanel({
   const [showAltTextDialog, setShowAltTextDialog] = useState(false);
   const [altText, setAltText] = useState('');
   const [caption, setCaption] = useState('');
+
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    if (showAltTextDialog) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showAltTextDialog])
 
   const { data: mediaFiles = [], isLoading, refetch } = useQuery({
     queryKey: ['media-files', moduleId],
@@ -149,15 +163,15 @@ export function MediaLibraryPanel({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col space-y-3 pb-4">
+      <CardContent className="flex-1 flex flex-col space-y-3 pb-4 pt-5">
         <Tabs defaultValue="library" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="library">
-              <Grid3x3 className="h-4 w-4 mr-2" />
+          <TabsList className="grid w-full grid-cols-2 text-xs sm:text-sm h-11 overflow-hidden p-1.5 gap-1">
+            <TabsTrigger value="library" className="px-2 sm:px-4 shadow-none data-[state=active]:shadow-none ring-0 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+              <Grid3x3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Library
             </TabsTrigger>
-            <TabsTrigger value="upload">
-              <Upload className="h-4 w-4 mr-2" />
+            <TabsTrigger value="upload" className="px-2 sm:px-4 shadow-none data-[state=active]:shadow-none ring-0 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+              <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Upload
             </TabsTrigger>
           </TabsList>
@@ -229,11 +243,12 @@ export function MediaLibraryPanel({
                       className="group relative cursor-pointer rounded-lg border border-border hover:border-neural-primary transition-all overflow-hidden"
                     >
                       {file.mimeType.startsWith('image/') ? (
-                        <div className="aspect-square bg-muted">
-                          <img
+                        <div className="aspect-square bg-muted relative">
+                          <Image
                             src={file.url}
                             alt={file.originalName}
-                            className="w-full h-full object-cover"
+                            fill
+                            className="object-cover"
                           />
                         </div>
                       ) : (
@@ -266,10 +281,12 @@ export function MediaLibraryPanel({
                       className="flex items-center gap-3 p-3 border rounded-lg hover:border-neural-primary cursor-pointer transition-colors"
                     >
                       {file.mimeType.startsWith('image/') ? (
-                        <img
+                        <Image
                           src={file.url}
                           alt={file.originalName}
-                          className="w-12 h-12 object-cover rounded"
+                          width={48}
+                          height={48}
+                          className="object-cover rounded"
                         />
                       ) : (
                         <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
@@ -312,8 +329,8 @@ export function MediaLibraryPanel({
 
       {/* Alt Text Dialog */}
       {showAltTextDialog && selectedFile && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[100] px-2 sm:px-4 pt-8 sm:pt-12 pb-4">
+          <div className="bg-background rounded-lg shadow-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Add Image Description</h3>
               <NeuralButton
@@ -331,11 +348,12 @@ export function MediaLibraryPanel({
             </div>
 
             {/* Image Preview */}
-            <div className="mb-4">
-              <img
+            <div className="mb-4 relative h-48">
+              <Image
                 src={selectedFile.url}
                 alt={selectedFile.originalName}
-                className="w-full h-48 object-cover rounded-lg"
+                fill
+                className="object-cover rounded-lg"
               />
             </div>
 

@@ -334,3 +334,11 @@ The project uses manual testing. When adding features:
 
 **Note**: Outdated files have been removed. All AI development prompts, task reports, and debug documentation have been cleaned up.
 - Use Context7 to check up-to-date docs when needed for implementing new libraries or frameworks, or adding features using them.
+- When you need to access supabase production through MCP, the MCP server name is supabasePROD
+- Whenever database schema changes is made, remember to create migrations locally, commit them, and let Vercel apply them automatically.
+- https://bcs-web2.vercel.app/ is the development environment referred in @docs/DEV_PROD_WORKFLOW.md 
+https://www.brainandcognitivescience.com/ is the production environment referred in @docs/DEV_PROD_WORKFLOW.md
+- For faculty user in development environment and testing, use:
+
+email/username: ritikh2@illinois.edu
+password: Test234!

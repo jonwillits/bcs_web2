@@ -1,0 +1,178 @@
+"use client";
+
+import { ReactNode, useState } from 'react';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { useFloatingPanel } from '@/hooks/useFloatingPanel';
+import { PageHeader, PageHeaderProps } from './PageHeader';
+import { FloatingTeamPanel } from './FloatingTeamPanel';
+import { MobileBottomSheet } from './MobileBottomSheet';
+import { MediaSidebar } from './MediaSidebar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+
+export interface ResponsiveEditLayoutProps {
+  /**
+   * Page header props
+   */
+  header: Omit<PageHeaderProps, 'onTeamClick'>;
+
+  /**
+   * Content for Edit tab (rich text editor + content)
+   */
+  editTabContent: ReactNode;
+
+  /**
+   * Content for Settings tab (module details, publishing options)
+   */
+  settingsTabContent: ReactNode;
+
+  /**
+   * Content for Team panel/sheet (collaborators + activity feed)
+   */
+  teamContent: ReactNode;
+
+  /**
+   * Content for Media sidebar/sheet (media library)
+   */
+  mediaContent: ReactNode;
+
+  /**
+   * Default active tab
+   */
+  defaultTab?: 'edit' | 'settings';
+
+  /**
+   * Additional className for main container
+   */
+  className?: string;
+}
+
+/**
+ * Responsive layout wrapper for edit/create pages
+ *
+ * Layout by breakpoint:
+ * - Desktop (>= 1280px): Two tabs + floating team panel + media sidebar
+ * - Tablet (768-1279px): Two tabs + team bottom sheet + media bottom sheet
+ * - Mobile (< 768px): Two tabs + team bottom sheet + media bottom sheet
+ *
+ * Features:
+ * - Automatic responsive behavior
+ * - Consistent team panel/sheet across breakpoints
+ * - Media integration (sidebar on desktop, sheet on mobile)
+ * - Shared state management
+ */
+export function ResponsiveEditLayout({
+  header,
+  editTabContent,
+  settingsTabContent,
+  teamContent,
+  mediaContent,
+  defaultTab = 'edit',
+  className,
+}: ResponsiveEditLayoutProps) {
+  const { isMobile, isTablet, isDesktop } = useResponsiveLayout();
+  const teamPanel = useFloatingPanel({ lockScroll: isMobile || isTablet });
+  const mediaSheet = useFloatingPanel({ lockScroll: isMobile || isTablet });
+
+  const [activeTab, setActiveTab] = useState<'edit' | 'settings'>(defaultTab);
+
+  return (
+    <div className={cn("min-h-screen bg-background", className)}>
+      {/* Header with Team Button */}
+      <PageHeader
+        {...header}
+        onTeamClick={teamPanel.togglePanel}
+      />
+
+      {/* Main Content Area */}
+      <main className="container mx-auto px-4 sm:px-6 py-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'edit' | 'settings')}
+          className="w-full"
+        >
+          {/* Tab Navigation */}
+          <TabsList className="grid w-full grid-cols-2 mb-6 max-w-md mx-auto lg:mx-0 shadow-none">
+            <TabsTrigger value="edit" className="text-sm sm:text-base">
+              ✏️ Edit
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="text-sm sm:text-base">
+              ⚙️ Settings
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Edit Tab */}
+          <TabsContent value="edit" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Main Editor Area */}
+              <div className="lg:col-span-9">
+                {editTabContent}
+              </div>
+
+              {/* Media Sidebar (Desktop Only) */}
+              {isDesktop && (
+                <div className="lg:col-span-3">
+                  <MediaSidebar>
+                    {mediaContent}
+                  </MediaSidebar>
+                </div>
+              )}
+            </div>
+
+            {/* Media Button for Mobile/Tablet */}
+            {(isMobile || isTablet) && (
+              <div className="fixed bottom-20 right-4 z-30">
+                <button
+                  onClick={mediaSheet.openPanel}
+                  className="flex items-center justify-center w-14 h-14 rounded-full bg-neural-primary text-primary-foreground shadow-lg hover:bg-neural-primary/90 transition-all hover:scale-110"
+                  aria-label="Open media library"
+                >
+                  📷
+                </button>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="mt-0">
+            <div className="max-w-4xl mx-auto">
+              {settingsTabContent}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Team Panel (Desktop) or Bottom Sheet (Mobile/Tablet) */}
+      {isDesktop ? (
+        <FloatingTeamPanel
+          isOpen={teamPanel.isOpen}
+          onClose={teamPanel.closePanel}
+          width="420px"
+        >
+          {teamContent}
+        </FloatingTeamPanel>
+      ) : (
+        <MobileBottomSheet
+          isOpen={teamPanel.isOpen}
+          onClose={teamPanel.closePanel}
+          title="Team & Activity"
+          height="85vh"
+        >
+          {teamContent}
+        </MobileBottomSheet>
+      )}
+
+      {/* Media Bottom Sheet (Mobile/Tablet) */}
+      {(isMobile || isTablet) && (
+        <MobileBottomSheet
+          isOpen={mediaSheet.isOpen}
+          onClose={mediaSheet.closePanel}
+          title="Media Library"
+          height="85vh"
+        >
+          {mediaContent}
+        </MobileBottomSheet>
+      )}
+    </div>
+  );
+}

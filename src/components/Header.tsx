@@ -101,14 +101,16 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60" role="banner">
       <div className="container mx-auto px-4 sm:px-6">
-        <div className="flex h-16 items-center justify-between">
+        <div className="flex h-16 items-center justify-between gap-2 md:gap-4">
           {/* Logo & Brand */}
-          <Link href="/" className="flex items-center space-x-2" aria-label="Brain & Cognitive Sciences - Go to homepage">
+          <Link href="/" className="flex items-center space-x-2 flex-shrink-0" aria-label="Brain & Cognitive Sciences - Go to homepage">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-neural" aria-hidden="true">
               <Brain className="h-5 w-5 text-primary-foreground" />
             </div>
+            {/* Show abbreviated "BCS" on mobile, full text on md+ */}
             <span className="font-bold text-sm sm:text-base lg:text-lg text-neural-primary">
-              Brain & Cognitive Sciences
+              <span className="md:hidden">BCS</span>
+              <span className="hidden md:inline">Brain & Cognitive Sciences</span>
             </span>
           </Link>
 
@@ -154,7 +156,7 @@ export function Header() {
             )}
           </nav>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3 md:space-x-4">
             {/* Desktop Search */}
             <div className="hidden lg:block">
               <form onSubmit={handleSearch} className="relative">
@@ -177,7 +179,7 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <NeuralButton variant="synaptic" size="sm">
                     <User className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-2">{session.user.name}</span>
+                    <span className="hidden lg:inline ml-2">{session.user.name}</span>
                   </NeuralButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -244,17 +246,18 @@ export function Header() {
               </DropdownMenu>
             ) : (
               <>
-                <Link href="/courses" className="hidden sm:inline-block">
+                {/* Hide Browse button on mobile - available in mobile menu */}
+                <Link href="/courses" className="hidden lg:inline-block">
                   <NeuralButton variant="ghost" size="sm">
                     <BookOpen className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-2">Browse</span>
+                    <span className="ml-2">Browse</span>
                   </NeuralButton>
                 </Link>
-                
+
                 <Link href="/auth/login">
                   <NeuralButton variant="synaptic" size="sm">
                     <User className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-2">Sign In</span>
+                    <span className="hidden lg:inline ml-2">Sign In</span>
                   </NeuralButton>
                 </Link>
               </>
@@ -266,7 +269,7 @@ export function Header() {
                 setMobileSearchOpen(!mobileSearchOpen)
                 if (mobileMenuOpen) setMobileMenuOpen(false)
               }}
-              className="lg:hidden p-2 text-muted-foreground hover:text-neural-primary transition-colors rounded-md"
+              className="lg:hidden p-1.5 text-muted-foreground hover:text-neural-primary transition-colors rounded-md"
               aria-label="Toggle search"
             >
               <Search className="h-5 w-5" />
@@ -276,7 +279,7 @@ export function Header() {
             <NeuralButton
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden p-1.5"
               onClick={() => {
                 setMobileMenuOpen(!mobileMenuOpen)
                 if (mobileSearchOpen) setMobileSearchOpen(false)

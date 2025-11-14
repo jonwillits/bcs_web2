@@ -117,10 +117,12 @@ export function FacultyDashboard({ user }: FacultyDashboardProps) {
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card className="cognitive-card">
-            <CardContent className="p-4 sm:p-6">
+          <Card className="cognitive-card group hover:shadow-lg transition-all duration-200 hover:scale-105">
+            <CardContent className="p-4 sm:p-6 bg-gradient-to-br from-neural-primary/5 to-neural-primary/10">
               <div className="flex items-center">
-                <FileText className="h-6 sm:h-8 w-6 sm:w-8 text-neural-primary" />
+                <div className="p-2 rounded-lg bg-neural-primary/10 group-hover:bg-neural-primary/20 transition-colors">
+                  <FileText className="h-6 sm:h-8 w-6 sm:w-8 text-neural-primary" />
+                </div>
                 <div className="ml-3 sm:ml-4">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Modules</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground">
@@ -137,10 +139,12 @@ export function FacultyDashboard({ user }: FacultyDashboardProps) {
             </CardContent>
           </Card>
 
-          <Card className="cognitive-card">
-            <CardContent className="p-4 sm:p-6">
+          <Card className="cognitive-card group hover:shadow-lg transition-all duration-200 hover:scale-105">
+            <CardContent className="p-4 sm:p-6 bg-gradient-to-br from-synapse-primary/5 to-synapse-primary/10">
               <div className="flex items-center">
-                <BookOpen className="h-6 sm:h-8 w-6 sm:w-8 text-synapse-primary" />
+                <div className="p-2 rounded-lg bg-synapse-primary/10 group-hover:bg-synapse-primary/20 transition-colors">
+                  <BookOpen className="h-6 sm:h-8 w-6 sm:w-8 text-synapse-primary" />
+                </div>
                 <div className="ml-3 sm:ml-4">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Courses</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground">
@@ -157,10 +161,12 @@ export function FacultyDashboard({ user }: FacultyDashboardProps) {
             </CardContent>
           </Card>
 
-          <Card className="cognitive-card">
-            <CardContent className="p-4 sm:p-6">
+          <Card className="cognitive-card group hover:shadow-lg transition-all duration-200 hover:scale-105">
+            <CardContent className="p-4 sm:p-6 bg-gradient-to-br from-cognition-teal/5 to-cognition-teal/10">
               <div className="flex items-center">
-                <Users className="h-6 sm:h-8 w-6 sm:w-8 text-cognition-teal" />
+                <div className="p-2 rounded-lg bg-cognition-teal/10 group-hover:bg-cognition-teal/20 transition-colors">
+                  <Users className="h-6 sm:h-8 w-6 sm:w-8 text-cognition-teal" />
+                </div>
                 <div className="ml-3 sm:ml-4">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Students</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground">
@@ -177,10 +183,12 @@ export function FacultyDashboard({ user }: FacultyDashboardProps) {
             </CardContent>
           </Card>
 
-          <Card className="cognitive-card">
-            <CardContent className="p-4 sm:p-6">
+          <Card className="cognitive-card group hover:shadow-lg transition-all duration-200 hover:scale-105">
+            <CardContent className="p-4 sm:p-6 bg-gradient-to-br from-cognition-orange/5 to-cognition-orange/10">
               <div className="flex items-center">
-                <BarChart3 className="h-6 sm:h-8 w-6 sm:w-8 text-cognition-orange" />
+                <div className="p-2 rounded-lg bg-cognition-orange/10 group-hover:bg-cognition-orange/20 transition-colors">
+                  <BarChart3 className="h-6 sm:h-8 w-6 sm:w-8 text-cognition-orange" />
+                </div>
                 <div className="ml-3 sm:ml-4">
                   <p className="text-xs sm:text-sm font-medium text-muted-foreground">Views</p>
                   <p className="text-lg sm:text-2xl font-bold text-foreground">

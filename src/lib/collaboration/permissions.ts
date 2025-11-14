@@ -48,6 +48,7 @@ export async function canEditCourse(
 
 /**
  * Check if a user can edit a module (is author OR collaborator)
+ * This includes inherited permissions from parent modules (cascading downward)
  *
  * @param userId - The ID of the user to check
  * @param moduleId - The ID of the module
@@ -63,7 +64,8 @@ export async function canEditModule(
   userId: string,
   moduleId: string
 ): Promise<boolean> {
-  const result = await prisma.modules.findFirst({
+  // First check if user has direct access to this module
+  const directAccess = await prisma.modules.findFirst({
     where: {
       id: moduleId,
       OR: [
@@ -78,7 +80,24 @@ export async function canEditModule(
     select: { id: true }
   })
 
-  return !!result
+  if (directAccess) {
+    return true
+  }
+
+  // Check if user has access through parent modules (inherited permission)
+  // Walk up the module hierarchy to check all ancestors
+  const moduleWithParent = await prisma.modules.findUnique({
+    where: { id: moduleId },
+    select: { parent_module_id: true }
+  })
+
+  if (!moduleWithParent?.parent_module_id) {
+    return false // No parent, and no direct access
+  }
+
+  // Recursively check parent module
+  // If user has access to parent, they inherit access to this child
+  return canEditModule(userId, moduleWithParent.parent_module_id)
 }
 
 // ==================== PERMISSION CHECKS WITH RETRY ====================

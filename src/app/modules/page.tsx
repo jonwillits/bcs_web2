@@ -1,5 +1,6 @@
 import { ModuleCatalog } from "@/components/public/module-catalog";
 import { PublicLayout } from "@/components/layouts/app-layout";
+import { auth } from "@/lib/auth/config";
 
 export const metadata = {
   title: "Module Catalog - BCS Interactive Platform",
@@ -13,10 +14,11 @@ type Props = {
 export default async function ModulesPage({ searchParams }: Props) {
   const params = await searchParams;
   const initialSearch = typeof params.search === 'string' ? params.search : '';
+  const session = await auth();
 
   return (
     <PublicLayout>
-      <ModuleCatalog initialSearch={initialSearch} />
+      <ModuleCatalog initialSearch={initialSearch} session={session} />
     </PublicLayout>
   );
 }

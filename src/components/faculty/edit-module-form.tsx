@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import Link from 'next/link'
 import { NeuralRichTextEditor } from '@/components/editor/neural-rich-text-editor'
 import { NeuralButton } from '@/components/ui/neural-button'
 import { TagsInput } from '@/components/ui/tags-input'
 import { MediaLibraryPanel } from '@/components/ui/media-library-panel'
 import { CollaboratorPanel } from '@/components/collaboration/CollaboratorPanel'
 import { ActivityFeed } from '@/components/collaboration/ActivityFeed'
+import { ResponsiveEditLayout } from '@/components/layout/ResponsiveEditLayout'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -21,19 +21,19 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-custom'
 import { toast } from 'sonner'
-import { 
-  Save, 
-  Eye, 
-  ArrowLeft, 
-  Brain, 
+import {
+  Brain,
   Hash,
   CheckCircle,
   FileText,
   AlertCircle,
   Layers,
-  Trash2
+  Trash2,
+  Globe,
+  Lock,
+  Calendar
 } from 'lucide-react'
 
 const editModuleSchema = z.object({
@@ -43,6 +43,7 @@ const editModuleSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   parentModuleId: z.string().nullable().optional(),
   status: z.enum(['draft', 'published']).default('draft'),
+  visibility: z.enum(['public', 'private']).default('public'),
   tags: z.array(z.string()).default([]),
 })
 
@@ -55,6 +56,7 @@ interface Module {
   description: string | null
   content: string
   status: 'draft' | 'published'
+  visibility: 'public' | 'private'
   tags: string[]
   parentModuleId: string | null
   createdAt: string
@@ -104,14 +106,11 @@ async function fetchParentModules(): Promise<{ modules: ParentModule[], availabl
 }
 
 async function updateModule(id: string, data: EditModuleFormData) {
-  // Transform parentModuleId to parent_module_id for API consistency
   const { parentModuleId, ...rest } = data;
   const apiData = {
     ...rest,
     parent_module_id: parentModuleId,
   }
-
-  console.log('Updating module with data:', apiData);
 
   const response = await fetch(`/api/modules/${id}`, {
     method: 'PUT',
@@ -154,6 +153,19 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
   const [availableTags, setAvailableTags] = useState<string[]>([])
   const [insertImageFn, setInsertImageFn] = useState<((url: string, alt?: string, caption?: string) => void) | null>(null)
 
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    if (showDeleteConfirm) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showDeleteConfirm])
+
   const { data: module, isLoading: isLoadingModule, error: moduleError } = useQuery({
     queryKey: ['module', moduleId],
     queryFn: () => fetchModule(moduleId),
@@ -166,7 +178,6 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
 
   const parentModules = parentModuleData?.modules || []
 
-  // Populate tags and available tags when data loads
   useEffect(() => {
     if (module?.tags) {
       setTags(module.tags)
@@ -185,7 +196,6 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
       toast.success('Module updated successfully!')
       queryClient.invalidateQueries({ queryKey: ['module', moduleId] })
       queryClient.invalidateQueries({ queryKey: ['modules'] })
-      // Redirect to the module's view page
       router.push(`/faculty/modules/${moduleId}`)
     },
     onError: (error: Error) => {
@@ -211,6 +221,7 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<EditModuleFormData>({
     resolver: zodResolver(editModuleSchema),
@@ -218,6 +229,7 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
 
   const watchedTitle = watch('title')
   const watchedStatus = watch('status')
+  const watchedVisibility = watch('visibility')
   const watchedParentId = watch('parentModuleId')
 
   // Initialize form when module data loads
@@ -229,8 +241,8 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
       setValue('content', module.content)
       setValue('parentModuleId', module.parentModuleId)
       setValue('status', module.status)
+      setValue('visibility', module.visibility || 'public')
       setValue('tags', module.tags || [])
-      // Also set the tags state
       setTags(module.tags || [])
     }
   }, [module, setValue])
@@ -247,6 +259,22 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
       setValue('slug', slug)
     }
   }, [watchedTitle, setValue, module])
+
+  // Keyboard shortcut: Ctrl+S (or Cmd+S) to save
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        if (!isSubmitting) {
+          handleSubmit(onSubmit)()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleSubmit, isSubmitting])
 
   const onSubmit = async (data: EditModuleFormData) => {
     try {
@@ -268,340 +296,394 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
   }
 
   // Available parent modules (exclude self and descendants)
-  const availableParentModules = parentModules.filter(parent => 
-    parent.id !== moduleId && 
+  const availableParentModules = parentModules.filter(parent =>
+    parent.id !== moduleId &&
     (!module?.subModules?.some(sub => sub.id === parent.id))
   )
 
+  // Loading state
   if (isLoadingModule) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border/40 bg-background/95 backdrop-blur">
-          <div className="container mx-auto px-6 py-8">
-            <div className="animate-pulse space-y-4">
-              <div className="h-8 bg-gradient-to-r from-neural-light/30 to-neural-primary/30 rounded w-1/3"></div>
-              <div className="h-4 bg-gradient-to-r from-neural-primary/30 to-neural-light/30 rounded w-1/2"></div>
-            </div>
-          </div>
-        </header>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse space-y-4 text-center">
+          <div className="h-8 bg-gradient-to-r from-neural-light/30 to-neural-primary/30 rounded w-64 mx-auto"></div>
+          <div className="h-4 bg-gradient-to-r from-neural-primary/30 to-neural-light/30 rounded w-48 mx-auto"></div>
+        </div>
       </div>
     )
   }
 
+  // Error state
   if (moduleError || !module) {
     return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border/40 bg-background/95 backdrop-blur">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/faculty/modules">
-                <NeuralButton variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Modules
-                </NeuralButton>
-              </Link>
-            </div>
-          </div>
-        </header>
-        <main className="container mx-auto px-6 py-8">
-          <Card className="cognitive-card max-w-md mx-auto">
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-              <h2 className="text-xl font-semibold text-foreground mb-2">
-                Module Not Found
-              </h2>
-              <p className="text-muted-foreground mb-6">
-                The module you are trying to edit does not exist or you do not have permission to edit it.
-              </p>
-              <Link href="/faculty/modules">
-                <NeuralButton variant="neural">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Modules
-                </NeuralButton>
-              </Link>
-            </CardContent>
-          </Card>
-        </main>
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="cognitive-card max-w-md mx-auto">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-2">
+              Module Not Found
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              The module you are trying to edit does not exist or you do not have permission to edit it.
+            </p>
+            <NeuralButton variant="neural" onClick={() => router.push('/faculty/modules')}>
+              Back to Modules
+            </NeuralButton>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href={`/faculty/modules/${moduleId}`}>
-                <NeuralButton variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Module
-                </NeuralButton>
-              </Link>
-              <Separator orientation="vertical" className="h-6" />
-              <div className="flex items-center space-x-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-neural">
-                  {module.parentModule ? (
-                    <Layers className="h-6 w-6 text-primary-foreground" />
-                  ) : (
-                    <Brain className="h-6 w-6 text-primary-foreground" />
-                  )}
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-neural-primary">Edit Module</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Modify content and settings for: {module.title}
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <NeuralButton
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={deleteMutation.isPending}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </NeuralButton>
-              <NeuralButton
-                variant="synaptic"
-                size="sm"
-                onClick={handleSubmit(onSubmit)}
-                disabled={isSubmitting || updateMutation.isPending}
-              >
-                <Save className="mr-2 h-4 w-4" />
-                {isSubmitting || updateMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </NeuralButton>
-            </div>
-          </div>
-        </div>
-      </header>
+  // ============================================================================
+  // RENDER SECTIONS FOR NEW LAYOUT
+  // ============================================================================
 
-      <main className="container mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* Module Settings */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="cognitive-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="mr-2 h-5 w-5 text-neural-primary" />
-                  Module Details
-                </CardTitle>
-                <CardDescription>
-                  Configure the basic information for your module
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    placeholder="Enter module title..."
-                    {...register('title')}
-                    className="border-neural-light/30 focus:border-neural-primary"
-                  />
-                  {errors.title && (
-                    <p className="text-sm text-red-500">{errors.title.message}</p>
-                  )}
-                </div>
+  // EDIT TAB: Rich Text Editor
+  const editTabContent = (
+    <Card className="cognitive-card">
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Brain className="mr-2 h-5 w-5 text-neural-primary" />
+          Module Content
+        </CardTitle>
+        <CardDescription>
+          Write and format your educational content using the rich text editor
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <NeuralRichTextEditor
+          content={watch('content') || ''}
+          onChange={(html) => setValue('content', html)}
+          placeholder="Start writing your module content..."
+          autoSave={true}
+          moduleId={moduleId}
+          onEditorReady={(insertImage) => setInsertImageFn(() => insertImage)}
+        />
+        {errors.content && (
+          <Alert className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {errors.content.message}
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
+  );
 
-                <div className="space-y-2">
-                  <Label htmlFor="slug">URL Slug *</Label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="slug"
-                      placeholder="url-friendly-slug"
-                      {...register('slug')}
-                      className="pl-10 border-neural-light/30 focus:border-neural-primary"
-                    />
-                  </div>
-                  {errors.slug && (
-                    <p className="text-sm text-red-500">{errors.slug.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Brief description of the module..."
-                    rows={3}
-                    {...register('description')}
-                    className="border-neural-light/30 focus:border-neural-primary"
-                  />
-                </div>
-
-                <TagsInput
-                  value={tags}
-                  onChange={setTags}
-                  label="Tags"
-                  placeholder="Add tags to categorize this module..."
-                  suggestions={availableTags}
-                  maxTags={10}
-                  id="tags"
-                />
-
-                <div className="space-y-2">
-                  <Label htmlFor="parentModule">Parent Module</Label>
-                  <Select
-                    value={watchedParentId ?? 'none'}
-                    onValueChange={(value) => setValue('parentModuleId', value === 'none' ? null : value)}
-                  >
-                    <SelectTrigger className="border-neural-light/30 focus:border-neural-primary">
-                      <SelectValue placeholder="None (Root Module)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None (Root Module)</SelectItem>
-                      {isLoadingParents ? (
-                        <SelectItem value="loading" disabled>Loading...</SelectItem>
-                      ) : (
-                        availableParentModules.map((parent) => (
-                          <SelectItem key={parent.id} value={parent.id}>
-                            {parent.title}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        value="draft"
-                        {...register('status')}
-                        className="text-neural-primary"
-                      />
-                      <span className="flex items-center text-sm">
-                        <FileText className="mr-1 h-4 w-4 text-orange-500" />
-                        Draft
-                      </span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        value="published"
-                        {...register('status')}
-                        className="text-neural-primary"
-                      />
-                      <span className="flex items-center text-sm">
-                        <CheckCircle className="mr-1 h-4 w-4 text-green-500" />
-                        Published
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Module Statistics */}
-            <Card className="cognitive-card">
-              <CardHeader>
-                <CardTitle className="text-sm">Module Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Status:</span>
-                  <Badge variant={watchedStatus === 'published' ? 'default' : 'outline'}>
-                    {watchedStatus}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Created:</span>
-                  <span className="font-medium">
-                    {new Date(module.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Updated:</span>
-                  <span className="font-medium">
-                    {new Date(module.updatedAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sub-modules:</span>
-                  <span className="font-medium">{module.subModules?.length || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Collaboration */}
-            <CollaboratorPanel
-              entityType="module"
-              entityId={moduleId}
-              authorId={module.author_id}
+  // SETTINGS TAB: Module Details + Publishing Settings
+  const settingsTabContent = (
+    <div className="space-y-6">
+      {/* Basic Information */}
+      <Card className="cognitive-card">
+        <CardHeader>
+          <CardTitle>Basic Information</CardTitle>
+          <CardDescription>Core module details and metadata</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Title *</Label>
+            <Input
+              id="title"
+              placeholder="Enter module title..."
+              {...register('title')}
             />
-
-            {/* Activity Feed */}
-            <ActivityFeed
-              entityType="module"
-              entityId={moduleId}
-              limit={10}
-            />
+            {errors.title && (
+              <p className="text-sm text-red-500">{errors.title.message}</p>
+            )}
           </div>
 
-          {/* Content Editor */}
-          <div className="lg:col-span-3 space-y-6">
-            <Card className="cognitive-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Brain className="mr-2 h-5 w-5 text-neural-primary" />
-                  Module Content
-                </CardTitle>
-                <CardDescription>
-                  Write and format your educational content using the rich text editor
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <NeuralRichTextEditor
-                  content={watch('content') || ''}
-                  onChange={(html) => setValue('content', html)}
-                  placeholder="Start writing your module content..."
-                  autoSave={true}
-                  onSave={(html) => setValue('content', html)}
-                  moduleId={moduleId}
-                  onEditorReady={(insertImage) => setInsertImageFn(() => insertImage)}
-                />
-                {errors.content && (
-                  <Alert className="mt-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      {errors.content.message}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Media Library */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 h-[calc(100vh-8rem)]">
-              <MediaLibraryPanel
-                moduleId={moduleId}
-                onMediaSelect={(file, altText, caption) => {
-                  if (insertImageFn) {
-                    insertImageFn(file.url, altText || file.originalName, caption);
-                  }
-                }}
+          <div className="space-y-2">
+            <Label htmlFor="slug">URL Slug *</Label>
+            <div className="relative">
+              <Hash className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="slug"
+                placeholder="url-friendly-slug"
+                {...register('slug')}
+                className="pl-10"
               />
             </div>
+            {errors.slug && (
+              <p className="text-sm text-red-500">{errors.slug.message}</p>
+            )}
           </div>
-        </div>
-      </main>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Brief description of the module..."
+              rows={3}
+              {...register('description')}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <TagsInput
+              value={tags}
+              onChange={setTags}
+              label="Tags"
+              placeholder="Add tags to categorize this module..."
+              suggestions={availableTags}
+              maxTags={10}
+              id="tags"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Module Hierarchy */}
+      <Card className="cognitive-card">
+        <CardHeader>
+          <CardTitle>Module Hierarchy</CardTitle>
+          <CardDescription>Organize this module within a parent module</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="parentModule">Parent Module</Label>
+            <Select
+              value={watchedParentId ?? 'none'}
+              onValueChange={(value) => setValue('parentModuleId', value === 'none' ? null : value)}
+              disabled={isLoadingParents}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={isLoadingParents ? "Loading..." : "None (Root Module)"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None (Root Module)</SelectItem>
+                {availableParentModules.map((parent) => (
+                  <SelectItem key={parent.id} value={parent.id}>
+                    {parent.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Publishing Settings */}
+      <Card className="cognitive-card">
+        <CardHeader>
+          <CardTitle>Publishing Settings</CardTitle>
+          <CardDescription>Control module status and visibility</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <Label>Status</Label>
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  className="flex items-center space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="draft" id="status-draft" />
+                    <Label htmlFor="status-draft" className="flex items-center cursor-pointer font-normal">
+                      <FileText className="mr-1.5 h-4 w-4 text-orange-500" />
+                      Draft
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="published" id="status-published" />
+                    <Label htmlFor="status-published" className="flex items-center cursor-pointer font-normal">
+                      <CheckCircle className="mr-1.5 h-4 w-4 text-green-500" />
+                      Published
+                    </Label>
+                  </div>
+                </RadioGroup>
+              )}
+            />
+          </div>
+
+          <div className="space-y-3">
+            <Label>Visibility</Label>
+            <Controller
+              name="visibility"
+              control={control}
+              render={({ field }) => (
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  className="flex items-center space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="public" id="visibility-public" />
+                    <Label htmlFor="visibility-public" className="flex items-center cursor-pointer font-normal">
+                      <Globe className="mr-1.5 h-4 w-4 text-blue-500" />
+                      Public
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="private" id="visibility-private" />
+                    <Label htmlFor="visibility-private" className="flex items-center cursor-pointer font-normal">
+                      <Lock className="mr-1.5 h-4 w-4 text-purple-500" />
+                      Private
+                    </Label>
+                  </div>
+                </RadioGroup>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              Public modules can be added to any course. Private modules are only accessible to you.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Module Statistics */}
+      <Card className="cognitive-card">
+        <CardHeader>
+          <CardTitle>Module Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-synapse-primary" />
+                <p className="text-sm font-medium text-muted-foreground">Status</p>
+              </div>
+              <Badge variant={watchedStatus === 'published' ? 'default' : 'outline'}>
+                {watchedStatus}
+              </Badge>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-neural-primary" />
+                <p className="text-sm font-medium text-muted-foreground">Sub-modules</p>
+              </div>
+              <p className="text-2xl font-bold">{module.subModules?.length || 0}</p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-cognition-teal" />
+                <p className="text-sm font-medium text-muted-foreground">Created</p>
+              </div>
+              <p className="text-sm font-semibold">
+                {module.createdAt ? (
+                  new Date(module.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })
+                ) : (
+                  'N/A'
+                )}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-cognition-orange" />
+                <p className="text-sm font-medium text-muted-foreground">Updated</p>
+              </div>
+              <p className="text-sm font-semibold">
+                {module.updatedAt ? (
+                  new Date(module.updatedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })
+                ) : (
+                  'N/A'
+                )}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Danger Zone */}
+      <Card className="cognitive-card border-red-200 dark:border-red-900">
+        <CardHeader>
+          <CardTitle className="text-sm text-red-600 dark:text-red-400 flex items-center">
+            <AlertCircle className="mr-2 h-4 w-4" />
+            Danger Zone
+          </CardTitle>
+          <CardDescription>
+            Irreversible actions that permanently affect this module
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <NeuralButton
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={deleteMutation.isPending}
+            className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Module
+          </NeuralButton>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // TEAM CONTENT: Collaborators + Activity Feed
+  const teamContent = (
+    <div className="space-y-6">
+      <CollaboratorPanel
+        entityType="module"
+        entityId={moduleId}
+        authorId={module.author_id}
+      />
+      <ActivityFeed
+        entityType="module"
+        entityId={moduleId}
+        limit={10}
+      />
+    </div>
+  );
+
+  // MEDIA CONTENT: Media Library
+  const mediaContent = (
+    <MediaLibraryPanel
+      moduleId={moduleId}
+      onMediaSelect={(file, altText, caption) => {
+        if (insertImageFn) {
+          insertImageFn(file.url, altText || file.originalName, caption);
+        }
+      }}
+    />
+  );
+
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
+
+  return (
+    <div>
+      <ResponsiveEditLayout
+        header={{
+          title: "Edit Module",
+          subtitle: `Modify content and settings for: ${module.title}`,
+          backHref: `/faculty/modules/${moduleId}`,
+          backLabel: "Back to Module",
+          previewHref: `/modules/${module.slug}`,
+          collaboratorCount: 0, // TODO: Get actual count from API
+          onSave: handleSubmit(onSubmit),
+          isSaving: isSubmitting || updateMutation.isPending,
+          saveDisabled: isSubmitting || updateMutation.isPending,
+          icon: module.parentModule ? 'layers' : 'brain',
+        }}
+        editTabContent={editTabContent}
+        settingsTabContent={settingsTabContent}
+        teamContent={teamContent}
+        mediaContent={mediaContent}
+      />
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center px-2 sm:px-4 pt-8 sm:pt-12 pb-4 z-[100]">
+          <Card className="w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle className="flex items-center text-red-600">
                 <AlertCircle className="mr-2 h-5 w-5" />

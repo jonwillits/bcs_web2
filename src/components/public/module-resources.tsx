@@ -30,6 +30,11 @@ interface ModuleResourcesProps {
 }
 
 export function ModuleResources({ resources, className = '' }: ModuleResourcesProps) {
+  const getDownloadUrl = (file: MediaFile) => {
+    // Use server-side proxy to avoid CORS issues and force download
+    return `/api/media/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name)}`;
+  }
+
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith('image/')) return <ImageIcon className="h-4 w-4" />
     if (mimeType.startsWith('video/')) return <Video className="h-4 w-4" />
@@ -128,10 +133,9 @@ export function ModuleResources({ resources, className = '' }: ModuleResourcesPr
                   </td>
                   <td className="py-4 pl-4 text-right">
                     <a
-                      href={file.url}
+                      href={getDownloadUrl(file)}
                       download={file.name}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      aria-label={`Download ${file.name}`}
                     >
                       <NeuralButton variant="ghost" size="sm">
                         <Download className="h-4 w-4" />

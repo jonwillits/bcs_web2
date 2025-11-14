@@ -11,6 +11,7 @@ const createModuleSchema = z.object({
   description: z.string().optional(),
   parent_module_id: z.string().optional(),
   status: z.enum(['draft', 'published']).default('draft'),
+  visibility: z.enum(['public', 'private']).default('public'),
   tags: z.array(z.string().min(1).max(50)).max(20).default([]),
 })
 
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
           description: validatedData.description,
           parent_module_id: validatedData.parent_module_id,
           status: validatedData.status,
+          visibility: validatedData.visibility,
           tags: cleanTags,
           author_id: session.user.id,
           sort_order,
@@ -140,6 +142,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const sortBy = searchParams.get('sortBy') || 'sort_order'
     const sortOrder = searchParams.get('sortOrder') || 'asc'
+    const authorOnly = searchParams.get('authorOnly')
+    const collaboratorOnly = searchParams.get('collaboratorOnly')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '50', 10)
 
@@ -147,6 +151,234 @@ export async function GET(request: NextRequest) {
     const validPage = Math.max(1, page)
     const validLimit = Math.min(Math.max(1, limit), 100) // Max 100 items per page
     const skip = (validPage - 1) * validLimit
+
+    // If authorOnly is specified, require authentication
+    if (authorOnly === 'true') {
+      if (!session?.user || session.user.role !== 'faculty') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      const whereClause: any = {
+        author_id: session.user.id,
+        ...(status && { status }),
+      }
+
+      // Apply parent filtering
+      if (parentId === 'root') {
+        whereClause.parent_module_id = null
+      } else if (parentId === 'sub') {
+        whereClause.parent_module_id = { not: null }
+      } else if (parentId && parentId !== 'all') {
+        whereClause.parent_module_id = parentId
+      }
+
+      // Apply tag filtering
+      if (tags) {
+        const tagList = tags.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0)
+        if (tagList.length > 0) {
+          whereClause.tags = { hasSome: tagList }
+        }
+      }
+
+      // Apply search filtering
+      if (search && search.trim().length > 0) {
+        const searchTerm = search.trim()
+        whereClause.OR = [
+          { title: { contains: searchTerm, mode: 'insensitive' } },
+          { description: { contains: searchTerm, mode: 'insensitive' } },
+          { slug: { contains: searchTerm, mode: 'insensitive' } },
+          { tags: { hasSome: [searchTerm.toLowerCase()] } }
+        ]
+      }
+
+      // Build order by clause
+      let orderByClause: any
+      switch (sortBy) {
+        case 'title':
+          orderByClause = { title: sortOrder }
+          break
+        case 'created_at':
+          orderByClause = { created_at: sortOrder }
+          break
+        case 'updated_at':
+          orderByClause = { updated_at: sortOrder }
+          break
+        case 'status':
+          orderByClause = { status: sortOrder }
+          break
+        default:
+          orderByClause = { sort_order: sortOrder }
+      }
+
+      const [modules, totalCount] = await withDatabaseRetry(async () => {
+        return await Promise.all([
+          prisma.modules.findMany({
+            where: whereClause,
+            include: {
+              users: { select: { name: true, email: true } },
+              modules: { select: { id: true, title: true } },
+              _count: { select: { other_modules: true, course_modules: true } }
+            },
+            orderBy: orderByClause,
+            skip,
+            take: validLimit,
+          }),
+          prisma.modules.count({ where: whereClause })
+        ])
+      })
+
+      const transformedModules = modules.map(module => ({
+        ...module,
+        author: module.users,
+        parentModule: module.modules,
+        subModulesCount: module._count.other_modules,
+        courseModulesCount: module._count.course_modules,
+        createdAt: module.created_at,
+        updatedAt: module.updated_at,
+      }))
+
+      const availableTags = await withDatabaseRetry(async () => {
+        const modulesWithTags = await prisma.modules.findMany({
+          where: { author_id: session.user.id },
+          select: { tags: true }
+        })
+        const tagsSet = new Set<string>()
+        modulesWithTags.forEach(module => {
+          if (Array.isArray(module.tags)) {
+            module.tags.forEach(tag => tagsSet.add(tag))
+          }
+        })
+        return Array.from(tagsSet).sort()
+      })
+
+      return NextResponse.json({
+        modules: transformedModules,
+        availableTags,
+        pagination: {
+          page: validPage,
+          limit: validLimit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / validLimit)
+        }
+      })
+    }
+
+    // If collaboratorOnly is specified, return modules where user is a collaborator
+    // This includes both direct collaboration and inherited through parent modules
+    if (collaboratorOnly === 'true') {
+      if (!session?.user || session.user.role !== 'faculty') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      // Get modules where user is a direct collaborator
+      const whereClause: any = {
+        collaborators: {
+          some: { user_id: session.user.id }
+        },
+        ...(status && { status }),
+      }
+
+      // Apply parent filtering
+      if (parentId === 'root') {
+        whereClause.parent_module_id = null
+      } else if (parentId === 'sub') {
+        whereClause.parent_module_id = { not: null }
+      } else if (parentId && parentId !== 'all') {
+        whereClause.parent_module_id = parentId
+      }
+
+      // Apply tag filtering
+      if (tags) {
+        const tagList = tags.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0)
+        if (tagList.length > 0) {
+          whereClause.tags = { hasSome: tagList }
+        }
+      }
+
+      // Apply search filtering
+      if (search && search.trim().length > 0) {
+        const searchTerm = search.trim()
+        whereClause.OR = [
+          { title: { contains: searchTerm, mode: 'insensitive' } },
+          { description: { contains: searchTerm, mode: 'insensitive' } },
+          { slug: { contains: searchTerm, mode: 'insensitive' } },
+          { tags: { hasSome: [searchTerm.toLowerCase()] } }
+        ]
+      }
+
+      // Build order by clause
+      let orderByClause: any
+      switch (sortBy) {
+        case 'title':
+          orderByClause = { title: sortOrder }
+          break
+        case 'created_at':
+          orderByClause = { created_at: sortOrder }
+          break
+        case 'updated_at':
+          orderByClause = { updated_at: sortOrder }
+          break
+        case 'status':
+          orderByClause = { status: sortOrder }
+          break
+        default:
+          orderByClause = { sort_order: sortOrder }
+      }
+
+      const [directCollaborationModules, totalCount] = await withDatabaseRetry(async () => {
+        return await Promise.all([
+          prisma.modules.findMany({
+            where: whereClause,
+            include: {
+              users: { select: { name: true, email: true } },
+              modules: { select: { id: true, title: true } },
+              _count: { select: { other_modules: true, course_modules: true } }
+            },
+            orderBy: orderByClause,
+            skip,
+            take: validLimit,
+          }),
+          prisma.modules.count({ where: whereClause })
+        ])
+      })
+
+      const transformedModules = directCollaborationModules.map(module => ({
+        ...module,
+        author: module.users,
+        parentModule: module.modules,
+        subModulesCount: module._count.other_modules,
+        courseModulesCount: module._count.course_modules,
+        createdAt: module.created_at,
+        updatedAt: module.updated_at,
+      }))
+
+      const availableTags = await withDatabaseRetry(async () => {
+        const modulesWithTags = await prisma.modules.findMany({
+          where: {
+            collaborators: { some: { user_id: session.user.id } }
+          },
+          select: { tags: true }
+        })
+        const tagsSet = new Set<string>()
+        modulesWithTags.forEach(module => {
+          if (Array.isArray(module.tags)) {
+            module.tags.forEach(tag => tagsSet.add(tag))
+          }
+        })
+        return Array.from(tagsSet).sort()
+      })
+
+      return NextResponse.json({
+        modules: transformedModules,
+        availableTags,
+        pagination: {
+          page: validPage,
+          limit: validLimit,
+          totalCount,
+          totalPages: Math.ceil(totalCount / validLimit)
+        }
+      })
+    }
 
     // Handle different access patterns
     let whereClause: any = {}
@@ -157,16 +389,32 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized - only published modules are publicly accessible' }, { status: 401 })
       }
       whereClause.status = 'published'
-    } 
-    // Faculty access: can see their own modules with any status
+      whereClause.visibility = 'public'
+    }
+    // Faculty access: can see their own modules + published public modules from others
     else if (session.user.role === 'faculty') {
-      whereClause.author_id = session.user.id
-    } 
+      // Build own modules filter (respects status if provided)
+      const ownModulesFilter: any = { author_id: session.user.id }
+      if (status) {
+        ownModulesFilter.status = status
+      }
+
+      whereClause.OR = [
+        // Show own modules (filtered by status if provided)
+        ownModulesFilter,
+        // Show published PUBLIC modules from other users
+        {
+          status: 'published',
+          visibility: 'public'
+        }
+      ]
+    }
     // Other authenticated users: only published modules
     else {
       whereClause.status = 'published'
+      whereClause.visibility = 'public'
     }
-    
+
     // Parent filtering logic - FIXED
     if (parentId === 'root') {
       // Only show root modules (no parent)
@@ -180,11 +428,6 @@ export async function GET(request: NextRequest) {
     }
     // ✅ IMPORTANT: When parentId is undefined or 'all', we DON'T add any parent filtering
     // This allows the query to return ALL modules (both root and sub-modules)
-    
-    // Apply status filter for faculty (public access already has status set)
-    if (status && session?.user?.role === 'faculty') {
-      whereClause.status = status
-    }
 
     // Add tag filtering
     if (tags) {
@@ -366,10 +609,10 @@ export async function GET(request: NextRequest) {
         id: module.modules.id,
         title: module.modules.title,
       } : null,
-      // Transform 'other_modules' to 'subModules' (children relationship) 
+      // Transform 'other_modules' to 'subModules' (children relationship)
       subModules: module.other_modules || [],
       // Transform users (author info)
-      author: module.users,
+      users: module.users,
       // Transform counts
       _count: {
         subModules: module._count?.other_modules || 0,

@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { NeuralButton } from '@/components/ui/neural-button'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { toast } from 'sonner'
 import {
   Search,
   BookOpen,
@@ -25,7 +29,10 @@ import {
   FileText,
   Play,
   Users,
-  FolderTree
+  FolderTree,
+  Copy,
+  X,
+  AlertCircle
 } from 'lucide-react'
 
 type SortOption = 'newest' | 'oldest' | 'a-z' | 'z-a' | 'submodules'
@@ -62,16 +69,83 @@ async function fetchPublicModules(): Promise<Module[]> {
 
 type ModuleCatalogProps = {
   initialSearch?: string;
+  session?: any;
 };
 
-export function ModuleCatalog({ initialSearch = '' }: ModuleCatalogProps) {
+export function ModuleCatalog({ initialSearch = '', session }: ModuleCatalogProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [searchTerm, setSearchTerm] = useState(initialSearch)
   const [showRootOnly, setShowRootOnly] = useState(false)
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<SortOption>('newest')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [showCloneDialog, setShowCloneDialog] = useState(false)
+  const [moduleToClone, setModuleToClone] = useState<Module | null>(null)
+  const [cloneOptions, setCloneOptions] = useState({
+    newTitle: '',
+    cloneMedia: true,
+    cloneCollaborators: false,
+  })
+
+  const isFaculty = session?.user?.role === 'faculty'
+
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    if (showCloneDialog) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showCloneDialog])
+
+  const cloneMutation = useMutation({
+    mutationFn: async () => {
+      if (!moduleToClone) throw new Error('No module selected')
+
+      const response = await fetch(`/api/modules/${moduleToClone.id}/clone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cloneOptions),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to clone module')
+      }
+
+      return response.json()
+    },
+    onSuccess: (data) => {
+      toast.success('Module cloned successfully!')
+      queryClient.invalidateQueries({ queryKey: ['modules'] })
+      setShowCloneDialog(false)
+      setModuleToClone(null)
+      setCloneOptions({ newTitle: '', cloneMedia: true, cloneCollaborators: false })
+      // Navigate to the cloned module
+      router.push(`/faculty/modules/${data.module.id}`)
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to clone module')
+    },
+  })
+
+  const handleCloneClick = (module: Module, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setModuleToClone(module)
+    setCloneOptions({
+      newTitle: `${module.title} (Copy)`,
+      cloneMedia: true,
+      cloneCollaborators: false,
+    })
+    setShowCloneDialog(true)
+  }
 
   const { data: modules = [], isLoading, error } = useQuery({
     queryKey: ['publicModules'],
@@ -354,17 +428,33 @@ export function ModuleCatalog({ initialSearch = '' }: ModuleCatalogProps) {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center text-xs text-muted-foreground">
-                          <Clock className="mr-1 h-3 w-3" />
-                          Updated {new Date(module.updatedAt).toLocaleDateString()}
+                      <div className="flex items-center text-xs text-muted-foreground mb-4">
+                        <Clock className="mr-1 h-3 w-3" />
+                        Updated {new Date(module.updatedAt).toLocaleDateString()}
+                      </div>
+
+                      {isFaculty ? (
+                        <div className="flex gap-2">
+                          <NeuralButton variant="neural" size="sm" className="flex-1 group-hover:bg-neural-deep">
+                            View
+                            <Play className="ml-1 h-3 w-3" />
+                          </NeuralButton>
+                          <NeuralButton
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleCloneClick(module, e)}
+                            className="flex-1"
+                          >
+                            <Copy className="mr-2 h-3 w-3" />
+                            Clone
+                          </NeuralButton>
                         </div>
-                        
-                        <NeuralButton variant="neural" size="sm" className="group-hover:bg-neural-deep">
+                      ) : (
+                        <NeuralButton variant="neural" size="sm" className="w-full group-hover:bg-neural-deep">
                           Start Learning
                           <Play className="ml-1 h-3 w-3" />
                         </NeuralButton>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
                 </Link>
@@ -548,11 +638,29 @@ export function ModuleCatalog({ initialSearch = '' }: ModuleCatalogProps) {
                           {new Date(module.updatedAt).toLocaleDateString()}
                         </div>
                       </div>
-                      
-                      <NeuralButton variant="outline" size="sm" className="w-full group-hover:bg-neural-primary group-hover:text-white">
-                        Explore Module
-                        <ArrowRight className="ml-2 h-3 w-3" />
-                      </NeuralButton>
+
+                      {isFaculty ? (
+                        <div className="flex gap-2">
+                          <NeuralButton variant="outline" size="sm" className="flex-1 group-hover:bg-neural-primary group-hover:text-white">
+                            View
+                            <ArrowRight className="ml-2 h-3 w-3" />
+                          </NeuralButton>
+                          <NeuralButton
+                            variant="neural"
+                            size="sm"
+                            onClick={(e) => handleCloneClick(module, e)}
+                            className="flex-1"
+                          >
+                            <Copy className="mr-2 h-3 w-3" />
+                            Clone
+                          </NeuralButton>
+                        </div>
+                      ) : (
+                        <NeuralButton variant="outline" size="sm" className="w-full group-hover:bg-neural-primary group-hover:text-white">
+                          Explore Module
+                          <ArrowRight className="ml-2 h-3 w-3" />
+                        </NeuralButton>
+                      )}
                     </CardContent>
                   </Card>
                 </Link>
@@ -584,6 +692,147 @@ export function ModuleCatalog({ initialSearch = '' }: ModuleCatalogProps) {
           )}
         </div>
       </section>
+
+      {/* Clone Module Dialog */}
+      {showCloneDialog && moduleToClone && (
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center px-2 sm:px-4 pt-8 sm:pt-12 pb-4 z-[100]">
+          <Card className="w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <Copy className="mr-2 h-5 w-5 text-neural-primary" />
+                    Clone Module
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Create a copy of this module in your library
+                  </CardDescription>
+                </div>
+                <NeuralButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCloneDialog(false)}
+                >
+                  <X className="h-4 w-4" />
+                </NeuralButton>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Clone Info */}
+              <div className="rounded-lg border border-border/40 bg-muted/30 p-3 space-y-1">
+                <p className="text-sm font-medium text-foreground">
+                  Original Module: {moduleToClone.title}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Author: {moduleToClone.users?.name || 'Unknown'}
+                </p>
+              </div>
+
+              {/* New Title */}
+              <div className="space-y-2">
+                <Label htmlFor="new-title">New Module Title</Label>
+                <Input
+                  id="new-title"
+                  value={cloneOptions.newTitle}
+                  onChange={(e) =>
+                    setCloneOptions({ ...cloneOptions, newTitle: e.target.value })
+                  }
+                  placeholder="Enter a title for the cloned module"
+                />
+                <p className="text-xs text-muted-foreground">
+                  A unique slug will be generated automatically (e.g., &quot;{moduleToClone.slug}-copy&quot;)
+                </p>
+              </div>
+
+              {/* Clone Options */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Clone Options</Label>
+
+                <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/40 bg-muted/30">
+                  <Checkbox
+                    id="clone-media"
+                    checked={cloneOptions.cloneMedia}
+                    onCheckedChange={(checked) =>
+                      setCloneOptions({ ...cloneOptions, cloneMedia: checked === true })
+                    }
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="clone-media"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Clone media associations
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Include all images and files linked to this module
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/40 bg-muted/30">
+                  <Checkbox
+                    id="clone-collaborators"
+                    checked={cloneOptions.cloneCollaborators}
+                    onCheckedChange={(checked) =>
+                      setCloneOptions({
+                        ...cloneOptions,
+                        cloneCollaborators: checked === true,
+                      })
+                    }
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="clone-collaborators"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Clone collaborators
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Add the same collaborators to the cloned module
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Alert */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  The cloned module will start as a <strong>private draft</strong>. You can
+                  edit and publish it independently from the original.
+                </AlertDescription>
+              </Alert>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <NeuralButton
+                  variant="outline"
+                  onClick={() => setShowCloneDialog(false)}
+                  className="flex-1"
+                  disabled={cloneMutation.isPending}
+                >
+                  Cancel
+                </NeuralButton>
+                <NeuralButton
+                  variant="synaptic"
+                  onClick={() => cloneMutation.mutate()}
+                  className="flex-1"
+                  disabled={cloneMutation.isPending || !cloneOptions.newTitle.trim()}
+                >
+                  {cloneMutation.isPending ? (
+                    <>Cloning...</>
+                  ) : (
+                    <>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Clone Module
+                    </>
+                  )}
+                </NeuralButton>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

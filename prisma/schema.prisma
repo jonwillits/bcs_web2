@@ -13,6 +13,12 @@ model course_modules {
   module_id    String
   sort_order   Int
   custom_title String?
+
+  // Course-specific customization (Phase 6 - Alternative to cloning)
+  custom_notes        String? @db.Text // Add course-specific context without modifying original
+  custom_context      String? @db.Text // Prerequisites, connections to other materials
+  custom_objectives   String? @db.Text // Learning objectives specific to this course
+
   created_at   DateTime @default(now())
   courses      courses  @relation(fields: [course_id], references: [id], onDelete: Cascade)
   modules      modules  @relation(fields: [module_id], references: [id], onDelete: Cascade)
@@ -84,6 +90,14 @@ model modules {
   sort_order       Int                    @default(0)
   module_number    String?
   status           String                 @default("draft")
+
+  // Visibility & Sharing (Phase 1)
+  visibility       String                 @default("public") // "public" | "private"
+
+  // Cloning & Lineage (Phase 1)
+  cloned_from      String?                // References modules.id (NULL if original)
+  clone_count      Int                    @default(0) // Number of times this module was cloned
+
   tags             String[]               @default([])
   created_at       DateTime               @default(now())
   updated_at       DateTime               @updatedAt
@@ -94,11 +108,18 @@ model modules {
   other_modules    modules[]              @relation("modulesTomodules")
   collaborators    module_collaborators[]
 
+  // Clone lineage relation (self-referential)
+  original_module  modules?               @relation("ModuleClones", fields: [cloned_from], references: [id], onDelete: SetNull)
+  cloned_modules   modules[]              @relation("ModuleClones")
+
   @@unique([parent_module_id, sort_order])
   @@index([author_id])
   @@index([parent_module_id])
   @@index([status])
   @@index([tags])
+  @@index([visibility])       // For filtering public/private modules
+  @@index([cloned_from])      // For tracking clone lineage
+  @@index([status, visibility]) // Combined index for common queries
 }
 
 model sessions {

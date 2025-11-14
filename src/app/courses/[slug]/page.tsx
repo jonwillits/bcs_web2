@@ -3,6 +3,7 @@ import { CourseViewer } from "@/components/public/course-viewer";
 import { PublicLayout } from "@/components/layouts/app-layout";
 import { prisma } from '@/lib/db';
 import { withDatabaseRetry } from '@/lib/retry';
+import { buildModuleTree, generateModuleNumbering, applyNumberingToTree } from '@/lib/modules/hierarchy-helpers';
 
 async function getCourse(slug: string) {
   try {
@@ -20,6 +21,32 @@ async function getCourse(slug: string) {
             avatar_url: true,
             speciality: true,
             university: true,
+            about: true,
+            google_scholar_url: true,
+            personal_website_url: true,
+            linkedin_url: true,
+            twitter_url: true,
+            github_url: true,
+          },
+        },
+        collaborators: {
+          include: {
+            collaborator: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar_url: true,
+                speciality: true,
+                university: true,
+                about: true,
+                google_scholar_url: true,
+                personal_website_url: true,
+                linkedin_url: true,
+                twitter_url: true,
+                github_url: true,
+              },
+            },
           },
         },
         course_modules: {
@@ -60,6 +87,23 @@ async function getCourse(slug: string) {
       return null;
     }
 
+    // Build hierarchical tree structure from course modules
+    const modules = course.course_modules.map(cm => ({
+      id: cm.modules.id,
+      title: cm.modules.title,
+      slug: cm.modules.slug,
+      description: cm.modules.description,
+      parent_module_id: cm.modules.parent_module_id,
+      sort_order: cm.modules.sort_order,
+      status: cm.modules.status,
+      created_at: cm.modules.created_at,
+      updated_at: cm.modules.updated_at,
+    }))
+
+    const tree = buildModuleTree(modules)
+    const numbering = generateModuleNumbering(tree)
+    applyNumberingToTree(tree, numbering)
+
     // Transform data structure to match component expectations
     return {
       id: course.id,
@@ -77,7 +121,27 @@ async function getCourse(slug: string) {
         avatar_url: course.users.avatar_url,
         speciality: course.users.speciality,
         university: course.users.university,
+        about: course.users.about,
+        google_scholar_url: course.users.google_scholar_url,
+        personal_website_url: course.users.personal_website_url,
+        linkedin_url: course.users.linkedin_url,
+        twitter_url: course.users.twitter_url,
+        github_url: course.users.github_url,
       },
+      collaborators: course.collaborators.map(collab => ({
+        id: collab.collaborator.id,
+        name: collab.collaborator.name,
+        email: collab.collaborator.email,
+        avatar_url: collab.collaborator.avatar_url,
+        speciality: collab.collaborator.speciality,
+        university: collab.collaborator.university,
+        about: collab.collaborator.about,
+        google_scholar_url: collab.collaborator.google_scholar_url,
+        personal_website_url: collab.collaborator.personal_website_url,
+        linkedin_url: collab.collaborator.linkedin_url,
+        twitter_url: collab.collaborator.twitter_url,
+        github_url: collab.collaborator.github_url,
+      })),
       courseModules: course.course_modules.map(cm => ({
         sortOrder: cm.sort_order,
         module: {
@@ -93,6 +157,8 @@ async function getCourse(slug: string) {
           updatedAt: cm.modules.updated_at,
         }
       })),
+      moduleTree: tree, // Add hierarchical tree
+      moduleNumbering: Object.fromEntries(numbering), // Add numbering map
       _count: {
         courseModules: course._count.course_modules,
       },

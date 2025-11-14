@@ -13,9 +13,14 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Loading } from '@/components/ui/loading'
 import { ModuleResources } from '@/components/public/module-resources'
-import { 
-  ArrowLeft, 
-  BookOpen, 
+import { ModuleTreeSidebar } from '@/components/modules/module-tree-sidebar'
+import { InstructorsSection } from '@/components/public/instructors-section'
+import { ReadingProgressBar } from '@/components/public/reading-progress-bar'
+import { CourseNotesSection } from '@/components/public/course-notes-section'
+import type { ModuleTreeNode } from '@/lib/modules/tree-utils'
+import {
+  ArrowLeft,
+  BookOpen,
   User,
   Calendar,
   Layers,
@@ -68,6 +73,10 @@ interface Module {
 
 interface CourseModule {
   sortOrder: number
+  customTitle?: string | null
+  customNotes?: string | null
+  customContext?: string | null
+  customObjectives?: string | null
   module: Module
 }
 
@@ -87,8 +96,30 @@ interface Course {
     avatar_url?: string | null
     speciality?: string | null
     university?: string | null
+    about?: string | null
+    google_scholar_url?: string | null
+    personal_website_url?: string | null
+    linkedin_url?: string | null
+    twitter_url?: string | null
+    github_url?: string | null
   }
+  collaborators?: Array<{
+    id: string
+    name: string
+    email: string
+    avatar_url?: string | null
+    speciality?: string | null
+    university?: string | null
+    about?: string | null
+    google_scholar_url?: string | null
+    personal_website_url?: string | null
+    linkedin_url?: string | null
+    twitter_url?: string | null
+    github_url?: string | null
+  }>
   courseModules: CourseModule[]
+  moduleTree?: ModuleTreeNode[] // Optional hierarchical tree structure
+  moduleNumbering?: Record<string, string> // Optional module numbering (e.g., "1.2.3")
   _count: {
     courseModules: number
   }
@@ -109,21 +140,22 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(() => {
     if (initialModule) {
       const moduleExists = course.courseModules.find(cm => cm.module.slug === initialModule)
-      return moduleExists ? moduleExists.module.id : course.courseModules[0]?.module?.id || null
+      return moduleExists ? moduleExists.module.id : null
     }
-    return course.courseModules[0]?.module?.id || null
+    // Return null to show course overview when no module specified
+    return null
   })
   
   const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
-  const [readingProgress, setReadingProgress] = useState(0)
   
   // Find current module and navigation
-  const selectedModule = course.courseModules.find(
+  const selectedCourseModule = course.courseModules.find(
     cm => cm.module.id === selectedModuleId
-  )?.module
+  )
+  const selectedModule = selectedCourseModule?.module
 
   const currentModuleIndex = course.courseModules.findIndex(
     cm => cm.module.id === selectedModuleId
@@ -175,18 +207,6 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
     }
   }, [selectedModule, searchQuery, searchParams])
 
-  // Reading progress tracking
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight
-      const progress = Math.min((scrollTop / docHeight) * 100, 100)
-      setReadingProgress(progress)
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   // Handle module selection
   const handleModuleSelect = (module: Module) => {
@@ -261,29 +281,26 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
 
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
-      {/* Reading Progress Bar */}
-      <div 
-        className="fixed top-0 left-0 h-1 bg-neural-primary transition-all duration-200 z-50"
-        style={{ width: `${readingProgress}%` }}
-      />
+      {/* Reading Progress Bar - Only show when viewing a module */}
+      {selectedModule && <ReadingProgressBar />}
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4">
-          {/* Breadcrumbs */}
-          <nav aria-label="Breadcrumb" className="mb-2 sm:mb-4">
-            <ol className="flex items-center space-x-1 text-sm text-muted-foreground">
+          {/* Breadcrumbs - Hidden on mobile, visible on sm+ */}
+          <nav aria-label="Breadcrumb" className="hidden sm:block mb-2 sm:mb-4 overflow-x-auto">
+            <ol className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
               {breadcrumbs.map((crumb, index) => (
-                <li key={crumb.href} className="flex items-center">
-                  {index > 0 && <ChevronRight className="mx-1 h-3 w-3" />}
+                <li key={crumb.href} className="flex items-center flex-shrink-0">
+                  {index > 0 && <ChevronRight className="mx-1 h-3 w-3 flex-shrink-0" />}
                   {index === breadcrumbs.length - 1 ? (
-                    <span className="text-foreground font-medium truncate max-w-48 sm:max-w-none">
+                    <span className="text-foreground font-medium truncate max-w-32 sm:max-w-48 md:max-w-none">
                       {crumb.label}
                     </span>
                   ) : (
-                    <Link 
-                      href={crumb.href} 
-                      className="hover:text-neural-primary transition-colors truncate max-w-24 sm:max-w-none"
+                    <Link
+                      href={crumb.href}
+                      className="hover:text-neural-primary transition-colors truncate max-w-20 sm:max-w-24 md:max-w-none"
                     >
                       {crumb.label}
                     </Link>
@@ -394,48 +411,13 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
               </CardContent>
             </Card>
 
-            {/* Instructor Section */}
-            <Card className="cognitive-card">
-              <CardHeader>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                  <User className="h-6 w-6 text-neural-primary" />
-                  Instructor
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link href={`/profile/${course.author.id}`} className="flex items-center gap-4 hover:bg-muted/50 p-4 rounded-lg transition-colors">
-                  {course.author.avatar_url ? (
-                    <Image
-                      src={course.author.avatar_url}
-                      alt={course.author.name}
-                      width={64}
-                      height={64}
-                      className="w-16 h-16 rounded-full border-2 border-neural-primary object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full border-2 border-neural-primary bg-gradient-to-br from-neural-primary to-synapse-primary flex items-center justify-center text-white text-2xl font-bold">
-                      {course.author.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-foreground hover:text-neural-primary transition-colors">
-                      {course.author.name}
-                    </h3>
-                    {course.author.speciality && (
-                      <p className="text-sm text-muted-foreground">{course.author.speciality}</p>
-                    )}
-                    {course.author.university && (
-                      <p className="text-sm text-muted-foreground">{course.author.university}</p>
-                    )}
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
+            {/* Instructors Section */}
+            <InstructorsSection author={course.author} collaborators={course.collaborators} />
           </div>
         )}
 
-        <div className={`grid grid-cols-1 ${isFullscreen ? 'lg:grid-cols-1' : 'lg:grid-cols-[280px_1fr]'} gap-4 sm:gap-8`}>
-          {/* Course Navigation Sidebar - Fixed width for better content space */}
+        <div className={`grid grid-cols-1 ${isFullscreen ? 'lg:grid-cols-1' : 'lg:grid-cols-[320px_1fr]'} gap-4 sm:gap-8`}>
+          {/* Course Navigation Sidebar - Increased width for better readability */}
           <div className={`${isFullscreen ? 'hidden' : ''} ${showMobileSidebar ? 'fixed inset-0 z-30 bg-background lg:relative lg:inset-auto lg:bg-transparent' : 'hidden lg:block'}`}>
             {showMobileSidebar && (
               <div className="lg:hidden absolute top-4 right-4 z-40">
@@ -450,86 +432,106 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
             )}
             
             <div className={`${showMobileSidebar ? 'p-4 pt-16' : ''} lg:p-0`}>
-              <Card className="cognitive-card sticky top-24">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center text-base sm:text-lg">
-                    <List className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-neural-primary" />
-                    Course Modules
-                  </CardTitle>
-                  <CardDescription className="text-sm">
-                    {course.description || 'Interactive learning modules covering key concepts and applications.'}
-                  </CardDescription>
-                  
-                  {/* Search within course */}
-                  <div className="relative mt-3">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="course-search"
-                      placeholder="Search modules..."
-                      className="pl-10 h-9"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2 max-h-96 overflow-y-auto pt-0">
-                  {filteredModules.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">
-                      No modules found matching &quot;{searchQuery}&quot;
-                    </p>
-                  ) : (
-                    filteredModules.map((courseModule, index) => {
-                      const currentModule = courseModule.module
-                      const isSelected = selectedModuleId === currentModule.id
-                      const isCompleted = false // TODO: Add completion tracking
-                      const originalIndex = course.courseModules.findIndex(cm => cm.module.id === currentModule.id)
-                      
-                      return (
-                        <button
-                          key={currentModule.id}
-                          onClick={() => handleModuleSelect(currentModule)}
-                          className={`w-full text-left p-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-neural-primary focus:ring-offset-2 ${
-                            isSelected 
-                              ? 'border-neural-primary bg-neural-primary/10 shadow-sm' 
-                              : 'border-border hover:border-neural-light hover:bg-muted/50'
-                          }`}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                              isCompleted 
-                                ? 'bg-green-500 text-white' 
-                                : isSelected 
-                                  ? 'bg-neural-primary text-white' 
-                                  : 'bg-muted text-muted-foreground'
-                            }`}>
-                              {isCompleted ? (
-                                <CheckCircle className="h-3 w-3" />
-                              ) : (
-                                <span>{originalIndex + 1}</span>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`font-medium text-sm ${
-                                isSelected ? 'text-neural-primary' : 'text-foreground'
-                              }`}>
-                                {currentModule.title}
-                              </p>
-                              {currentModule.description && (
-                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                  {currentModule.description}
+              {/* Conditionally render tree sidebar or flat list */}
+              {course.moduleTree && course.moduleTree.length > 0 ? (
+                /* Hierarchical Tree Navigation */
+                <div className="cognitive-card sticky top-24 overflow-hidden rounded-lg border">
+                  <ModuleTreeSidebar
+                    tree={course.moduleTree}
+                    currentModuleId={selectedModuleId || undefined}
+                    baseUrl={`/courses/${course.slug}`}
+                    showSearch={true}
+                  />
+                </div>
+              ) : (
+                /* Fallback: Flat Module List (Backward Compatibility) */
+                <Card className="cognitive-card sticky top-24">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center text-base sm:text-lg">
+                      <List className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-neural-primary" />
+                      Course Modules
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      {course.description || 'Interactive learning modules covering key concepts and applications.'}
+                    </CardDescription>
+
+                    {/* Search within course */}
+                    <div className="relative mt-3">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="course-search"
+                        placeholder="Search modules..."
+                        className="pl-10 h-9"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2 max-h-96 overflow-y-auto pt-0">
+                    {filteredModules.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4 text-center">
+                        No modules found matching &quot;{searchQuery}&quot;
+                      </p>
+                    ) : (
+                      filteredModules.map((courseModule, index) => {
+                        const currentModule = courseModule.module
+                        const isSelected = selectedModuleId === currentModule.id
+                        const isCompleted = false // TODO: Add completion tracking
+                        const originalIndex = course.courseModules.findIndex(
+                          (cm) => cm.module.id === currentModule.id
+                        )
+
+                        return (
+                          <button
+                            key={currentModule.id}
+                            onClick={() => handleModuleSelect(currentModule)}
+                            className={`w-full text-left p-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-neural-primary focus:ring-offset-2 ${
+                              isSelected
+                                ? 'border-neural-primary bg-neural-primary/10 shadow-sm'
+                                : 'border-border hover:border-neural-light hover:bg-muted/50'
+                            }`}
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div
+                                className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                                  isCompleted
+                                    ? 'bg-green-500 text-white'
+                                    : isSelected
+                                    ? 'bg-neural-primary text-white'
+                                    : 'bg-muted text-muted-foreground'
+                                }`}
+                              >
+                                {isCompleted ? (
+                                  <CheckCircle className="h-3 w-3" />
+                                ) : (
+                                  <span>{originalIndex + 1}</span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className={`font-medium text-sm ${
+                                    isSelected ? 'text-neural-primary' : 'text-foreground'
+                                  }`}
+                                >
+                                  {currentModule.title}
                                 </p>
+                                {currentModule.description && (
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    {currentModule.description}
+                                  </p>
+                                )}
+                              </div>
+                              {isSelected && (
+                                <ChevronRight className="h-4 w-4 text-neural-primary flex-shrink-0" />
                               )}
                             </div>
-                            {isSelected && (
-                              <ChevronRight className="h-4 w-4 text-neural-primary flex-shrink-0" />
-                            )}
-                          </div>
-                        </button>
-                      )
-                    })
-                  )}
-                </CardContent>
-              </Card>
+                          </button>
+                        )
+                      })
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
 
@@ -577,6 +579,16 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                   </CardContent>
                 </Card>
 
+                {/* Course-Specific Notes */}
+                {selectedCourseModule && (
+                  <CourseNotesSection
+                    customTitle={selectedCourseModule.customTitle}
+                    customNotes={selectedCourseModule.customNotes}
+                    customContext={selectedCourseModule.customContext}
+                    customObjectives={selectedCourseModule.customObjectives}
+                  />
+                )}
+
                 {/* Module Content */}
                 <Card className="cognitive-card">
                   <CardContent className={`${isFullscreen ? 'p-12' : 'p-6 sm:p-8 lg:p-12'}`}>
@@ -588,6 +600,28 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                     />
                   </CardContent>
                 </Card>
+
+                {/* Next Module Navigation */}
+                {(() => {
+                  const currentIndex = course.courseModules.findIndex(cm => cm.module.id === selectedModuleId)
+                  const nextModule = currentIndex >= 0 && currentIndex < course.courseModules.length - 1
+                    ? course.courseModules[currentIndex + 1].module
+                    : null
+
+                  return nextModule ? (
+                    <div className="flex justify-end">
+                      <NeuralButton
+                        variant="neural"
+                        size="lg"
+                        onClick={() => handleModuleSelect(nextModule)}
+                        className="group"
+                      >
+                        <span>Next: {nextModule.title}</span>
+                        <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                      </NeuralButton>
+                    </div>
+                  ) : null
+                })()}
 
                 {/* Module Resources */}
                 {selectedModule.resources && selectedModule.resources.length > 0 && (

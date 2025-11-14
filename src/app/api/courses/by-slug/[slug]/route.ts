@@ -82,6 +82,10 @@ export async function GET(
       },
       courseModules: course.course_modules.map(cm => ({
         sortOrder: cm.sort_order,
+        customTitle: cm.custom_title,
+        customNotes: cm.custom_notes,
+        customContext: cm.custom_context,
+        customObjectives: cm.custom_objectives,
         module: {
           id: cm.modules.id,
           title: cm.modules.title,

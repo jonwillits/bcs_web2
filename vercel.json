@@ -3,6 +3,10 @@
   "devCommand": "npm run dev",
   "framework": "nextjs",
   "functions": {
+    "src/app/api/media/upload/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }

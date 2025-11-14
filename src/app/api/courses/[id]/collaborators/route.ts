@@ -7,7 +7,8 @@ import { logCollaboratorAdded } from '@/lib/collaboration/activity'
 import type { Collaborator } from '@/types/collaboration'
 
 const addCollaboratorSchema = z.object({
-  userId: z.string().cuid('Invalid user ID format'),
+  userId: z.string().min(1, 'User ID is required'),
+  cascadeToModules: z.boolean().optional().default(false),
 })
 
 /**
@@ -121,7 +122,7 @@ export async function POST(
 
     // Validate request body
     const body = await request.json()
-    const { userId } = addCollaboratorSchema.parse(body)
+    const { userId, cascadeToModules } = addCollaboratorSchema.parse(body)
 
     // Check if user exists and is faculty
     const userToAdd = await prisma.users.findUnique({
@@ -199,6 +200,70 @@ export async function POST(
         },
       },
     })
+
+    // Cascade permissions to modules if requested
+    if (cascadeToModules) {
+      try {
+        // Fetch all modules in this course
+        const courseModules = await prisma.course_modules.findMany({
+          where: { course_id: courseId },
+          include: {
+            modules: {
+              select: {
+                id: true,
+                title: true,
+                visibility: true,
+                author_id: true,
+              },
+            },
+          },
+        })
+
+        // Filter to only public modules and add collaborator to each
+        const modulesToAddTo = courseModules
+          .filter(cm => cm.modules.visibility === 'public')
+          .map(cm => cm.modules)
+
+        // For each public module, add the collaborator if not already added
+        for (const courseModule of modulesToAddTo) {
+          // Check if already a collaborator
+          const existingModuleCollab = await prisma.module_collaborators.findUnique({
+            where: {
+              module_id_user_id: {
+                module_id: courseModule.id,
+                user_id: userId,
+              },
+            },
+          })
+
+          // Only add if not already a collaborator and not the author
+          if (!existingModuleCollab && courseModule.author_id !== userId) {
+            await prisma.module_collaborators.create({
+              data: {
+                module_id: courseModule.id,
+                user_id: userId,
+                added_by: session.user.id,
+              },
+            })
+
+            // Log activity for module collaboration
+            await logCollaboratorAdded(
+              'module',
+              courseModule.id,
+              session.user.id,
+              session.user.name || 'Unknown',
+              userId,
+              userToAdd.name
+            )
+          }
+        }
+
+        console.log(`Cascaded permissions to ${modulesToAddTo.length} public modules`)
+      } catch (cascadeError) {
+        // Log error but don't fail the request - course collaborator was already added
+        console.error('Error cascading permissions to modules:', cascadeError)
+      }
+    }
 
     // Log activity
     await logCollaboratorAdded(

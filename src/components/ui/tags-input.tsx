@@ -129,15 +129,15 @@ export function TagsInput({
         )}
         onClick={() => inputRef.current?.focus()}
       >
-        {/* Display existing tags */}
+        {/* Display existing tags - Enhanced with larger size and better touch targets */}
         {value.map((tag) => (
-          <Badge 
-            key={tag} 
-            variant="secondary" 
-            className="gap-1 pr-1 hover:bg-neural-primary hover:text-white transition-colors"
+          <Badge
+            key={tag}
+            variant="secondary"
+            className="h-8 gap-2 pr-1 hover:bg-neural-primary hover:text-white transition-all duration-200 hover:scale-105 text-sm px-3"
           >
-            <Tag className="h-3 w-3" />
-            {tag}
+            <Tag className="h-4 w-4" />
+            <span>{tag}</span>
             {!disabled && (
               <button
                 type="button"
@@ -145,9 +145,10 @@ export function TagsInput({
                   e.stopPropagation()
                   removeTag(tag)
                 }}
-                className="ml-1 hover:bg-white hover:text-black rounded-full p-0.5"
+                className="ml-1 hover:bg-white hover:text-black rounded-full p-1 min-w-[24px] min-h-[24px] flex items-center justify-center transition-all duration-200 hover:scale-110"
+                aria-label={`Remove ${tag} tag`}
               >
-                <X className="h-2.5 w-2.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
             )}
           </Badge>
@@ -214,11 +215,11 @@ export function TagsInput({
       </div>
       
       {/* Helper text */}
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>
+      <div className="flex justify-between gap-4 text-xs text-muted-foreground">
+        <span className="flex-1">
           Press Enter or Tab to add tags. Use tags to categorize and search your content.
         </span>
-        <span>
+        <span className="flex-shrink-0 font-medium">
           {value.length}/{maxTags}
         </span>
       </div>

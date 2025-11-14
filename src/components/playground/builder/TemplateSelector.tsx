@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlaygroundTemplate, PlaygroundCategory } from '@/types/playground';
 import { getAllTemplates, getTemplatesByCategory } from '@/templates';
 import { X, Search, FileCode, Sparkles } from 'lucide-react';
@@ -13,6 +13,14 @@ interface TemplateSelectorProps {
 export function TemplateSelector({ onSelect, onClose }: TemplateSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<PlaygroundCategory | 'all'>('all');
+
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [])
 
   const templates = selectedCategory === 'all'
     ? getAllTemplates()
@@ -35,8 +43,8 @@ export function TemplateSelector({ onSelect, onClose }: TemplateSelectorProps) {
   ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-8">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-start justify-center px-2 sm:px-4 pt-8 sm:pt-12 pb-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>

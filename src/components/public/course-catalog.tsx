@@ -37,13 +37,13 @@ interface Course {
   description: string | null
   featured: boolean
   tags: string[]
-  createdAt: string
-  updatedAt: string
+  created_at?: string | null
+  updated_at?: string | null
   users: {
     name: string
   }
   _count: {
-    courseModules: number
+    course_modules: number
   }
 }
 
@@ -106,7 +106,7 @@ export function CourseCatalog({ initialSearch = '' }: CourseCatalogProps) {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const totalModules = courses.reduce((sum, course) => sum + course._count.courseModules, 0)
+    const totalModules = courses.reduce((sum, course) => sum + (course._count?.course_modules || 0), 0)
     return {
       totalCourses: courses.length,
       totalInstructors: allInstructors.length,
@@ -134,15 +134,15 @@ export function CourseCatalog({ initialSearch = '' }: CourseCatalogProps) {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
         case 'oldest':
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
         case 'a-z':
           return a.title.localeCompare(b.title)
         case 'z-a':
           return b.title.localeCompare(a.title)
         case 'modules':
-          return b._count.courseModules - a._count.courseModules
+          return (b._count?.course_modules || 0) - (a._count?.course_modules || 0)
         default:
           return 0
       }
@@ -349,14 +349,14 @@ export function CourseCatalog({ initialSearch = '' }: CourseCatalogProps) {
                         </div>
                         <div className="flex items-center">
                           <Layers className="mr-1 h-3 w-3" />
-                          {course._count.courseModules} modules
+                          {course._count?.course_modules || 0} modules
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between">
                         <div className="flex items-center text-xs text-muted-foreground">
                           <Clock className="mr-1 h-3 w-3" />
-                          Updated {new Date(course.updatedAt).toLocaleDateString()}
+                          {course.updated_at ? `Updated ${new Date(course.updated_at).toLocaleDateString()}` : 'Recently added'}
                         </div>
 
                         <NeuralButton variant="neural" size="sm" className="group-hover:bg-neural-deep">
@@ -510,11 +510,11 @@ export function CourseCatalog({ initialSearch = '' }: CourseCatalogProps) {
                           </div>
                           <div className="flex items-center">
                             <Layers className="mr-1 h-3 w-3" />
-                            {course._count.courseModules} modules
+                            {course._count?.course_modules || 0} modules
                           </div>
                           <div className="flex items-center">
                             <Calendar className="mr-1 h-3 w-3" />
-                            {new Date(course.updatedAt).toLocaleDateString()}
+                            {course.updated_at ? new Date(course.updated_at).toLocaleDateString() : 'Recently added'}
                           </div>
                         </div>
 

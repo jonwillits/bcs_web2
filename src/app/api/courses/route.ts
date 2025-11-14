@@ -204,6 +204,7 @@ export async function GET(request: NextRequest) {
               _count: {
                 select: {
                   course_modules: true,
+                  collaborators: true,
                 },
               },
             },
@@ -274,6 +275,7 @@ export async function GET(request: NextRequest) {
               _count: {
                 select: {
                   course_modules: true,
+                  collaborators: true,
                 },
               },
             },

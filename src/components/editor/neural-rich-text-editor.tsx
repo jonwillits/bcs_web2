@@ -65,8 +65,22 @@ export function NeuralRichTextEditor({
   const [wordCount, setWordCount] = useState(0)
   const [characterCount, setCharacterCount] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [showMediaUpload, setShowMediaUpload] = useState(false)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Disable body scroll when modal is open
+  useEffect(() => {
+    if (showMediaUpload) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showMediaUpload])
 
   const editor = useEditor({
     extensions: [
@@ -154,6 +168,7 @@ export function NeuralRichTextEditor({
 
     try {
       await onSave(html)
+      setLastSavedAt(new Date())
       toast.success('Content saved successfully!')
     } catch (error) {
       toast.error('Failed to save content')
@@ -209,14 +224,16 @@ export function NeuralRichTextEditor({
   return (
     <Card className={`cognitive-card ${className}`}>
       {/* Toolbar */}
-      <div className="border-b border-border/50 p-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="border-b border-border/50 p-2 sm:p-3 md:p-4">
+        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
           {/* Text Formatting */}
           <div className="flex items-center gap-1">
             <NeuralButton
               variant={editor.isActive('bold') ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleBold().run()}
+              title="Bold (Ctrl+B)"
+              aria-label="Toggle bold"
             >
               <Bold className="h-4 w-4" />
             </NeuralButton>
@@ -224,6 +241,8 @@ export function NeuralRichTextEditor({
               variant={editor.isActive('italic') ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleItalic().run()}
+              title="Italic (Ctrl+I)"
+              aria-label="Toggle italic"
             >
               <Italic className="h-4 w-4" />
             </NeuralButton>
@@ -231,19 +250,25 @@ export function NeuralRichTextEditor({
               variant={editor.isActive('strike') ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleStrike().run()}
+              title="Strikethrough"
+              aria-label="Toggle strikethrough"
             >
               <Strikethrough className="h-4 w-4" />
             </NeuralButton>
+            {/* Hide inline code button on mobile - less common */}
             <NeuralButton
               variant={editor.isActive('code') ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleCode().run()}
+              title="Inline code"
+              aria-label="Toggle inline code"
+              className="hidden sm:inline-flex"
             >
               <Code className="h-4 w-4" />
             </NeuralButton>
           </div>
 
-          <Separator orientation="vertical" className="h-6" />
+          <Separator orientation="vertical" className="h-6 hidden sm:block" />
 
           {/* Headings */}
           <div className="flex items-center gap-1">
@@ -251,6 +276,8 @@ export function NeuralRichTextEditor({
               variant={editor.isActive('heading', { level: 1 }) ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              title="Heading 1"
+              aria-label="Toggle heading level 1"
             >
               <Heading1 className="h-4 w-4" />
             </NeuralButton>
@@ -258,6 +285,8 @@ export function NeuralRichTextEditor({
               variant={editor.isActive('heading', { level: 2 }) ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              title="Heading 2"
+              aria-label="Toggle heading level 2"
             >
               <Heading2 className="h-4 w-4" />
             </NeuralButton>
@@ -265,6 +294,8 @@ export function NeuralRichTextEditor({
               variant={editor.isActive('heading', { level: 3 }) ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+              title="Heading 3"
+              aria-label="Toggle heading level 3"
             >
               <Heading3 className="h-4 w-4" />
             </NeuralButton>
@@ -278,6 +309,8 @@ export function NeuralRichTextEditor({
               variant={editor.isActive('bulletList') ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleBulletList().run()}
+              title="Bullet list"
+              aria-label="Toggle bullet list"
             >
               <List className="h-4 w-4" />
             </NeuralButton>
@@ -285,26 +318,34 @@ export function NeuralRichTextEditor({
               variant={editor.isActive('orderedList') ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleOrderedList().run()}
+              title="Numbered list"
+              aria-label="Toggle numbered list"
             >
               <ListOrdered className="h-4 w-4" />
             </NeuralButton>
+            {/* Hide blockquote on mobile - less common */}
             <NeuralButton
               variant={editor.isActive('blockquote') ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().toggleBlockquote().run()}
+              title="Block quote"
+              aria-label="Toggle blockquote"
+              className="hidden md:inline-flex"
             >
               <Quote className="h-4 w-4" />
             </NeuralButton>
           </div>
 
-          <Separator orientation="vertical" className="h-6" />
+          <Separator orientation="vertical" className="h-6 hidden sm:block" />
 
-          {/* Alignment */}
-          <div className="flex items-center gap-1">
+          {/* Alignment - hide on mobile, show on md+ */}
+          <div className="hidden md:flex items-center gap-1">
             <NeuralButton
               variant={editor.isActive({ textAlign: 'left' }) ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().setTextAlign('left').run()}
+              title="Align left"
+              aria-label="Align text left"
             >
               <AlignLeft className="h-4 w-4" />
             </NeuralButton>
@@ -312,6 +353,8 @@ export function NeuralRichTextEditor({
               variant={editor.isActive({ textAlign: 'center' }) ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().setTextAlign('center').run()}
+              title="Align center"
+              aria-label="Align text center"
             >
               <AlignCenter className="h-4 w-4" />
             </NeuralButton>
@@ -319,12 +362,15 @@ export function NeuralRichTextEditor({
               variant={editor.isActive({ textAlign: 'right' }) ? 'neural' : 'ghost'}
               size="sm"
               onClick={() => editor.chain().focus().setTextAlign('right').run()}
+              title="Align right"
+              aria-label="Align text right"
             >
               <AlignRight className="h-4 w-4" />
             </NeuralButton>
           </div>
 
-          <Separator orientation="vertical" className="h-6" />
+          {/* Hide separator before alignment since alignment is hidden on mobile */}
+          <Separator orientation="vertical" className="h-6 hidden md:block" />
 
           {/* Media */}
           <div className="flex items-center gap-1">
@@ -332,6 +378,8 @@ export function NeuralRichTextEditor({
               variant="ghost"
               size="sm"
               onClick={addLink}
+              title="Add link"
+              aria-label="Insert or edit link"
             >
               <LinkIcon className="h-4 w-4" />
             </NeuralButton>
@@ -339,7 +387,8 @@ export function NeuralRichTextEditor({
               variant="ghost"
               size="sm"
               onClick={addImage}
-              title="Add Image"
+              title="Add image"
+              aria-label="Insert image"
             >
               <Upload className="h-4 w-4" />
             </NeuralButton>
@@ -354,6 +403,8 @@ export function NeuralRichTextEditor({
               size="sm"
               onClick={() => editor.chain().focus().undo().run()}
               disabled={!editor.can().undo()}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo last action"
             >
               <Undo className="h-4 w-4" />
             </NeuralButton>
@@ -362,6 +413,8 @@ export function NeuralRichTextEditor({
               size="sm"
               onClick={() => editor.chain().focus().redo().run()}
               disabled={!editor.can().redo()}
+              title="Redo (Ctrl+Y)"
+              aria-label="Redo last action"
             >
               <Redo className="h-4 w-4" />
             </NeuralButton>
@@ -388,13 +441,19 @@ export function NeuralRichTextEditor({
       {/* Editor Content */}
       <CardContent className="p-0">
         <div className="relative">
-          <EditorContent 
-            editor={editor} 
+          <EditorContent
+            editor={editor}
             className="neural-editor-wrapper"
           />
           {editor.isEmpty && (
-            <div className="absolute top-6 left-6 text-muted-foreground pointer-events-none">
-              {placeholder}
+            <div className="absolute top-6 left-6 right-6 pointer-events-none">
+              <div className="flex items-start gap-3 text-muted-foreground">
+                <FileText className="h-5 w-5 mt-1 flex-shrink-0 opacity-50" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm break-words">{placeholder}</p>
+                  <p className="text-xs mt-1 opacity-70 break-words">Use the toolbar above to format your content</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -415,15 +474,19 @@ export function NeuralRichTextEditor({
         
         {autoSave && (
           <div className="text-xs text-neural-primary">
-            Auto-save enabled
+            {lastSavedAt ? (
+              <span>Last saved at {lastSavedAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+            ) : (
+              <span>Auto-save enabled</span>
+            )}
           </div>
         )}
       </div>
 
       {/* Media Upload Dialog */}
       {showMediaUpload && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[100] px-2 sm:px-4 pt-8 sm:pt-12 pb-4">
+          <div className="bg-background rounded-lg shadow-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Upload Media</h3>
               <NeuralButton

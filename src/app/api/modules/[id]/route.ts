@@ -30,6 +30,7 @@ const updateModuleSchema = z.object({
   description: z.string().optional(),
   parent_module_id: z.string().nullable().optional(),
   status: z.enum(['draft', 'published']).optional(),
+  visibility: z.enum(['public', 'private']).optional(),
   tags: z.array(z.string().min(1).max(50)).max(20).optional(),
 })
 
@@ -102,7 +103,17 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ module: foundModule })
+    // Transform the response to match frontend interface
+    const transformedModule = {
+      ...foundModule,
+      author: foundModule.users,
+      parentModule: foundModule.modules,
+      subModules: foundModule.other_modules,
+      createdAt: foundModule.created_at,
+      updatedAt: foundModule.updated_at,
+    }
+
+    return NextResponse.json({ module: transformedModule })
   } catch (error) {
     console.error('Error fetching module:', error)
     
@@ -254,7 +265,15 @@ export async function PUT(
       },
     })
 
-    return NextResponse.json({ module: updatedModule })
+    // Transform the response to match frontend interface
+    const transformedModule = {
+      ...updatedModule,
+      author: updatedModule.users,
+      parentModule: updatedModule.modules,
+      subModules: updatedModule.other_modules,
+    }
+
+    return NextResponse.json({ module: transformedModule })
   } catch (error) {
     console.error('Error updating module:', error)
     
@@ -325,8 +344,20 @@ export async function DELETE(
       )
     }
 
-    await prisma.modules.delete({
-      where: { id },
+    // Delete module in a transaction to ensure all related records are cleaned up
+    await prisma.$transaction(async (tx) => {
+      // Manual cleanup for collaboration_activity (no foreign key CASCADE due to polymorphic relationship)
+      await tx.collaboration_activity.deleteMany({
+        where: {
+          entity_type: 'module',
+          entity_id: id,
+        },
+      })
+
+      // Delete module (CASCADE will handle module_media, module_collaborators, etc.)
+      await tx.modules.delete({
+        where: { id },
+      })
     })
 
     return NextResponse.json({ success: true })

@@ -39,7 +39,7 @@ yarn-error.log*
 next-env.d.ts
 
 # Prisma
-prisma/migrations/
+# prisma/migrations/ - MUST commit migrations for production deployment
 
 # Database Backups
 *.sql

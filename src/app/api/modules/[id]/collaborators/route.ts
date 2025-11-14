@@ -7,7 +7,7 @@ import { logCollaboratorAdded } from '@/lib/collaboration/activity'
 import type { Collaborator } from '@/types/collaboration'
 
 const addCollaboratorSchema = z.object({
-  userId: z.string().cuid('Invalid user ID format'),
+  userId: z.string().min(1, 'User ID is required'),
 })
 
 /**

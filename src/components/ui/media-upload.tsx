@@ -58,35 +58,79 @@ export function MediaUpload({
         // Initialize progress
         setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
 
-        // Create form data
-        const formData = new FormData();
-        formData.append('file', file);
-        if (moduleId) {
-          formData.append('moduleId', moduleId);
-        }
+        // Step 1: Get signed upload URL from server
+        setUploadProgress(prev => ({ ...prev, [fileId]: 10 }));
 
-        // Simulate progress (since we can't track real upload progress easily)
-        const progressInterval = setInterval(() => {
-          setUploadProgress(prev => ({
-            ...prev,
-            [fileId]: Math.min((prev[fileId] || 0) + 10, 90)
-          }));
-        }, 100);
-
-        // Upload file
-        const response = await fetch('/api/media/upload', {
+        const urlResponse = await fetch('/api/media/upload-url', {
           method: 'POST',
-          body: formData,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type,
+            fileSize: file.size,
+          }),
         });
 
-        clearInterval(progressInterval);
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Upload failed');
+        if (!urlResponse.ok) {
+          const error = await urlResponse.json();
+          throw new Error(error.error || 'Failed to get upload URL');
         }
 
-        const result = await response.json();
+        const { signedUrl, filePath } = await urlResponse.json();
+
+        // Step 2: Upload directly to Supabase Storage
+        setUploadProgress(prev => ({ ...prev, [fileId]: 20 }));
+
+        // Create XMLHttpRequest for progress tracking
+        const xhr = new XMLHttpRequest();
+
+        const uploadPromise = new Promise<void>((resolve, reject) => {
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percentComplete = 20 + (e.loaded / e.total) * 60; // 20-80%
+              setUploadProgress(prev => ({ ...prev, [fileId]: percentComplete }));
+            }
+          });
+
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          });
+
+          xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+          xhr.addEventListener('abort', () => reject(new Error('Upload cancelled')));
+
+          xhr.open('PUT', signedUrl);
+          xhr.setRequestHeader('Content-Type', file.type);
+          xhr.send(file);
+        });
+
+        await uploadPromise;
+
+        // Step 3: Confirm upload and save metadata
+        setUploadProgress(prev => ({ ...prev, [fileId]: 85 }));
+
+        const confirmResponse = await fetch('/api/media/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filePath,
+            originalName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            moduleId,
+          }),
+        });
+
+        if (!confirmResponse.ok) {
+          const error = await confirmResponse.json();
+          throw new Error(error.error || 'Failed to save file metadata');
+        }
+
+        const result = await confirmResponse.json();
 
         // Complete progress
         setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
@@ -137,7 +181,18 @@ export function MediaUpload({
       'text/plain': ['.txt']
     },
     maxFiles,
-    maxSize: 50 * 1024 * 1024, // 50MB
+    maxSize: 50 * 1024 * 1024, // 50MB - Direct upload to Supabase bypasses Vercel limits
+    onDropRejected: (fileRejections) => {
+      fileRejections.forEach(({ file, errors }) => {
+        errors.forEach(error => {
+          if (error.code === 'file-too-large') {
+            toast.error(`${file.name} is too large. Maximum file size is 50MB.`);
+          } else {
+            toast.error(`${file.name}: ${error.message}`);
+          }
+        });
+      });
+    },
   });
 
   const getFileIcon = (mimeType: string) => {

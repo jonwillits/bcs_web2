@@ -46,6 +46,7 @@ interface Course {
   }
   _count: {
     courseModules: number
+    collaborators: number
   }
 }
 
@@ -132,23 +133,23 @@ export function CourseLibrary() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-neural">
+      <header className="border-b border-border/40 bg-background">
+        <div className="container mx-auto px-3 sm:px-6 py-6 sm:py-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center space-x-3 min-w-0">
+              <div className="hidden sm:flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-neural flex-shrink-0">
                 <BookOpen className="h-7 w-7 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-neural-primary">Course Library</h1>
-                <p className="text-muted-foreground">
+              <div className="min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-neural-primary">Course Library</h1>
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Create and manage your educational courses
                 </p>
               </div>
             </div>
-            
-            <Link href="/faculty/courses/create">
-              <NeuralButton variant="neural" size="lg">
+
+            <Link href="/faculty/courses/create" className="w-full sm:w-auto">
+              <NeuralButton variant="neural" size="lg" className="w-full sm:w-auto">
                 <Plus className="mr-2 h-5 w-5" />
                 Create Course
               </NeuralButton>
@@ -345,6 +346,12 @@ export function CourseLibrary() {
                         <Layers className="mr-1 h-3 w-3" />
                         {course._count.courseModules} modules
                       </div>
+                      {course._count.collaborators > 0 && (
+                        <div className="flex items-center">
+                          <Users className="mr-1 h-3 w-3" />
+                          {course._count.collaborators} {course._count.collaborators === 1 ? 'collaborator' : 'collaborators'}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -386,8 +393,8 @@ export function CourseLibrary() {
                   <p className="text-muted-foreground mb-6">
                     Try adjusting your search terms or filters.
                   </p>
-                  <NeuralButton 
-                    variant="neural" 
+                  <NeuralButton
+                    variant="neural"
                     onClick={() => {
                       setSearchTerm('')
                       setStatusFilter('all')
@@ -395,6 +402,15 @@ export function CourseLibrary() {
                   >
                     Clear Filters
                   </NeuralButton>
+                </>
+              ) : activeTab === 'collaborated' ? (
+                <>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">
+                    No shared courses yet
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Courses that other faculty members share with you will appear here.
+                  </p>
                 </>
               ) : (
                 <>

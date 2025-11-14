@@ -7,12 +7,6 @@ import { prisma } from '@/lib/db';
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60 seconds for file uploads
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
@@ -26,7 +20,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - Faculty access required' }, { status: 403 });
     }
 
-    const formData = await request.formData();
+    // Parse formData with error handling for large files
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch (formDataError) {
+      console.error('FormData parsing error:', formDataError);
+      return NextResponse.json(
+        { error: 'File too large or invalid request. Maximum file size is 50MB.' },
+        { status: 413 }
+      );
+    }
     const file = formData.get('file') as File;
     const moduleId = formData.get('moduleId') as string;
 
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
           original_name: file.name,
           file_size: BigInt(file.size),
           mime_type: file.type,
-          storage_path: uploadResult.path,
+          storage_path: uploadResult.url, // Store full Supabase public URL, not relative path
           uploaded_by: session.user.id,
         },
       });
