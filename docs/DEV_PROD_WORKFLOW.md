@@ -32,13 +32,15 @@ This guide documents the complete development and production workflow for the BC
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     DEVELOPMENT (Personal)                   │
+│              DEVELOPMENT/TESTING ENVIRONMENT                 │
 ├─────────────────────────────────────────────────────────────┤
+│ URL:       https://bcs-web2.vercel.app                     │
 │ GitHub:    Your fork (RITIKHARIANI/bcs_web2)               │
 │ Vercel:    Personal account → bcs-web2.vercel.app          │
-│ Supabase:  Personal project → Dev database                  │
+│ Database:  Supabase dev/test (via DATABASE_URL env var)     │
+│ MCP:       'supabase' (for Claude debugging only)           │
 │ Resend:    Personal account → Dev email                     │
-│ Domain:    bcs-web2.vercel.app (free Vercel subdomain)     │
+│ Testing:   ALL testing done on Vercel (NOT locally)         │
 └─────────────────────────────────────────────────────────────┘
                               ↓
                     Git Push → Your Fork
@@ -48,47 +50,55 @@ This guide documents the complete development and production workflow for the BC
                     Professor Reviews & Merges
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
-│                    PRODUCTION (University)                   │
+│                   PRODUCTION ENVIRONMENT                     │
 ├─────────────────────────────────────────────────────────────┤
+│ URL:       https://www.brainandcognitivescience.com        │
 │ GitHub:    Professor's repo (University org)                │
-│ Vercel:    University account → brainandcognitivescience.org│
-│ Supabase:  University project → Prod database               │
-│ Resend:    University account → Prod email                  │
-│ Domain:    brainandcognitivescience.org (custom domain)     │
+│ Vercel:    University account → brainandcognitivescience.com│
+│ Database:  Supabase production (via DATABASE_URL env var)   │
+│ MCP:       'supabasePROD' (for Claude debugging only)       │
+│ Resend:    University account → Production email            │
+│ Users:     Real users, published courses, live data         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Principles
 
-1. **Isolation**: Development and production are completely isolated
-2. **Fork Model**: You work on your fork, PR to professor's repo for production
-3. **Automatic Deployments**: Push to fork → dev deploy, merge to main → prod deploy
-4. **Separate Databases**: Dev data never touches production
-5. **Separate Email**: Dev emails go to personal Resend, prod to university Resend
+1. **Two Environments**: Development/testing (bcs-web2.vercel.app) and Production (brainandcognitivescience.com)
+2. **No Local Development**: All testing done on Vercel deployment, NOT locally
+3. **Fork Model**: Work on your fork → test on dev → PR to professor's repo → deploys to production
+4. **Automatic Deployments**:
+   - Push to fork → auto-deploy to bcs-web2.vercel.app (development)
+   - Merge to professor's repo → auto-deploy to brainandcognitivescience.com (production)
+5. **Database Connections**:
+   - Websites connect via `DATABASE_URL` environment variable (set in Vercel)
+   - MCP servers (`supabase` and `supabasePROD`) are for Claude-assisted debugging only
 
 ---
 
 ## 🔧 Service Configuration
 
-### Development (Your Personal Accounts)
+### Development/Testing (Your Personal Accounts)
 
-| Service | Account | Resource | URL/Details |
-|---------|---------|----------|-------------|
+| Service | Account | Resource | Connection Method |
+|---------|---------|----------|-------------------|
 | **GitHub** | Your personal | Your fork | `RITIKHARIANI/bcs_web2` |
 | **Vercel** | Personal | Project | `bcs-web2.vercel.app` |
-| **Supabase** | Personal | Dev database | `bcs-dev` project |
-| **Resend** | Personal | Dev email | Personal API key, custom domain |
-| **GoDaddy** | N/A | No access needed | Domain managed by university |
+| **Supabase** | Personal | Dev/test database | `DATABASE_URL` env var in Vercel |
+| **MCP** | Personal | Debug access | `supabase` MCP server (for Claude) |
+| **Resend** | Personal | Dev email | Personal API key |
+| **Testing** | Vercel-based | No local dev | All testing on deployed site |
 
 ### Production (University Accounts)
 
-| Service | Account | Resource | URL/Details |
-|---------|---------|----------|-------------|
+| Service | Account | Resource | Connection Method |
+|---------|---------|----------|-------------------|
 | **GitHub** | University org | Main repository | Professor's repo |
-| **Vercel** | University | Project | `brainandcognitivescience.org` |
-| **Supabase** | University | Prod database | `bcs-prod` project |
-| **Resend** | University | Prod email | University API key, verified domain |
-| **GoDaddy** | University | Domain | `brainandcognitivescience.org` |
+| **Vercel** | University | Project | `brainandcognitivescience.com` |
+| **Supabase** | University | Production database | `DATABASE_URL` env var in Vercel |
+| **MCP** | University | Debug access | `supabasePROD` MCP server (for Claude) |
+| **Resend** | University | Production email | University API key |
+| **Domain** | University | GoDaddy | `brainandcognitivescience.com` |
 
 ---
 
@@ -194,9 +204,9 @@ NEXT_PUBLIC_ENABLE_GRAPH_VISUALIZATION=true
 NEXT_PUBLIC_ENABLE_ANALYTICS=true  # Enable analytics in prod
 ```
 
-### Local Development Variables
+### Local Development Variables (Rarely Used)
 
-**File:** `.env.local` (gitignored)
+**File:** `.env.local` (gitignored, only if running locally)
 
 ```bash
 # Database (Use port 5432 for local development - session pooler)
@@ -220,8 +230,9 @@ NEXT_PUBLIC_ENABLE_ANALYTICS=false
 ```
 
 **Important Notes:**
+- **Testing is done on Vercel** (bcs-web2.vercel.app), NOT locally
 - **Port 6543**: Use for Vercel (serverless) - transaction pooler
-- **Port 5432**: Use for local dev - session pooler
+- **Port 5432**: Use for local dev (if running locally) - session pooler
 - See `/.env.development.example` and `/.env.production.example` for templates
 
 ---
@@ -405,41 +416,41 @@ git push origin --delete feature/add-new-feature
 ### Database Separation
 
 **Development Database (Your Supabase):**
-- Project: `bcs-dev`
-- Purpose: Testing, development, can be reset
-- Data: Fake users, test courses, experimental data
-- Access: Only you
+- **Purpose**: Testing, development, can be reset
+- **Data**: Fake users, test courses, experimental data
+- **Website Connection**: Via `DATABASE_URL` environment variable in your Vercel project
+- **Claude Access**: Via `supabase` MCP server for debugging/inspection
 
 **Production Database (University Supabase):**
-- Project: `bcs-prod`
-- Purpose: Real user data, stable
-- Data: Real users, real courses, published content
-- Access: University admin + you (read-only for debugging)
+- **Purpose**: Real user data, stable production environment
+- **Data**: Real users, real courses, published content
+- **Website Connection**: Via `DATABASE_URL` environment variable in university Vercel project
+- **Claude Access**: Via `supabasePROD` MCP server for debugging/inspection (use carefully)
 
 ### Schema Synchronization
 
-**Process:**
+**⚠️ IMPORTANT: Complete migration guide at [DATABASE_MIGRATION_GUIDE.md](./DATABASE_MIGRATION_GUIDE.md)**
 
-1. **Make schema changes in development:**
+**Correct Process (Updated Nov 2025):**
+
+1. **Make schema changes and create migration in ONE step:**
    ```bash
    # Edit prisma/schema.prisma locally
 
-   # Push to dev database to test
-   npx prisma db push
+   # Create migration (generates SQL + applies to dev DB)
+   npx prisma migrate dev --name add_user_avatar_field
+
+   # This creates: prisma/migrations/[timestamp]_add_user_avatar_field/
+   # AND applies it to your development database
 
    # Test locally
    npm run dev
    ```
 
-2. **Create migration when ready:**
+2. **Commit migration file:**
    ```bash
-   # Generate migration file
-   npx prisma migrate dev --name add_user_avatar_field
-
-   # This creates: prisma/migrations/[timestamp]_add_user_avatar_field/
-
-   # Commit migration file
-   git add prisma/migrations
+   # Commit both schema and migration
+   git add prisma/schema.prisma prisma/migrations
    git commit -m "Add user avatar field migration"
    git push origin main
    ```
@@ -452,6 +463,9 @@ git push origin --delete feature/add-new-feature
 
    # Migration applies to production database automatically
    ```
+
+**❌ NEVER use `npx prisma db push` - it causes migration drift!**
+**✅ ALWAYS use `npx prisma migrate dev` - keeps everything in sync**
 
 ### Database Backup
 
@@ -616,15 +630,17 @@ Tracked in university Resend dashboard
 
 ### Supabase Access
 
-**Personal Supabase:**
-- Owner: You
-- Full access to dev database
-- Can reset, modify schema, view data
+**Development Supabase:**
+- **Owner**: You
+- **Website Access**: Via `DATABASE_URL` in Vercel (automatic)
+- **Claude Access**: Via `supabase` MCP server (for debugging/inspection)
+- **Permissions**: Full access - can reset, modify schema, view data
 
-**University Supabase:**
-- Owner: University
-- Your access: Read-only or limited (for debugging)
-- Cannot modify production data directly
+**Production Supabase:**
+- **Owner**: University
+- **Website Access**: Via `DATABASE_URL` in university Vercel (automatic)
+- **Claude Access**: Via `supabasePROD` MCP server (for debugging/inspection)
+- **Permissions**: Use MCP carefully - contains real user data
 
 ### Resend Access
 

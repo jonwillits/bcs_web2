@@ -13,10 +13,12 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Loading } from '@/components/ui/loading'
 import { ModuleResources } from '@/components/public/module-resources'
+import { StartCourseButton } from '@/components/student/StartCourseButton'
 import { ModuleTreeSidebar } from '@/components/modules/module-tree-sidebar'
 import { InstructorsSection } from '@/components/public/instructors-section'
 import { ReadingProgressBar } from '@/components/public/reading-progress-bar'
 import { CourseNotesSection } from '@/components/public/course-notes-section'
+import { MarkCompleteButton } from '@/components/progress/MarkCompleteButton'
 import type { ModuleTreeNode } from '@/lib/modules/tree-utils'
 import {
   ArrowLeft,
@@ -129,9 +131,11 @@ interface EnhancedCourseViewerProps {
   course: Course
   initialModule?: string
   initialSearch?: string
+  session?: any
+  isStarted?: boolean
 }
 
-export function EnhancedCourseViewer({ course, initialModule, initialSearch = '' }: EnhancedCourseViewerProps) {
+export function EnhancedCourseViewer({ course, initialModule, initialSearch = '', session, isStarted = false }: EnhancedCourseViewerProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const contentRef = useRef<HTMLDivElement>(null)
@@ -150,6 +154,7 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
   const [showMobileSidebar, setShowMobileSidebar] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [moduleProgress, setModuleProgress] = useState<Record<string, 'not_started' | 'completed'>>({})
   
   // Find current module and navigation
   const selectedCourseModule = course.courseModules.find(
@@ -200,13 +205,30 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
       const params = new URLSearchParams(searchParams)
       params.set('module', selectedModule.slug)
       if (searchQuery) params.set('search', searchQuery)
-      
+
       // Update URL without triggering navigation
       const newUrl = `${window.location.pathname}?${params.toString()}`
       window.history.replaceState({}, '', newUrl)
     }
   }, [selectedModule, searchQuery, searchParams])
 
+  // Fetch progress data when user is enrolled
+  useEffect(() => {
+    if (session?.user && isStarted) {
+      fetch(`/api/progress/course/${course.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.modules) {
+            const progressMap: Record<string, 'not_started' | 'completed'> = {}
+            data.modules.forEach((m: any) => {
+              progressMap[m.id] = m.progress.status
+            })
+            setModuleProgress(progressMap)
+          }
+        })
+        .catch(err => console.error('Error fetching progress:', err))
+    }
+  }, [course.id, session, isStarted])
 
   // Handle module selection
   const handleModuleSelect = (module: Module) => {
@@ -408,6 +430,17 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                     </div>
                   )}
                 </div>
+
+                {/* Start Course Button - Available to all authenticated users (Week 3: Inclusive Enrollment) */}
+                {session?.user && (
+                  <div className="pt-4">
+                    <StartCourseButton
+                      courseId={course.id}
+                      courseName={course.title}
+                      isStarted={isStarted}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -600,6 +633,32 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                     />
                   </CardContent>
                 </Card>
+
+                {/* Mark Complete Button (shown only if user is enrolled) */}
+                {session?.user && isStarted && selectedModule && (
+                  <div className="flex justify-end">
+                    <MarkCompleteButton
+                      moduleId={selectedModule.id}
+                      courseId={course.id}
+                      initialStatus={moduleProgress[selectedModule.id] || 'not_started'}
+                      onComplete={() => {
+                        // Refetch progress after marking complete
+                        fetch(`/api/progress/course/${course.id}`)
+                          .then(res => res.json())
+                          .then(data => {
+                            if (data.modules) {
+                              const progressMap: Record<string, 'not_started' | 'completed'> = {}
+                              data.modules.forEach((m: any) => {
+                                progressMap[m.id] = m.progress.status
+                              })
+                              setModuleProgress(progressMap)
+                            }
+                          })
+                          .catch(err => console.error('Error fetching progress:', err))
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Next Module Navigation */}
                 {(() => {

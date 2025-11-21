@@ -27,7 +27,11 @@ export async function GET() {
         personal_website_url: true,
         linkedin_url: true,
         twitter_url: true,
-        github_url: true
+        github_url: true,
+        // Student fields
+        major: true,
+        graduation_year: true,
+        academic_interests: true
       }
     })
 
@@ -66,7 +70,11 @@ export async function PUT(request: NextRequest) {
       personal_website_url,
       linkedin_url,
       twitter_url,
-      github_url
+      github_url,
+      // Student fields
+      major,
+      graduation_year,
+      academic_interests
     } = body
 
     // Validate required fields
@@ -88,7 +96,11 @@ export async function PUT(request: NextRequest) {
         personal_website_url: personal_website_url?.trim() || null,
         linkedin_url: linkedin_url?.trim() || null,
         twitter_url: twitter_url?.trim() || null,
-        github_url: github_url?.trim() || null
+        github_url: github_url?.trim() || null,
+        // Student fields
+        major: major?.trim() || null,
+        graduation_year: graduation_year ? parseInt(graduation_year, 10) : null,
+        academic_interests: Array.isArray(academic_interests) ? academic_interests : []
       },
       select: {
         id: true,
@@ -102,7 +114,11 @@ export async function PUT(request: NextRequest) {
         personal_website_url: true,
         linkedin_url: true,
         twitter_url: true,
-        github_url: true
+        github_url: true,
+        // Student fields
+        major: true,
+        graduation_year: true,
+        academic_interests: true
       }
     })
 

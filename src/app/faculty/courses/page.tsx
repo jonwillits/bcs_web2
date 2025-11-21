@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/config";
 import { redirect } from "next/navigation";
+import { hasFacultyAccess } from "@/lib/auth/utils";
 import { CourseLibrary } from "@/components/faculty/course-library";
 import { AuthenticatedLayout } from "@/components/layouts/app-layout";
 
@@ -10,7 +11,7 @@ export default async function CoursesPage() {
     redirect("/auth/login");
   }
 
-  if (session.user.role !== "faculty") {
+  if (!hasFacultyAccess(session)) {
     redirect("/");
   }
 

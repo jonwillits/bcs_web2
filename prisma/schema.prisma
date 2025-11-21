@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // Transaction pooler (6543) - app queries (prepared statements disabled in src/lib/db.ts)
+  directUrl = env("DIRECT_URL")     // Session pooler (5432) - migrations only (supports DDL)
 }
 
 model course_modules {
@@ -30,23 +31,29 @@ model course_modules {
 }
 
 model courses {
-  id             String                 @id
-  title          String
-  slug           String                 @unique
-  description    String?
-  author_id      String
-  status         String                 @default("draft")
-  featured       Boolean                @default(false)
-  tags           String[]
-  created_at     DateTime               @default(now())
-  updated_at     DateTime               @updatedAt
-  course_modules course_modules[]
-  users          users                  @relation(fields: [author_id], references: [id], onDelete: Restrict)
-  collaborators  course_collaborators[]
+  id              String                 @id
+  title           String
+  slug            String                 @unique
+  description     String?
+  author_id       String
+  status          String                 @default("draft")
+  featured        Boolean                @default(false)
+  tags            String[]
+  tracking_count  Int                    @default(0) // Number of users (learners) who started this course
+  created_at      DateTime               @default(now())
+  updated_at      DateTime               @updatedAt
+  course_modules  course_modules[]
+  users           users                  @relation(fields: [author_id], references: [id], onDelete: Restrict)
+  collaborators   course_collaborators[]
+  course_tracking course_tracking[]
+
+  // Progress tracking (Week 4)
+  module_progress module_progress[]      @relation("CourseProgress")
 
   @@index([author_id])
   @@index([slug])
   @@index([status])
+  @@index([tracking_count])
 }
 
 model media_files {
@@ -112,6 +119,9 @@ model modules {
   original_module  modules?               @relation("ModuleClones", fields: [cloned_from], references: [id], onDelete: SetNull)
   cloned_modules   modules[]              @relation("ModuleClones")
 
+  // Progress tracking (Week 4)
+  progress_records module_progress[]      @relation("ModuleProgressRecords")
+
   @@unique([parent_module_id, sort_order])
   @@index([author_id])
   @@index([parent_module_id])
@@ -136,14 +146,30 @@ model users {
   email         String @unique
   password_hash String
   name          String
-  role          String @default("faculty")
 
-  // Profile fields
-  about             String?  @db.Text
-  speciality        String?
-  interested_fields String[] @default([])
-  university        String?
-  avatar_url        String?
+  // Enhanced role system
+  role              String  @default("student") // student | faculty | pending_faculty | admin
+  is_super_admin    Boolean @default(false)
+  account_status    String  @default("active") // active | suspended | pending_approval | deleted
+
+  // Student-specific fields
+  major              String?
+  graduation_year    Int?
+  academic_interests String[] @default([])
+
+  // Faculty-specific fields
+  title         String? // Professor, Lecturer, Researcher, etc.
+  department    String?
+  research_area String? // Primary research area/speciality
+
+  // General profile fields (both student and faculty)
+  about       String?  @db.Text
+  university  String?
+  avatar_url  String?
+
+  // Legacy field (kept for backward compatibility)
+  speciality        String? // Deprecated: use research_area instead
+  interested_fields String[] @default([]) // Deprecated: use academic_interests instead
 
   // Academic & Social Links
   google_scholar_url   String?
@@ -166,6 +192,7 @@ model users {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
+  // Content relations
   courses              courses[]
   media_files          media_files[]
   modules              modules[]
@@ -179,6 +206,21 @@ model users {
   module_collaborations_as_user    module_collaborators[]   @relation("ModuleCollaborator")
   module_collaborations_as_inviter module_collaborators[]   @relation("ModuleInviter")
   collaboration_activities         collaboration_activity[]
+
+  // Course tracking relations (learning - any user can enroll)
+  started_courses course_tracking[] @relation("CourseTracking")
+
+  // Progress tracking (Week 4)
+  module_progress module_progress[] @relation("ModuleProgress")
+
+  // Admin & approval relations
+  faculty_request       faculty_requests?       @relation("FacultyRequester")
+  reviewed_requests     faculty_requests[]      @relation("FacultyReviewer")
+  admin_actions         admin_audit_logs[]      @relation("AdminActor")
+
+  @@index([role])
+  @@index([account_status])
+  @@index([email])
 }
 
 // ==================== PLAYGROUND BUILDER MODELS ====================
@@ -303,6 +345,29 @@ model course_collaborators {
   @@index([added_by]) // For audit trails
 }
 
+model course_tracking {
+  id            String   @id @default(cuid())
+  course_id     String
+  user_id       String   // Changed from student_id - allows any user (student, faculty, admin) to enroll
+  started_at    DateTime @default(now())
+  last_accessed DateTime @default(now())
+  status        String   @default("active") // active (for future: completed, dropped)
+
+  // Progress tracking (Week 4)
+  completion_pct    Float @default(0) // 0-100 percentage
+  modules_completed Int   @default(0) // Count of completed modules
+  modules_total     Int   @default(0) // Total modules in course
+
+  // Relations
+  course courses @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  user   users   @relation("CourseTracking", fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Constraints
+  @@unique([course_id, user_id]) // Prevent duplicate course starts
+  @@index([user_id, started_at(sort: Desc)]) // Fast lookup for user dashboard
+  @@index([course_id, started_at(sort: Desc)]) // Fast lookup for faculty view
+}
+
 model module_collaborators {
   id        String @id @default(cuid())
   module_id String
@@ -351,4 +416,87 @@ model collaboration_activity {
   @@index([user_id, created_at(sort: Desc)]) // User activity history
   @@index([action]) // Filter by action type
   @@index([created_at(sort: Desc)]) // Cleanup old records
+}
+
+// ==================== ADMIN & APPROVAL MODELS ====================
+
+model faculty_requests {
+  id      String @id @default(cuid())
+  user_id String @unique
+
+  // Request details
+  request_statement String   @db.Text
+  requested_at      DateTime @default(now())
+
+  // Review tracking
+  approval_status String    @default("pending") // pending | approved | declined
+  reviewed_by     String? // admin user_id
+  reviewed_at     DateTime?
+  admin_note      String?   @db.Text
+  decline_reason  String?   @db.Text
+
+  // Relations
+  requester users  @relation("FacultyRequester", fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer  users? @relation("FacultyReviewer", fields: [reviewed_by], references: [id], onDelete: SetNull)
+
+  @@index([approval_status])
+  @@index([requested_at(sort: Desc)])
+  @@index([reviewed_by])
+}
+
+model admin_audit_logs {
+  id       String @id @default(cuid())
+  admin_id String
+
+  // Action details
+  action      String // approved_faculty | declined_faculty | deleted_user | edited_content | etc.
+  target_type String? // user | course | module | content_flag
+  target_id   String?
+
+  // Metadata
+  reason      String? @db.Text
+  details     Json? // Additional context (old_value, new_value, cascade info, etc.)
+  ip_address  String?
+  user_agent  String?
+
+  // Timestamp
+  created_at DateTime @default(now())
+
+  // Relations
+  admin users @relation("AdminActor", fields: [admin_id], references: [id], onDelete: Cascade)
+
+  @@index([admin_id])
+  @@index([action])
+  @@index([created_at(sort: Desc)])
+  @@index([target_type, target_id])
+}
+
+// ==================== PROGRESS TRACKING (WEEK 4) ====================
+
+model module_progress {
+  id           String    @id @default(cuid())
+  user_id      String    // Learner (student, faculty, or admin)
+  module_id    String
+  course_id    String    // Link to enrolled course
+
+  // Completion tracking (simplified - no time tracking)
+  status       String    @default("not_started") // not_started | completed
+  completed_at DateTime? // When marked complete
+
+  // Metadata
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  user   users   @relation("ModuleProgress", fields: [user_id], references: [id], onDelete: Cascade)
+  module modules @relation("ModuleProgressRecords", fields: [module_id], references: [id], onDelete: Cascade)
+  course courses @relation("CourseProgress", fields: [course_id], references: [id], onDelete: Cascade)
+
+  // Constraints
+  @@unique([user_id, module_id, course_id]) // One progress record per user+module+course
+  @@index([user_id]) // Fast lookup by user
+  @@index([module_id]) // Fast lookup by module
+  @@index([course_id]) // Fast lookup by course
+  @@index([status]) // Filter by completion status
+  @@index([user_id, course_id]) // Common query pattern
 }

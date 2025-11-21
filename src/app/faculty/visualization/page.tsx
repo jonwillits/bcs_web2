@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/config";
 import { redirect } from "next/navigation";
+import { hasFacultyAccess } from "@/lib/auth/utils";
 import { NetworkVisualization } from "@/components/faculty/network-visualization";
 import { IntegratedGraphSystem } from "@/components/visualization/integrated-graph-system";
 import { AuthenticatedLayout } from "@/components/layouts/app-layout";
@@ -16,7 +17,7 @@ export default async function VisualizationPage() {
     redirect("/auth/login");
   }
 
-  if (session.user.role !== "faculty") {
+  if (!hasFacultyAccess(session)) {
     redirect("/");
   }
 

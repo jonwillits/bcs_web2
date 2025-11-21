@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/config";
 import { redirect } from "next/navigation";
+import { hasFacultyAccess } from "@/lib/auth/utils";
 import { ModuleViewer } from "@/components/faculty/module-viewer";
 
 export default async function ModuleViewPage({
@@ -13,7 +14,7 @@ export default async function ModuleViewPage({
     redirect("/auth/login");
   }
 
-  if (session.user.role !== "faculty") {
+  if (!hasFacultyAccess(session)) {
     redirect("/");
   }
 

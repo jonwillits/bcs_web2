@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { canEditCourseWithRetry } from '@/lib/collaboration/permissions'
 import { logCollaboratorAdded } from '@/lib/collaboration/activity'
 import type { Collaborator } from '@/types/collaboration'
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 const addCollaboratorSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
@@ -21,7 +22,7 @@ export async function GET(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -105,7 +106,7 @@ export async function POST(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -134,9 +135,9 @@ export async function POST(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (userToAdd.role !== 'faculty') {
+    if (userToAdd.role !== 'faculty' && userToAdd.role !== 'admin') {
       return NextResponse.json(
-        { error: 'Only faculty members can be added as collaborators' },
+        { error: 'Only faculty or admin can be added as collaborators' },
         { status: 400 }
       )
     }

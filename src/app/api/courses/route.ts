@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { withDatabaseRetry } from '@/lib/retry'
 import { z } from 'zod'
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 const createCourseSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
@@ -20,7 +21,7 @@ const createCourseSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -165,7 +166,7 @@ export async function GET(request: NextRequest) {
     // If authorOnly is specified, require authentication
     if (authorOnly === 'true') {
       const session = await auth()
-      if (!session?.user || session.user.role !== 'faculty') {
+      if (!hasFacultyAccess(session)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
@@ -232,7 +233,7 @@ export async function GET(request: NextRequest) {
     // If collaboratorOnly is specified, require authentication
     if (collaboratorOnly === 'true') {
       const session = await auth()
-      if (!session?.user || session.user.role !== 'faculty') {
+      if (!hasFacultyAccess(session)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 

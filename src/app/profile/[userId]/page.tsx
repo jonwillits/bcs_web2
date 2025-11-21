@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth/config'
 import { Header } from '@/components/Header'
 import { ProfileView } from '@/components/profile/ProfileView'
+import { StudentProfileView } from '@/components/student/StudentProfileView'
 
 interface ProfilePageProps {
   params: Promise<{
@@ -47,6 +48,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         linkedin_url: true,
         twitter_url: true,
         github_url: true,
+        // Student fields
+        major: true,
+        graduation_year: true,
+        academic_interests: true,
         courses: {
           where: { status: 'published' },
           select: {
@@ -74,11 +79,18 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   return (
     <>
       <Header />
-      <ProfileView
-        user={user}
-        moduleCount={moduleCount}
-        isOwnProfile={isOwnProfile}
-      />
+      {user.role === 'student' ? (
+        <StudentProfileView
+          user={user}
+          isOwnProfile={isOwnProfile}
+        />
+      ) : (
+        <ProfileView
+          user={user}
+          moduleCount={moduleCount}
+          isOwnProfile={isOwnProfile}
+        />
+      )}
     </>
   )
 }

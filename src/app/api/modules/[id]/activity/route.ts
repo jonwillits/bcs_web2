@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/config'
 import { canEditModuleWithRetry } from '@/lib/collaboration/permissions'
 import { getActivityFeed } from '@/lib/collaboration/activity'
 import type { ActivityAction } from '@/types/collaboration'
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 /**
  * GET /api/modules/[id]/activity
@@ -20,7 +21,7 @@ export async function GET(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

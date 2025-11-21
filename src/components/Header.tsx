@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from 'next/navigation';
-import { Brain, Search, User, BookOpen, Menu, LogOut, X, Home, BarChart3, Settings, Plus } from "lucide-react";
+import { Brain, Search, User, BookOpen, Menu, LogOut, X, Home, BarChart3, Settings, Plus, Users, Activity, Shield, FileText } from "lucide-react";
 import { NeuralButton } from "./ui/neural-button";
 import { Input } from "./ui/input";
 import {
@@ -23,25 +23,36 @@ const navigationConfig = {
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/network", label: "Network", icon: BarChart3 },
   ],
+  admin: [
+    { href: "/", label: "Home", icon: Home },
+    { href: "/courses", label: "Courses", icon: BookOpen },
+    { href: "/modules", label: "Modules", icon: BookOpen },
+    { href: "/network", label: "Network", icon: BarChart3 },
+    { href: "/admin/dashboard", label: "Admin Dashboard", icon: BarChart3 },
+    { href: "/admin/users", label: "Users", icon: Users },
+    { href: "/admin/analytics", label: "Analytics", icon: Activity },
+    { href: "/admin/audit-logs", label: "Audit Logs", icon: Shield },
+    { href: "/admin/faculty-requests", label: "Faculty Requests", icon: FileText },
+    { href: "/learning", label: "My Learning", icon: BookOpen },
+  ],
   faculty: [
     { href: "/", label: "Home", icon: Home },
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/network", label: "Network", icon: BarChart3 },
     { href: "/faculty/dashboard", label: "Dashboard", icon: BarChart3 },
+    { href: "/learning", label: "My Learning", icon: BookOpen },
     { href: "/faculty/visualization", label: "Visualization", icon: BarChart3 },
     { href: "/faculty/modules", label: "My Modules", icon: BookOpen },
     { href: "/faculty/courses", label: "My Courses", icon: BookOpen },
     { href: "/faculty/modules/create", label: "Create Module", icon: Plus },
   ],
-  // Future extensibility for student role
   student: [
     { href: "/", label: "Home", icon: Home },
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/network", label: "Network", icon: BarChart3 },
-    { href: "/student/dashboard", label: "Dashboard", icon: BarChart3 },
-    { href: "/student/progress", label: "Progress", icon: BarChart3 },
+    { href: "/learning", label: "My Learning", icon: BookOpen },
   ]
 };
 
@@ -73,7 +84,10 @@ export function Header() {
 
   // Get navigation items based on user role
   const getNavigationItems = () => {
-    if (session?.user?.role === "faculty") {
+    // Check admin first (most privileged role)
+    if (session?.user?.role === "admin") {
+      return navigationConfig.admin;
+    } else if (session?.user?.role === "faculty") {
       return navigationConfig.faculty;
     } else if (session?.user?.role === "student") {
       return navigationConfig.student;
@@ -201,13 +215,50 @@ export function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
 
-                  {/* User-specific actions */}
-                  {session.user.role === "faculty" && (
+                  {/* Admin Tools Section */}
+                  {session.user.role === "admin" && (
                     <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Admin Tools
+                      </div>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/dashboard" className="flex items-center">
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/users" className="flex items-center">
+                          <Users className="mr-2 h-4 w-4" />
+                          User Management
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/analytics" className="flex items-center">
+                          <Activity className="mr-2 h-4 w-4" />
+                          Platform Analytics
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin/audit-logs" className="flex items-center">
+                          <Shield className="mr-2 h-4 w-4" />
+                          Audit Logs
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Content Creation
+                      </div>
                       <DropdownMenuItem asChild>
                         <Link href="/faculty/dashboard" className="flex items-center">
                           <BarChart3 className="mr-2 h-4 w-4" />
-                          Dashboard
+                          Faculty Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/faculty/courses" className="flex items-center">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          My Courses
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
@@ -219,24 +270,56 @@ export function Header() {
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  
-                  {session.user.role === "student" && (
+
+                  {/* Faculty Tools Section */}
+                  {session.user.role === "faculty" && (
                     <>
                       <DropdownMenuItem asChild>
-                        <Link href="/student/dashboard" className="flex items-center">
+                        <Link href="/faculty/dashboard" className="flex items-center">
                           <BarChart3 className="mr-2 h-4 w-4" />
                           Dashboard
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/student/progress" className="flex items-center">
-                          <BarChart3 className="mr-2 h-4 w-4" />
-                          Progress
+                        <Link href="/faculty/courses" className="flex items-center">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          My Courses
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/faculty/modules" className="flex items-center">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          My Modules
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
                   )}
+
+                  {/* Learning Section (All authenticated users) */}
+                  <DropdownMenuItem asChild>
+                    <Link href="/learning" className="flex items-center">
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      My Learning
+                    </Link>
+                  </DropdownMenuItem>
+
+                  {/* Settings Section */}
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href={
+                        session.user.role === "admin" ? "/admin/profile/edit" :
+                        session.user.role === "faculty" ? "/faculty/profile/edit" :
+                        "/student/profile/edit"
+                      }
+                      className="flex items-center"
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      Edit Profile
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
                   
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />

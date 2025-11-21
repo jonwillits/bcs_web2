@@ -1,9 +1,9 @@
 import { Suspense } from "react";
-import { RegisterForm } from "@/components/auth/register-form";
+import { UnifiedRegistrationForm } from "@/components/auth/unified-registration-form";
 import { PublicLayout } from "@/components/layouts/app-layout";
 
 function RegisterContent() {
-  return <RegisterForm />;
+  return <UnifiedRegistrationForm />;
 }
 
 export default function RegisterPage() {

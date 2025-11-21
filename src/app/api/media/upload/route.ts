@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 import { uploadFile, validateFile } from '@/lib/storage-simple';
 import { prisma } from '@/lib/db';
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 // Use Node.js runtime for file uploads (not Edge)
 export const runtime = 'nodejs';
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only faculty can upload files
-    if (session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Forbidden - Faculty access required' }, { status: 403 });
     }
 

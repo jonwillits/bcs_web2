@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { withDatabaseRetry } from '@/lib/retry'
 import { z } from 'zod'
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 const createModuleSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
@@ -18,7 +19,7 @@ const createModuleSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -154,7 +155,7 @@ export async function GET(request: NextRequest) {
 
     // If authorOnly is specified, require authentication
     if (authorOnly === 'true') {
-      if (!session?.user || session.user.role !== 'faculty') {
+      if (!hasFacultyAccess(session)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
@@ -266,7 +267,7 @@ export async function GET(request: NextRequest) {
     // If collaboratorOnly is specified, return modules where user is a collaborator
     // This includes both direct collaboration and inherited through parent modules
     if (collaboratorOnly === 'true') {
-      if (!session?.user || session.user.role !== 'faculty') {
+      if (!hasFacultyAccess(session)) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }
 
@@ -391,8 +392,8 @@ export async function GET(request: NextRequest) {
       whereClause.status = 'published'
       whereClause.visibility = 'public'
     }
-    // Faculty access: can see their own modules + published public modules from others
-    else if (session.user.role === 'faculty') {
+    // Faculty/Admin access: can see their own modules + published public modules from others
+    else if (session.user.role === 'faculty' || session.user.role === 'admin') {
       // Build own modules filter (respects status if provided)
       const ownModulesFilter: any = { author_id: session.user.id }
       if (status) {
@@ -565,8 +566,8 @@ export async function GET(request: NextRequest) {
       allUserTags = await withDatabaseRetry(async () => {
         let tagQuery = {}
         
-        // For faculty, get their own module tags; for public, get all published module tags
-        if (session?.user?.role === 'faculty') {
+        // For faculty/admin, get their own module tags; for public, get all published module tags
+        if (session?.user?.role === 'faculty' || session?.user?.role === 'admin') {
           tagQuery = { author_id: session.user.id }
         } else {
           tagQuery = { status: 'published' }

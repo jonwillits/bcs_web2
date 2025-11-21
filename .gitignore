@@ -40,9 +40,11 @@ next-env.d.ts
 
 # Prisma
 # prisma/migrations/ - MUST commit migrations for production deployment
+# IMPORTANT: Do NOT ignore migration files!
 
-# Database Backups
+# Database Backups (but NOT migration files)
 *.sql
+!prisma/migrations/**/*.sql
 *.dump
 database_backup*.sql
 

@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { canEditModuleWithRetry } from '@/lib/collaboration/permissions'
 import { logCollaboratorRemoved } from '@/lib/collaboration/activity'
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 /**
  * DELETE /api/modules/[id]/collaborators/[userId]
@@ -14,7 +15,7 @@ export async function DELETE(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

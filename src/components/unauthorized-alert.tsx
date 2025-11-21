@@ -17,8 +17,14 @@ export function UnauthorizedAlert({ searchParams }: UnauthorizedAlertProps) {
 
   useEffect(() => {
     searchParams.then((params) => {
-      if (params.error === 'unauthorized') {
+      if (params.error === 'admin_required') {
+        setError('You do not have permission to access that page. Admin access required.')
+        setIsVisible(true)
+      } else if (params.error === 'faculty_required') {
         setError('You do not have permission to access that page. Faculty access required.')
+        setIsVisible(true)
+      } else if (params.error === 'unauthorized') {
+        setError('You do not have permission to access that page.')
         setIsVisible(true)
       }
     })

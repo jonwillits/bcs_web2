@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { withDatabaseRetry } from '@/lib/retry'
 import { z } from 'zod'
 import { canEditModuleWithRetry } from '@/lib/collaboration/permissions'
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 // Helper function to check if a module is an ancestor of another module
 async function checkIfModuleIsAncestor(moduleId: string, potentialDescendantId: string): Promise<boolean> {
@@ -40,7 +41,7 @@ export async function GET(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -138,7 +139,7 @@ export async function PUT(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -297,7 +298,7 @@ export async function DELETE(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

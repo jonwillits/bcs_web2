@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
 
 export const authConfig = {
+  trustHost: true, // Required for Vercel deployment
   providers: [
     CredentialsProvider({
       name: 'credentials',

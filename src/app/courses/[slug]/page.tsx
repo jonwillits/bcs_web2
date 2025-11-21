@@ -4,6 +4,7 @@ import { PublicLayout } from "@/components/layouts/app-layout";
 import { prisma } from '@/lib/db';
 import { withDatabaseRetry } from '@/lib/retry';
 import { buildModuleTree, generateModuleNumbering, applyNumberingToTree } from '@/lib/modules/hierarchy-helpers';
+import { auth } from '@/lib/auth/config';
 
 async function getCourse(slug: string) {
   try {
@@ -197,10 +198,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function CoursePage({ 
+export default async function CoursePage({
   params,
-  searchParams 
-}: { 
+  searchParams
+}: {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<{ module?: string; search?: string }>;
 }) {
@@ -212,9 +213,33 @@ export default async function CoursePage({
     notFound();
   }
 
+  // Check if user is logged in and if they have enrolled in this course
+  const session = await auth();
+  let isStarted = false;
+
+  if (session?.user?.id) {
+    const tracking = await withDatabaseRetry(async () => {
+      return await prisma.course_tracking.findUnique({
+        where: {
+          course_id_user_id: {
+            course_id: course.id,
+            user_id: session.user.id,
+          },
+        },
+      });
+    });
+    isStarted = !!tracking;
+  }
+
   return (
     <PublicLayout>
-      <CourseViewer course={course} initialModule={search?.module} initialSearch={search?.search} />
+      <CourseViewer
+        course={course}
+        initialModule={search?.module}
+        initialSearch={search?.search}
+        session={session}
+        isStarted={isStarted}
+      />
     </PublicLayout>
   );
 }

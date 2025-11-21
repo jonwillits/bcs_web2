@@ -89,7 +89,7 @@ export function ModuleCatalog({ initialSearch = '', session }: ModuleCatalogProp
     cloneCollaborators: false,
   })
 
-  const isFaculty = session?.user?.role === 'faculty'
+  const isFaculty = session?.user?.role === 'faculty' || session?.user?.role === 'admin'
 
   // Disable body scroll when modal is open
   useEffect(() => {

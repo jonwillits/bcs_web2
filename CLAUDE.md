@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Development
 ```bash
-npm run dev              # Start dev server with Turbopack
+npm run dev              # Start dev server with Turbopack (rarely used - testing done on Vercel)
 npm run build            # Build for production (includes Prisma generation)
 npm run start            # Start production server
 npm run lint             # Run ESLint
@@ -15,13 +15,16 @@ npm run lint             # Run ESLint
 ### Database Operations
 ```bash
 npm run db:studio        # Open Prisma Studio (visual DB editor)
-npm run db:push          # Push schema changes to DB (use this for schema drift)
-npm run db:migrate:dev   # Create and apply migration (development)
+npm run db:migrate:dev   # ✅ CORRECT: Create and apply migration (ALWAYS USE THIS)
 npm run db:generate      # Generate Prisma Client
-npm run local:setup      # Full local setup: generate + push + dev
 ```
 
-**Important**: Use `db:push` instead of `db:migrate` when there's schema drift to avoid reset.
+**Note:** Development and testing is done on Vercel deployment at https://bcs-web2.vercel.app, NOT locally.
+
+**⚠️ CRITICAL CHANGE (Nov 2025):**
+- ✅ **ALWAYS use `db:migrate:dev`** - Creates migration files and keeps sync
+- ❌ **NEVER use `db:push`** - Causes migration drift and deployment failures
+- 📖 **See [DATABASE_MIGRATION_GUIDE.md](./docs/DATABASE_MIGRATION_GUIDE.md)** for complete workflow
 
 ### Vercel Deployment
 ```bash
@@ -254,7 +257,7 @@ See `/docs/EMAIL_SETUP_GUIDE.md` for detailed setup instructions.
 
 ## Common Gotchas
 
-1. **Schema Changes**: Always use `npm run db:push` in development. Migrations are for production only.
+1. **Schema Changes**: ✅ ALWAYS use `npm run db:migrate:dev` for ALL schema changes. This creates migration files that work in both dev and production. See [DATABASE_MIGRATION_GUIDE.md](./docs/DATABASE_MIGRATION_GUIDE.md).
 
 2. **NextAuth Session**: User data is in `session.user.id` and `session.user.role`, not `session.userId`.
 
@@ -333,11 +336,28 @@ The project uses manual testing. When adding features:
 - `UNIVERSITY_OF_ILLINOIS_BRANDING.md` - Design guidelines
 
 **Note**: Outdated files have been removed. All AI development prompts, task reports, and debug documentation have been cleaned up.
-- Use Context7 to check up-to-date docs when needed for implementing new libraries or frameworks, or adding features using them.
-- When you need to access supabase production through MCP, the MCP server name is supabasePROD
-- Whenever database schema changes is made, remember to create migrations locally, commit them, and let Vercel apply them automatically.
-- https://bcs-web2.vercel.app/ is the development environment referred in @docs/DEV_PROD_WORKFLOW.md 
-https://www.brainandcognitivescience.com/ is the production environment referred in @docs/DEV_PROD_WORKFLOW.md
+
+## Environment Setup
+
+### Development/Testing Environment
+- **URL**: https://bcs-web2.vercel.app/
+- **Database Connection**: Uses `DATABASE_URL` environment variable (set in your Vercel project settings)
+- **Database**: Supabase dev/test database
+- **Testing**: ALL testing done on Vercel deployment (NOT locally)
+
+### Production Environment
+- **URL**: https://www.brainandcognitivescience.com/
+- **Database Connection**: Uses `DATABASE_URL` environment variable (set in university Vercel project settings)
+- **Database**: Supabase production database
+
+### MCP Servers (For Claude-Assisted Debugging Only)
+- **`supabase` MCP**: Allows Claude to inspect/debug dev/test database
+- **`supabasePROD` MCP**: Allows Claude to inspect/debug production database (use carefully)
+- **Important**: MCP is NOT how websites connect to databases - websites use `DATABASE_URL` environment variables
+
+### Other Notes
+- Use Context7 to check up-to-date docs when needed for implementing new libraries or frameworks
+- Whenever database schema changes are made, create migrations and commit them - Vercel applies them automatically
 - For faculty user in development environment and testing, use:
 
 email/username: ritikh2@illinois.edu

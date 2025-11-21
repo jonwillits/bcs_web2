@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 import { supabase, MEDIA_BUCKET } from '@/lib/supabase';
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 export const runtime = 'nodejs';
 
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Forbidden - Faculty access required' }, { status: 403 });
     }
 

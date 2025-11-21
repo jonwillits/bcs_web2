@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { NeuralButton } from '@/components/ui/neural-button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MediaUpload } from '@/components/ui/media-upload';
 import { toast } from 'sonner';
 import {
@@ -57,6 +56,7 @@ export function MediaLibraryPanel({
   onMediaSelect,
   className = ''
 }: MediaLibraryPanelProps) {
+  const [activeTab, setActiveTab] = useState<'library' | 'upload'>('library');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedFile, setSelectedFile] = useState<MediaFile | null>(null);
@@ -164,19 +164,37 @@ export function MediaLibraryPanel({
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col space-y-3 pb-4 pt-5">
-        <Tabs defaultValue="library" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 text-xs sm:text-sm h-11 overflow-hidden p-1.5 gap-1">
-            <TabsTrigger value="library" className="px-2 sm:px-4 shadow-none data-[state=active]:shadow-none ring-0 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+        {/* Elegant Underline Tab Navigation */}
+        <div className="border-b border-gray-200">
+          <nav className="flex gap-6 sm:gap-8">
+            <button
+              onClick={() => setActiveTab('library')}
+              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm sm:text-base transition-colors flex items-center ${
+                activeTab === 'library'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
               <Grid3x3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Library
-            </TabsTrigger>
-            <TabsTrigger value="upload" className="px-2 sm:px-4 shadow-none data-[state=active]:shadow-none ring-0 ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+            </button>
+            <button
+              onClick={() => setActiveTab('upload')}
+              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm sm:text-base transition-colors flex items-center ${
+                activeTab === 'upload'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
               <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
               Upload
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </nav>
+        </div>
 
-          <TabsContent value="library" className="flex-1 flex flex-col space-y-3 mt-3">
+        {/* Library Tab Content */}
+        {activeTab === 'library' && (
+          <div className="flex-1 flex flex-col space-y-3">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -314,17 +332,20 @@ export function MediaLibraryPanel({
                 </div>
               )}
             </div>
-          </TabsContent>
+          </div>
+        )}
 
-          <TabsContent value="upload" className="flex-1 mt-3">
+        {/* Upload Tab Content */}
+        {activeTab === 'upload' && (
+          <div className="flex-1">
             <MediaUpload
               onFileSelect={handleUploadComplete}
               moduleId={moduleId}
               maxFiles={10}
               showPreview={false}
             />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </CardContent>
 
       {/* Alt Text Dialog */}

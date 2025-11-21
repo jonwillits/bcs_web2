@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/config";
 import { redirect, notFound } from "next/navigation";
+import { hasFacultyAccess } from "@/lib/auth/utils";
 import { EditCourseForm } from "@/components/faculty/edit-course-form";
 import { AuthenticatedLayout } from "@/components/layouts/app-layout";
 import { prisma } from "@/lib/db";
@@ -15,7 +16,7 @@ export default async function EditCoursePage({
     redirect("/auth/login");
   }
 
-  if (session.user.role !== "faculty") {
+  if (!hasFacultyAccess(session)) {
     redirect("/");
   }
 

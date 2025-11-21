@@ -6,14 +6,18 @@ interface CourseViewerProps {
   course: any
   initialModule?: string
   initialSearch?: string
+  session?: any
+  isStarted?: boolean
 }
 
-export function CourseViewer({ course, initialModule, initialSearch }: CourseViewerProps) {
+export function CourseViewer({ course, initialModule, initialSearch, session, isStarted }: CourseViewerProps) {
   return (
-    <EnhancedCourseViewer 
-      course={course} 
+    <EnhancedCourseViewer
+      course={course}
       initialModule={initialModule}
       initialSearch={initialSearch}
+      session={session}
+      isStarted={isStarted}
     />
   )
 }

@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { withDatabaseRetry } from '@/lib/retry'
 import { z } from 'zod'
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 const cloneModuleSchema = z.object({
   cloneMedia: z.boolean().optional().default(true),
@@ -38,7 +39,7 @@ export async function POST(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

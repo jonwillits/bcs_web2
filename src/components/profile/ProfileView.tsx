@@ -97,7 +97,12 @@ export function ProfileView({ user, moduleCount, isOwnProfile }: ProfileViewProp
         {isOwnProfile && (
           <div className="absolute top-6 right-6 z-10">
             <Link
-              href="/profile/edit"
+              href={
+                user.role === 'admin' ? '/admin/profile/edit' :
+                user.role === 'faculty' ? '/faculty/profile/edit' :
+                user.role === 'student' ? '/student/profile/edit' :
+                '/profile/edit'
+              }
               className="flex items-center gap-2 px-4 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-colors shadow-lg font-medium"
             >
               <Edit className="h-4 w-4" />
@@ -151,7 +156,7 @@ export function ProfileView({ user, moduleCount, isOwnProfile }: ProfileViewProp
                     <GraduationCap className="h-4 w-4" />
                     {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                   </div>
-                  {user.role === 'faculty' && user.courses.length > 0 && (
+                  {(user.role === 'faculty' || user.role === 'admin') && user.courses.length > 0 && (
                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 rounded-full text-sm font-medium">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />

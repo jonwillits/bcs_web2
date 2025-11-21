@@ -8,15 +8,15 @@ import { NeuralButton } from '@/components/ui/neural-button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Grid, 
-  List, 
-  BookOpen, 
-  FileText, 
-  Clock, 
+import {
+  Plus,
+  Search,
+  Filter,
+  Grid,
+  List,
+  BookOpen,
+  FileText,
+  Clock,
   Eye,
   Edit,
   Brain,
@@ -28,7 +28,8 @@ import {
   AlertCircle,
   Star,
   Copy,
-  Trash2
+  Trash2,
+  BarChart3
 } from 'lucide-react'
 
 interface Course {
@@ -359,11 +360,16 @@ export function CourseLibrary() {
                     <div className="text-xs text-muted-foreground">
                       /{course.slug}
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Link href={`/courses/${course.slug}`}>
                         <NeuralButton variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />
+                        </NeuralButton>
+                      </Link>
+                      <Link href={`/faculty/courses/${course.id}/analytics`}>
+                        <NeuralButton variant="ghost" size="sm">
+                          <BarChart3 className="h-4 w-4" />
                         </NeuralButton>
                       </Link>
                       <Link href={`/faculty/courses/edit/${course.id}`}>

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { withDatabaseRetry } from '@/lib/retry'
 import { z } from 'zod'
 import { canEditCourseWithRetry } from '@/lib/collaboration/permissions'
+import { hasFacultyAccess } from '@/lib/auth/utils'
 
 const updateCourseModuleSchema = z.object({
   custom_notes: z.string().optional().nullable(),
@@ -18,7 +19,7 @@ export async function PATCH(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -103,7 +104,7 @@ export async function GET(
 ) {
   try {
     const session = await auth()
-    if (!session?.user || session.user.role !== 'faculty') {
+    if (!hasFacultyAccess(session)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

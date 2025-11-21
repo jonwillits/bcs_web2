@@ -7,7 +7,6 @@ import { PageHeader, PageHeaderProps } from './PageHeader';
 import { FloatingTeamPanel } from './FloatingTeamPanel';
 import { MobileBottomSheet } from './MobileBottomSheet';
 import { MediaSidebar } from './MediaSidebar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 export interface ResponsiveEditLayoutProps {
@@ -86,23 +85,35 @@ export function ResponsiveEditLayout({
 
       {/* Main Content Area */}
       <main className="container mx-auto px-4 sm:px-6 py-6">
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as 'edit' | 'settings')}
-          className="w-full"
-        >
-          {/* Tab Navigation */}
-          <TabsList className="grid w-full grid-cols-2 mb-6 max-w-md mx-auto lg:mx-0 shadow-none">
-            <TabsTrigger value="edit" className="text-sm sm:text-base">
+        {/* Elegant Underline Tab Navigation */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="flex gap-6 sm:gap-8">
+            <button
+              onClick={() => setActiveTab('edit')}
+              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm sm:text-base transition-colors ${
+                activeTab === 'edit'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
               ✏️ Edit
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="text-sm sm:text-base">
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm sm:text-base transition-colors ${
+                activeTab === 'settings'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
               ⚙️ Settings
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </nav>
+        </div>
 
-          {/* Edit Tab */}
-          <TabsContent value="edit" className="mt-0">
+        {/* Edit Tab Content */}
+        {activeTab === 'edit' && (
+          <div>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Main Editor Area */}
               <div className="lg:col-span-9">
@@ -131,15 +142,15 @@ export function ResponsiveEditLayout({
                 </button>
               </div>
             )}
-          </TabsContent>
+          </div>
+        )}
 
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="mt-0">
-            <div className="max-w-4xl mx-auto">
-              {settingsTabContent}
-            </div>
-          </TabsContent>
-        </Tabs>
+        {/* Settings Tab Content */}
+        {activeTab === 'settings' && (
+          <div className="max-w-4xl mx-auto">
+            {settingsTabContent}
+          </div>
+        )}
       </main>
 
       {/* Team Panel (Desktop) or Bottom Sheet (Mobile/Tablet) */}

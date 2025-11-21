@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth/config";
 import { redirect } from "next/navigation";
+import { hasFacultyAccess } from "@/lib/auth/utils";
 import { CreateCourseForm } from "@/components/faculty/create-course-form";
 
 export default async function CreateCoursePage() {
@@ -9,7 +10,7 @@ export default async function CreateCoursePage() {
     redirect("/auth/login");
   }
 
-  if (session.user.role !== "faculty") {
+  if (!hasFacultyAccess(session)) {
     redirect("/");
   }
 
