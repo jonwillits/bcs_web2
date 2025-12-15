@@ -101,6 +101,71 @@ export async function POST(
           data: { tracking_count: { increment: 1 } },
         });
 
+        // RETROACTIVE LINKING: Link standalone progress to this course
+        // Get all modules in this course
+        const courseModules = await tx.course_modules.findMany({
+          where: { course_id: courseId },
+          select: { module_id: true }
+        });
+
+        const moduleIds = courseModules.map(cm => cm.module_id);
+
+        if (moduleIds.length > 0) {
+          // Find standalone progress for these modules
+          const standaloneProgress = await tx.module_progress.findMany({
+            where: {
+              user_id: userId,
+              module_id: { in: moduleIds },
+              course_id: null, // Only standalone records
+              status: 'completed'
+            }
+          });
+
+          // Create course-specific progress records
+          for (const progress of standaloneProgress) {
+            await tx.module_progress.upsert({
+              where: {
+                user_id_module_id_course_id: {
+                  user_id: userId,
+                  module_id: progress.module_id,
+                  course_id: courseId
+                }
+              },
+              update: {
+                status: 'completed',
+                completed_at: progress.completed_at,
+                xp_earned: progress.xp_earned,
+                started_at: progress.started_at
+              },
+              create: {
+                user_id: userId,
+                module_id: progress.module_id,
+                course_id: courseId,
+                status: 'completed',
+                completed_at: progress.completed_at,
+                started_at: progress.started_at,
+                xp_earned: progress.xp_earned
+              }
+            });
+          }
+
+          // Update course tracking with linked progress
+          if (standaloneProgress.length > 0) {
+            const completedCount = standaloneProgress.length;
+            const totalModules = moduleIds.length;
+            const completionPct = Math.round((completedCount / totalModules) * 100);
+
+            await tx.course_tracking.update({
+              where: { id: newTracking.id },
+              data: {
+                modules_completed: completedCount,
+                modules_total: totalModules,
+                completion_pct: completionPct
+              }
+            });
+          }
+        }
+
         return newTracking;
       });
     });

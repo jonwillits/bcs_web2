@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from 'next/navigation';
-import { Brain, Search, User, BookOpen, Menu, LogOut, X, Home, BarChart3, Settings, Plus, Users, Activity, Shield, FileText } from "lucide-react";
+import { Brain, Search, User, BookOpen, Menu, LogOut, X, Home, BarChart3, Settings, Plus, Users, Activity, Shield, FileText, Trophy, Map } from "lucide-react";
 import { NeuralButton } from "./ui/neural-button";
 import { Input } from "./ui/input";
 import {
@@ -21,38 +21,45 @@ const navigationConfig = {
     { href: "/", label: "Home", icon: Home },
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
-    { href: "/network", label: "Network", icon: BarChart3 },
+    { href: "/paths", label: "Learning Paths", icon: Map },
+    { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
   ],
   admin: [
     { href: "/", label: "Home", icon: Home },
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
-    { href: "/network", label: "Network", icon: BarChart3 },
+    { href: "/paths", label: "Learning Paths", icon: Map },
+    { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
     { href: "/admin/dashboard", label: "Admin Dashboard", icon: BarChart3 },
     { href: "/admin/users", label: "Users", icon: Users },
     { href: "/admin/analytics", label: "Analytics", icon: Activity },
     { href: "/admin/audit-logs", label: "Audit Logs", icon: Shield },
     { href: "/admin/faculty-requests", label: "Faculty Requests", icon: FileText },
     { href: "/learning", label: "My Learning", icon: BookOpen },
+    { href: "/network", label: "Network", icon: BarChart3 },
   ],
   faculty: [
     { href: "/", label: "Home", icon: Home },
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
-    { href: "/network", label: "Network", icon: BarChart3 },
+    { href: "/paths", label: "Learning Paths", icon: Map },
+    { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
     { href: "/faculty/dashboard", label: "Dashboard", icon: BarChart3 },
     { href: "/learning", label: "My Learning", icon: BookOpen },
     { href: "/faculty/visualization", label: "Visualization", icon: BarChart3 },
     { href: "/faculty/modules", label: "My Modules", icon: BookOpen },
     { href: "/faculty/courses", label: "My Courses", icon: BookOpen },
     { href: "/faculty/modules/create", label: "Create Module", icon: Plus },
+    { href: "/network", label: "Network", icon: BarChart3 },
   ],
   student: [
     { href: "/", label: "Home", icon: Home },
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
-    { href: "/network", label: "Network", icon: BarChart3 },
+    { href: "/paths", label: "Learning Paths", icon: Map },
+    { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
     { href: "/learning", label: "My Learning", icon: BookOpen },
+    { href: "/network", label: "Network", icon: BarChart3 },
   ]
 };
 
@@ -213,6 +220,14 @@ export function Header() {
                       My Profile
                     </Link>
                   </DropdownMenuItem>
+
+                  {/* My Achievements */}
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile/achievements" className="flex items-center">
+                      <Trophy className="mr-2 h-4 w-4" />
+                      My Achievements
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
 
                   {/* Admin Tools Section */}
@@ -267,6 +282,12 @@ export function Header() {
                           My Modules
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/faculty/quest-map" className="flex items-center">
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          Quest Map Editor
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
                   )}
@@ -290,6 +311,12 @@ export function Header() {
                         <Link href="/faculty/modules" className="flex items-center">
                           <BookOpen className="mr-2 h-4 w-4" />
                           My Modules
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/faculty/quest-map" className="flex items-center">
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          Quest Map Editor
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />

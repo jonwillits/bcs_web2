@@ -6,12 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { NeuralButton } from "@/components/ui/neural-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BookOpen, 
-  Plus, 
-  FileText, 
-  Users, 
-  BarChart3, 
+import {
+  BookOpen,
+  Plus,
+  FileText,
+  Users,
+  BarChart3,
   Settings,
   LogOut,
   Brain,
@@ -20,7 +20,9 @@ import {
   Edit,
   RefreshCw,
   Loader2,
-  Layers
+  Layers,
+  Map,
+  Route
 } from "lucide-react";
 
 interface User {
@@ -224,7 +226,7 @@ export function FacultyDashboard({ user }: FacultyDashboardProps) {
         )}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="cognitive-card hover:shadow-neural transition-shadow duration-300">
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -277,6 +279,44 @@ export function FacultyDashboard({ user }: FacultyDashboardProps) {
               <Link href="/faculty/modules">
                 <NeuralButton variant="cognitive" className="w-full">
                   View All Modules
+                </NeuralButton>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="cognitive-card hover:shadow-neural transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Map className="mr-2 h-5 w-5 text-blue-600" />
+                Curriculum Map
+              </CardTitle>
+              <CardDescription>
+                Organize courses visually and set prerequisites
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/faculty/curriculum/edit">
+                <NeuralButton variant="outline" className="w-full">
+                  Edit Curriculum
+                </NeuralButton>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="cognitive-card hover:shadow-synaptic transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Route className="mr-2 h-5 w-5 text-purple-600" />
+                Learning Paths
+              </CardTitle>
+              <CardDescription>
+                Create curated paths to guide student learning
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/faculty/paths">
+                <NeuralButton variant="outline" className="w-full">
+                  Manage Paths
                 </NeuralButton>
               </Link>
             </CardContent>

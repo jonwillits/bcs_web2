@@ -33,6 +33,15 @@ const updateModuleSchema = z.object({
   status: z.enum(['draft', 'published']).optional(),
   visibility: z.enum(['public', 'private']).optional(),
   tags: z.array(z.string().min(1).max(50)).max(20).optional(),
+
+  // Quest Map fields
+  prerequisite_module_ids: z.array(z.string()).optional(),
+  quest_map_position_x: z.number().min(0).max(100).optional(),
+  quest_map_position_y: z.number().min(0).max(100).optional(),
+  xp_reward: z.number().int().min(0).max(10000).optional(),
+  difficulty_level: z.enum(['beginner', 'intermediate', 'advanced', 'boss']).optional(),
+  estimated_minutes: z.number().int().min(0).max(999).optional(),
+  quest_type: z.enum(['standard', 'challenge', 'boss', 'bonus']).optional(),
 })
 
 export async function GET(
@@ -229,6 +238,38 @@ export async function PUT(
     }
     
     console.log('Final parent_module_id for update:', validatedData.parent_module_id)
+
+    // Validate prerequisite_module_ids
+    if (validatedData.prerequisite_module_ids !== undefined) {
+      // Check for self-reference
+      if (validatedData.prerequisite_module_ids.includes(id)) {
+        return NextResponse.json(
+          { error: 'A module cannot be its own prerequisite' },
+          { status: 400 }
+        )
+      }
+
+      // Check if all prerequisite modules exist
+      if (validatedData.prerequisite_module_ids.length > 0) {
+        const existingPrereqs = await prisma.modules.findMany({
+          where: { id: { in: validatedData.prerequisite_module_ids } },
+          select: { id: true }
+        })
+
+        if (existingPrereqs.length !== validatedData.prerequisite_module_ids.length) {
+          const missingIds = validatedData.prerequisite_module_ids.filter(
+            prereqId => !existingPrereqs.some(m => m.id === prereqId)
+          )
+          return NextResponse.json(
+            { error: `Prerequisite modules not found: ${missingIds.join(', ')}` },
+            { status: 400 }
+          )
+        }
+
+        // TODO: Add circular dependency detection for prerequisites
+        // This would require checking if any prerequisite has this module in its chain
+      }
+    }
 
     const updatedModule = await prisma.modules.update({
       where: { id },

@@ -42,6 +42,12 @@ model courses {
   tracking_count  Int                    @default(0) // Number of users (learners) who started this course
   created_at      DateTime               @default(now())
   updated_at      DateTime               @updatedAt
+
+  // Curriculum Map & Learning Paths (Curriculum Visualization Feature)
+  prerequisite_course_ids String[]       @default([]) // Array of course IDs that must be completed first
+  curriculum_position_x   Float?         @default(50) // Percentage (0-100) for horizontal position on curriculum map
+  curriculum_position_y   Float?         @default(50) // Percentage (0-100) for vertical position on curriculum map
+
   course_modules  course_modules[]
   users           users                  @relation(fields: [author_id], references: [id], onDelete: Restrict)
   collaborators   course_collaborators[]
@@ -104,6 +110,15 @@ model modules {
   // Cloning & Lineage (Phase 1)
   cloned_from      String?                // References modules.id (NULL if original)
   clone_count      Int                    @default(0) // Number of times this module was cloned
+
+  // Quest Map & Gamification (Quest Map Feature)
+  prerequisite_module_ids String[]       @default([]) // Array of module IDs that must be completed first
+  quest_map_position_x    Float?         @default(50) // Percentage (0-100) for horizontal position
+  quest_map_position_y    Float?         @default(50) // Percentage (0-100) for vertical position
+  xp_reward              Int            @default(100) // XP earned on completion
+  difficulty_level       String         @default("beginner") // beginner | intermediate | advanced | boss
+  estimated_minutes      Int?           // Estimated time to complete
+  quest_type             String         @default("standard") // standard | challenge | boss | bonus
 
   tags             String[]               @default([])
   created_at       DateTime               @default(now())
@@ -217,6 +232,14 @@ model users {
   faculty_request       faculty_requests?       @relation("FacultyRequester")
   reviewed_requests     faculty_requests[]      @relation("FacultyReviewer")
   admin_actions         admin_audit_logs[]      @relation("AdminActor")
+
+  // Gamification relations (Quest Map Feature)
+  achievements          user_achievements[]     @relation("UserAchievements")
+  gamification_stats    user_gamification_stats? @relation("UserGamificationStats")
+  learning_sessions     learning_sessions[]     @relation("LearningSession")
+
+  // Curriculum & Learning Paths (Curriculum Visualization Feature)
+  created_learning_paths learning_paths[]       @relation("LearningPathCreator")
 
   @@index([role])
   @@index([account_status])
@@ -477,26 +500,124 @@ model module_progress {
   id           String    @id @default(cuid())
   user_id      String    // Learner (student, faculty, or admin)
   module_id    String
-  course_id    String    // Link to enrolled course
+  course_id    String?   // Link to enrolled course (NULL for standalone progress)
 
-  // Completion tracking (simplified - no time tracking)
-  status       String    @default("not_started") // not_started | completed
+  // Completion tracking (enhanced for quest map)
+  status       String    @default("not_started") // not_started | available | in_progress | completed
   completed_at DateTime? // When marked complete
+  started_at   DateTime? // When first accessed
+
+  // Gamification (Quest Map Feature)
+  xp_earned    Int       @default(0) // XP earned from this module
+  attempts     Int       @default(0) // Number of attempts (for challenge modules)
 
   // Metadata
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   // Relations
-  user   users   @relation("ModuleProgress", fields: [user_id], references: [id], onDelete: Cascade)
-  module modules @relation("ModuleProgressRecords", fields: [module_id], references: [id], onDelete: Cascade)
-  course courses @relation("CourseProgress", fields: [course_id], references: [id], onDelete: Cascade)
+  user   users    @relation("ModuleProgress", fields: [user_id], references: [id], onDelete: Cascade)
+  module modules  @relation("ModuleProgressRecords", fields: [module_id], references: [id], onDelete: Cascade)
+  course courses? @relation("CourseProgress", fields: [course_id], references: [id], onDelete: Cascade)
 
   // Constraints
-  @@unique([user_id, module_id, course_id]) // One progress record per user+module+course
+  @@unique([user_id, module_id, course_id]) // One progress record per user+module+course (nulls allowed)
   @@index([user_id]) // Fast lookup by user
   @@index([module_id]) // Fast lookup by module
   @@index([course_id]) // Fast lookup by course
   @@index([status]) // Filter by completion status
   @@index([user_id, course_id]) // Common query pattern
+  @@index([user_id, module_id]) // For standalone progress queries
+}
+
+// ==================== GAMIFICATION (QUEST MAP FEATURE) ====================
+
+model achievements {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @db.Text
+  icon         String   // emoji or lucide icon name
+  category     String   // completion | speed | consistency | mastery
+  criteria     Json     // { type: 'complete_n_modules', count: 10, ... }
+  xp_reward    Int      @default(0)
+  badge_color  String   @default("gray") // gray | bronze | silver | gold
+  created_at   DateTime @default(now())
+
+  // Relations
+  user_achievements user_achievements[]
+
+  @@index([category])
+}
+
+model user_achievements {
+  id             String   @id @default(cuid())
+  user_id        String
+  achievement_id String
+  earned_at      DateTime @default(now())
+  progress       Int      @default(100) // % progress if partially earned (100 = fully earned)
+
+  // Relations
+  user        users        @relation("UserAchievements", fields: [user_id], references: [id], onDelete: Cascade)
+  achievement achievements @relation(fields: [achievement_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, achievement_id])
+  @@index([user_id])
+  @@index([earned_at])
+}
+
+model user_gamification_stats {
+  id                String    @id @default(cuid())
+  user_id           String    @unique
+  total_xp          Int       @default(0)
+  level             Int       @default(1)
+  current_streak    Int       @default(0) // days
+  longest_streak    Int       @default(0) // days
+  last_active_date  DateTime?
+  total_time_minutes Int      @default(0)
+
+  // Relations
+  user users @relation("UserGamificationStats", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([total_xp])
+  @@index([level])
+}
+
+model learning_sessions {
+  id               String   @id @default(cuid())
+  user_id          String
+  date             DateTime @db.Date // One record per user per day
+  minutes_studied  Int      @default(0)
+  modules_viewed   Int      @default(0)
+  modules_completed Int     @default(0)
+  courses_accessed Int      @default(0)
+  first_activity   DateTime?
+  last_activity    DateTime?
+  created_at       DateTime @default(now())
+
+  // Relations
+  user users @relation("LearningSession", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, date])
+  @@index([user_id])
+  @@index([date])
+}
+
+model learning_paths {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?  @db.Text
+  course_ids  String[] @default([]) // Ordered array of course IDs in this path
+  is_featured Boolean  @default(false)
+  sort_order  Int      @default(0)
+  created_by  String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  creator users @relation("LearningPathCreator", fields: [created_by], references: [id], onDelete: Restrict)
+
+  @@index([created_by])
+  @@index([is_featured])
+  @@index([slug])
 }

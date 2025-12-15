@@ -33,7 +33,14 @@ import {
   Trash2,
   Globe,
   Lock,
-  Calendar
+  Calendar,
+  Map,
+  Trophy,
+  Zap,
+  Target,
+  Clock,
+  Shield,
+  Link2
 } from 'lucide-react'
 
 const editModuleSchema = z.object({
@@ -45,6 +52,15 @@ const editModuleSchema = z.object({
   status: z.enum(['draft', 'published']).default('draft'),
   visibility: z.enum(['public', 'private']).default('public'),
   tags: z.array(z.string()).default([]),
+
+  // Quest Map fields
+  prerequisiteModuleIds: z.array(z.string()).default([]),
+  questMapPositionX: z.number().min(0).max(100).default(50),
+  questMapPositionY: z.number().min(0).max(100).default(50),
+  xpReward: z.number().int().min(0).max(10000).default(100),
+  difficultyLevel: z.enum(['beginner', 'intermediate', 'advanced', 'boss']).default('beginner'),
+  estimatedMinutes: z.number().int().min(0).max(999).optional(),
+  questType: z.enum(['standard', 'challenge', 'boss', 'bonus']).default('standard'),
 })
 
 type EditModuleFormData = z.infer<typeof editModuleSchema>
@@ -76,6 +92,15 @@ interface Module {
     title: string
     slug: string
   }[]
+
+  // Quest Map fields
+  prerequisite_module_ids: string[]
+  quest_map_position_x: number
+  quest_map_position_y: number
+  xp_reward: number
+  difficulty_level: 'beginner' | 'intermediate' | 'advanced' | 'boss'
+  estimated_minutes: number | null
+  quest_type: 'standard' | 'challenge' | 'boss' | 'bonus'
 }
 
 interface ParentModule {
@@ -105,11 +130,38 @@ async function fetchParentModules(): Promise<{ modules: ParentModule[], availabl
   return { modules: data.modules, availableTags: data.availableTags || [] }
 }
 
+async function fetchAllModules(): Promise<ParentModule[]> {
+  const response = await fetch('/api/modules?limit=1000')
+  if (!response.ok) {
+    throw new Error('Failed to fetch modules')
+  }
+  const data = await response.json()
+  return data.modules
+}
+
 async function updateModule(id: string, data: EditModuleFormData) {
-  const { parentModuleId, ...rest } = data;
+  const {
+    parentModuleId,
+    prerequisiteModuleIds,
+    questMapPositionX,
+    questMapPositionY,
+    xpReward,
+    difficultyLevel,
+    estimatedMinutes,
+    questType,
+    ...rest
+  } = data;
+
   const apiData = {
     ...rest,
     parent_module_id: parentModuleId,
+    prerequisite_module_ids: prerequisiteModuleIds,
+    quest_map_position_x: questMapPositionX,
+    quest_map_position_y: questMapPositionY,
+    xp_reward: xpReward,
+    difficulty_level: difficultyLevel,
+    estimated_minutes: estimatedMinutes,
+    quest_type: questType,
   }
 
   const response = await fetch(`/api/modules/${id}`, {
@@ -176,6 +228,11 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
     queryFn: fetchParentModules,
   })
 
+  const { data: allModules, isLoading: isLoadingAllModules } = useQuery({
+    queryKey: ['modules', 'all'],
+    queryFn: fetchAllModules,
+  })
+
   const parentModules = parentModuleData?.modules || []
 
   useEffect(() => {
@@ -232,6 +289,11 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
   const watchedVisibility = watch('visibility')
   const watchedParentId = watch('parentModuleId')
 
+  // Quest map field watchers
+  const watchedPrerequisites = watch('prerequisiteModuleIds')
+  const watchedDifficulty = watch('difficultyLevel')
+  const watchedQuestType = watch('questType')
+
   // Initialize form when module data loads
   useEffect(() => {
     if (module) {
@@ -244,6 +306,15 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
       setValue('visibility', module.visibility || 'public')
       setValue('tags', module.tags || [])
       setTags(module.tags || [])
+
+      // Initialize quest map fields
+      setValue('prerequisiteModuleIds', module.prerequisite_module_ids || [])
+      setValue('questMapPositionX', module.quest_map_position_x ?? 50)
+      setValue('questMapPositionY', module.quest_map_position_y ?? 50)
+      setValue('xpReward', module.xp_reward ?? 100)
+      setValue('difficultyLevel', module.difficulty_level || 'beginner')
+      setValue('estimatedMinutes', module.estimated_minutes ?? undefined)
+      setValue('questType', module.quest_type || 'standard')
     }
   }, [module, setValue])
 
@@ -460,6 +531,203 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quest Map Settings */}
+      <Card className="cognitive-card">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Map className="mr-2 h-5 w-5 text-neural-primary" />
+            Quest Map Settings
+          </CardTitle>
+          <CardDescription>Configure gamification and quest map properties</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Prerequisites */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Link2 className="h-4 w-4 text-synapse-primary" />
+              <Label>Prerequisites</Label>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Select modules that must be completed before this one
+            </p>
+            {isLoadingAllModules ? (
+              <div className="text-sm text-muted-foreground">Loading modules...</div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                {allModules && allModules.length > 0 ? (
+                  allModules
+                    .filter(m => m.id !== moduleId)
+                    .map((prereqModule) => (
+                      <label
+                        key={prereqModule.id}
+                        className="flex items-center space-x-2 cursor-pointer hover:bg-accent/50 p-2 rounded transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={watchedPrerequisites?.includes(prereqModule.id) || false}
+                          onChange={(e) => {
+                            const currentPrereqs = watchedPrerequisites || []
+                            if (e.target.checked) {
+                              setValue('prerequisiteModuleIds', [...currentPrereqs, prereqModule.id])
+                            } else {
+                              setValue('prerequisiteModuleIds', currentPrereqs.filter(id => id !== prereqModule.id))
+                            }
+                          }}
+                          className="rounded border-gray-300 text-neural-primary focus:ring-neural-primary"
+                        />
+                        <span className="text-sm flex-1">{prereqModule.title}</span>
+                      </label>
+                    ))
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">
+                    No modules available
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* XP Reward & Difficulty - Responsive Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-yellow-500" />
+                <Label htmlFor="xpReward">XP Reward</Label>
+              </div>
+              <Input
+                id="xpReward"
+                type="number"
+                min={0}
+                max={10000}
+                {...register('xpReward', { valueAsNumber: true })}
+                placeholder="100"
+              />
+              <p className="text-xs text-muted-foreground">Points awarded (0-10000)</p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-purple-500" />
+                <Label htmlFor="difficultyLevel">Difficulty</Label>
+              </div>
+              <Select
+                value={watchedDifficulty}
+                onValueChange={(value: 'beginner' | 'intermediate' | 'advanced' | 'boss') =>
+                  setValue('difficultyLevel', value)
+                }
+              >
+                <SelectTrigger id="difficultyLevel">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">
+                    <span className="flex items-center">
+                      <Target className="mr-2 h-4 w-4 text-green-500" />
+                      Beginner
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="intermediate">
+                    <span className="flex items-center">
+                      <Target className="mr-2 h-4 w-4 text-blue-500" />
+                      Intermediate
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="advanced">
+                    <span className="flex items-center">
+                      <Target className="mr-2 h-4 w-4 text-orange-500" />
+                      Advanced
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="boss">
+                    <span className="flex items-center">
+                      <Target className="mr-2 h-4 w-4 text-red-500" />
+                      Boss
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Estimated Time & Quest Type - Responsive Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-500" />
+                <Label htmlFor="estimatedMinutes">Estimated Time</Label>
+              </div>
+              <Input
+                id="estimatedMinutes"
+                type="number"
+                min={0}
+                max={999}
+                {...register('estimatedMinutes', { valueAsNumber: true })}
+                placeholder="30"
+              />
+              <p className="text-xs text-muted-foreground">Minutes to complete (optional)</p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-yellow-500" />
+                <Label htmlFor="questType">Quest Type</Label>
+              </div>
+              <Select
+                value={watchedQuestType}
+                onValueChange={(value: 'standard' | 'challenge' | 'boss' | 'bonus') =>
+                  setValue('questType', value)
+                }
+              >
+                <SelectTrigger id="questType">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard</SelectItem>
+                  <SelectItem value="challenge">Challenge</SelectItem>
+                  <SelectItem value="boss">Boss</SelectItem>
+                  <SelectItem value="bonus">Bonus</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Map Position - Responsive Grid */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Map className="h-4 w-4 text-neural-primary" />
+              <Label>Quest Map Position (%)</Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Position on the quest map grid (0-100 for X and Y coordinates)
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="questMapPositionX" className="text-sm">X Position (Horizontal)</Label>
+                <Input
+                  id="questMapPositionX"
+                  type="number"
+                  min={0}
+                  max={100}
+                  {...register('questMapPositionX', { valueAsNumber: true })}
+                  placeholder="50"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="questMapPositionY" className="text-sm">Y Position (Vertical)</Label>
+                <Input
+                  id="questMapPositionY"
+                  type="number"
+                  min={0}
+                  max={100}
+                  {...register('questMapPositionY', { valueAsNumber: true })}
+                  placeholder="50"
+                />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -27,7 +27,8 @@ import {
   ArrowUpDown,
   Users,
   FileText,
-  Tag
+  Tag,
+  Map
 } from 'lucide-react'
 
 interface Course {
@@ -248,6 +249,22 @@ export function CourseCatalog({ initialSearch = '' }: CourseCatalogProps) {
                   Or search across all content (courses, modules, people) →
                 </button>
               )}
+
+              {/* Navigation Links */}
+              <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center">
+                <Link href="/curriculum/map">
+                  <NeuralButton variant="neural" size="lg" className="w-full sm:w-auto">
+                    <Map className="h-5 w-5 mr-2" />
+                    View Curriculum Map
+                  </NeuralButton>
+                </Link>
+                <Link href="/paths">
+                  <NeuralButton variant="outline" size="lg" className="w-full sm:w-auto">
+                    <Layers className="h-5 w-5 mr-2" />
+                    Browse Learning Paths
+                  </NeuralButton>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

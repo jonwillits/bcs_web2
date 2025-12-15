@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { auth } from '@/lib/auth/config'
 import { StandaloneModuleViewer } from '@/components/public/standalone-module-viewer'
 import { PublicLayout } from '@/components/layouts/app-layout'
 import { ModuleTreeSidebar } from '@/components/modules/module-tree-sidebar'
@@ -97,6 +98,25 @@ export default async function ModulePage({ params }: ModulePageProps) {
     notFound()
   }
 
+  // Check if user is authenticated and fetch their progress
+  const session = await auth()
+  let moduleProgress: 'not_started' | 'completed' = 'not_started'
+
+  if (session?.user?.id) {
+    // Check if module is completed (in any context - course or standalone)
+    const progress = await prisma.module_progress.findFirst({
+      where: {
+        user_id: session.user.id,
+        module_id: foundModule.id,
+        status: 'completed'
+      }
+    })
+
+    if (progress) {
+      moduleProgress = 'completed'
+    }
+  }
+
   // Fetch hierarchical navigation data
   const breadcrumbs = await getModuleBreadcrumbs(foundModule.id)
   const siblings = await getModuleSiblings(foundModule.id)
@@ -148,7 +168,11 @@ export default async function ModulePage({ params }: ModulePageProps) {
 
           {/* Main Content */}
           <main className="min-w-0">
-            <StandaloneModuleViewer module={moduleData} />
+            <StandaloneModuleViewer
+              module={moduleData}
+              userId={session?.user?.id}
+              initialProgress={moduleProgress}
+            />
 
             {/* Navigation Cards */}
             <div className="mt-8">

@@ -46,7 +46,8 @@ import {
   Minimize2,
   Eye,
   FileText,
-  Navigation
+  Navigation,
+  Map
 } from 'lucide-react'
 
 interface MediaFile {
@@ -302,7 +303,7 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
   }, [selectedModule])
 
   return (
-    <div className={`min-h-screen bg-background ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
+    <div className={`min-h-screen bg-background overflow-x-hidden ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}>
       {/* Reading Progress Bar - Only show when viewing a module */}
       {selectedModule && <ReadingProgressBar />}
 
@@ -377,19 +378,42 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                   Featured
                 </Badge>
               )}
-              <NeuralButton 
-                variant="ghost" 
-                size="sm" 
+              <Link href={`/courses/${course.slug}/map`}>
+                {/* Desktop: Show with text */}
+                <NeuralButton
+                  variant="outline"
+                  size="sm"
+                  aria-label="View Quest Map"
+                  className="hidden sm:inline-flex"
+                >
+                  <Map className="h-4 w-4 mr-2" />
+                  Quest Map
+                </NeuralButton>
+                {/* Mobile: Show icon only */}
+                <NeuralButton
+                  variant="outline"
+                  size="sm"
+                  aria-label="View Quest Map"
+                  className="sm:hidden"
+                >
+                  <Map className="h-4 w-4" />
+                </NeuralButton>
+              </Link>
+              <NeuralButton
+                variant="ghost"
+                size="sm"
                 onClick={handleShare}
                 aria-label={copiedUrl ? "URL Copied" : "Share course"}
+                className="hidden sm:inline-flex"
               >
                 {copiedUrl ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
               </NeuralButton>
-              <NeuralButton 
-                variant="ghost" 
+              <NeuralButton
+                variant="ghost"
                 size="sm"
                 onClick={() => setIsFullscreen(!isFullscreen)}
                 aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                className="hidden sm:inline-flex"
               >
                 {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </NeuralButton>
@@ -464,11 +488,11 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
               </div>
             )}
             
-            <div className={`${showMobileSidebar ? 'p-4 pt-16' : ''} lg:p-0`}>
+            <div className={`${showMobileSidebar ? 'p-4 pt-16 h-full overflow-y-auto' : ''} lg:p-0`}>
               {/* Conditionally render tree sidebar or flat list */}
               {course.moduleTree && course.moduleTree.length > 0 ? (
                 /* Hierarchical Tree Navigation */
-                <div className="cognitive-card sticky top-24 overflow-hidden rounded-lg border">
+                <div className={`cognitive-card overflow-hidden rounded-lg border ${showMobileSidebar ? '' : 'lg:sticky lg:top-24'}`}>
                   <ModuleTreeSidebar
                     tree={course.moduleTree}
                     currentModuleId={selectedModuleId || undefined}
@@ -478,7 +502,7 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                 </div>
               ) : (
                 /* Fallback: Flat Module List (Backward Compatibility) */
-                <Card className="cognitive-card sticky top-24">
+                <Card className={`cognitive-card ${showMobileSidebar ? '' : 'lg:sticky lg:top-24'}`}>
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center text-base sm:text-lg">
                       <List className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-neural-primary" />

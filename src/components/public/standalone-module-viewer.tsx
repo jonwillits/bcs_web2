@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { NeuralButton } from '@/components/ui/neural-button'
 import { Separator } from '@/components/ui/separator'
 import { ModuleResources } from '@/components/public/module-resources'
+import { MarkCompleteButton } from '@/components/progress/MarkCompleteButton'
 
 interface MediaFile {
   id: string
@@ -59,9 +60,11 @@ interface StandaloneModuleProps {
     }[]
     resources?: MediaFile[]
   }
+  userId?: string
+  initialProgress?: 'not_started' | 'completed'
 }
 
-export function StandaloneModuleViewer({ module }: StandaloneModuleProps) {
+export function StandaloneModuleViewer({ module, userId, initialProgress = 'not_started' }: StandaloneModuleProps) {
   const contentRef = useRef<HTMLDivElement>(null)
 
   // Initialize medium-zoom on module content images
@@ -107,7 +110,7 @@ export function StandaloneModuleViewer({ module }: StandaloneModuleProps) {
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-3xl md:text-4xl font-bold text-neural-primary mb-2">
                 {module.title}
@@ -118,9 +121,18 @@ export function StandaloneModuleViewer({ module }: StandaloneModuleProps) {
                 </p>
               )}
             </div>
-            <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-              Published
-            </Badge>
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                Published
+              </Badge>
+              {userId && (
+                <MarkCompleteButton
+                  moduleId={module.id}
+                  initialStatus={initialProgress}
+                  context="standalone"
+                />
+              )}
+            </div>
           </div>
 
           <div className="flex items-center space-x-6 text-sm text-muted-foreground">

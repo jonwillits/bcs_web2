@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface User {
   id: string;
@@ -119,15 +120,22 @@ export default function AdminUsersManagement() {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || 'Failed to update user');
+        toast.error('Update Failed', {
+          description: error.error || 'Failed to update user. Please try again.',
+        });
         return;
       }
 
+      toast.success('Success!', {
+        description: 'User updated successfully!',
+      });
       setEditDialogOpen(false);
       fetchUsers(); // Refresh list
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('Failed to update user');
+      toast.error('Update Failed', {
+        description: 'Failed to update user. Please try again.',
+      });
     }
   };
 
@@ -141,16 +149,23 @@ export default function AdminUsersManagement() {
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || 'Failed to delete user');
+        toast.error('Delete Failed', {
+          description: error.error || 'Failed to delete user. Please try again.',
+        });
         return;
       }
 
+      toast.success('Success!', {
+        description: 'User deleted successfully!',
+      });
       setDeleteDialogOpen(false);
       setUserToDelete(null);
       fetchUsers(); // Refresh list
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user');
+      toast.error('Delete Failed', {
+        description: 'Failed to delete user. Please try again.',
+      });
     }
   };
 
