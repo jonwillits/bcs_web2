@@ -872,3 +872,159 @@ Inspired by official UI brand colors: Illini Orange and Illini Blue
 .animate-pulse-slow {
   animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Nuclear option - remove ALL iframe borders (browser defaults) */
+iframe {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Sandpack Preview Overrides - Claude artifact style (edge-to-edge, no borders) */
+[class*="sp-preview"],
+[class*="sp-stack"],
+[class*="sp-wrapper"] {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[class*="sp-preview-container"] {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[class*="sp-preview-iframe"] {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1 1 auto !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Hide Sandpack's built-in action buttons (we use our own floating button) */
+[class*="sp-preview-actions"] {
+  display: none !important;
+}
+
+/* Target iframe directly inside Sandpack containers */
+[class*="sp-preview"] iframe,
+[class*="sp-stack"] iframe {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure all Sandpack divs fill their containers */
+[class*="sp-"] > div {
+  width: 100% !important;
+}
+
+/* Remove any scrollbar gutters and ensure no overflow chrome */
+[class*="sp-preview"],
+[class*="sp-preview-container"] {
+  overflow: hidden !important;
+  scrollbar-gutter: auto !important;
+}
+
+/* Dark scrollbars for Sandpack code editor - match the dark theme */
+[class*="sp-code-editor"],
+[class*="sp-cm"],
+[class*="cm-scroller"],
+[class*="sp-editor"] {
+  scrollbar-width: thin !important;
+  scrollbar-color: #333 transparent !important;
+}
+
+[class*="sp-code-editor"]::-webkit-scrollbar,
+[class*="sp-cm"]::-webkit-scrollbar,
+[class*="cm-scroller"]::-webkit-scrollbar,
+[class*="sp-editor"]::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+[class*="sp-code-editor"]::-webkit-scrollbar-track,
+[class*="sp-cm"]::-webkit-scrollbar-track,
+[class*="cm-scroller"]::-webkit-scrollbar-track,
+[class*="sp-editor"]::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+[class*="sp-code-editor"]::-webkit-scrollbar-thumb,
+[class*="sp-cm"]::-webkit-scrollbar-thumb,
+[class*="cm-scroller"]::-webkit-scrollbar-thumb,
+[class*="sp-editor"]::-webkit-scrollbar-thumb {
+  background: #333 !important;
+  border-radius: 4px !important;
+}
+
+[class*="sp-code-editor"]::-webkit-scrollbar-thumb:hover,
+[class*="sp-cm"]::-webkit-scrollbar-thumb:hover,
+[class*="cm-scroller"]::-webkit-scrollbar-thumb:hover,
+[class*="sp-editor"]::-webkit-scrollbar-thumb:hover {
+  background: #444 !important;
+}
+
+/* Remove any borders from Sandpack layout components */
+[class*="sp-layout"] {
+  border: none !important;
+  gap: 0 !important;
+}
+
+/* Ensure code editor has no right border */
+[class*="sp-code-editor"] {
+  border: none !important;
+  border-right: none !important;
+}
+
+/* Ensure Sandpack containers fill their parent and allow flex shrinking */
+[class*="sp-wrapper"],
+[class*="sp-layout"],
+[class*="sp-stack"] {
+  height: 100% !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+/* Sandpack Provider should be a proper flex container */
+.sp-wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+/* Nuclear border removal - target ALL possible sources */
+[class*="sp-"] {
+  border: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Specifically target preview left border which may have default styling */
+[class*="sp-preview"],
+[class*="sp-preview"] > div,
+[class*="sp-preview"] > div > div {
+  border-left: none !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}

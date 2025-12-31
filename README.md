@@ -351,3 +351,4 @@ Tech Stack: Next.js 15 + React 19 + PostgreSQL
 ---
 
 *Built with ❤️ for the Brain & Cognitive Sciences community*
+# Trigger deployment

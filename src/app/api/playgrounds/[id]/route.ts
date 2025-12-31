@@ -122,6 +122,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       sourceCode,
       requirements,
       is_public,
+      app_type, // 'sandpack' (React/JS) or 'shinylive' (Python)
     } = body;
 
     // Update playground
@@ -135,6 +136,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           ...(( source_code || sourceCode) && { source_code: source_code || sourceCode }),
           ...(requirements && { requirements }),
           ...(is_public !== undefined && { is_public }),
+          ...(app_type && { app_type }),
         },
         include: {
           author: {

@@ -86,12 +86,15 @@ const nextConfig: NextConfig = {
           key: 'Content-Security-Policy',
           value: [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google-analytics.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://va.vercel-scripts.com",
+            // Script sources: includes Sandpack bundler and esm.sh for npm packages
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google-analytics.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://*.codesandbox.io https://esm.sh",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
             "img-src 'self' data: blob: https:",
             "font-src 'self' https://fonts.gstatic.com",
-            "connect-src 'self' https://www.google-analytics.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://va.vercel-scripts.com",
-            "frame-src 'self' https://shinylive.io",
+            // Connect sources: includes Sandpack bundler, esm.sh, and npm registry for dependency resolution
+            "connect-src 'self' https://www.google-analytics.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://*.codesandbox.io https://esm.sh https://registry.npmjs.org https://esm.run",
+            // Frame sources: Sandpack preview iframe
+            "frame-src 'self' https://shinylive.io https://*.codesandbox.io",
             "media-src 'self' blob:",
             "worker-src 'self' blob:",
             "object-src 'none'",

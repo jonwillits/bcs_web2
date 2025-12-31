@@ -116,6 +116,7 @@ export async function POST(request: NextRequest) {
       requirements,
       template_id,
       is_public,
+      app_type, // 'sandpack' (React/JS) or 'shinylive' (Python)
     } = body;
 
     // Validation
@@ -141,7 +142,7 @@ export async function POST(request: NextRequest) {
           title,
           description: description || '',
           category,
-          app_type: 'shinylive',
+          app_type: app_type || 'sandpack', // Default to sandpack (React/JS)
           source_code: code,
           requirements: requirements || [],
           template_id: template_id || null,

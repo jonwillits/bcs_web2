@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from 'next/navigation';
-import { Brain, Search, User, BookOpen, Menu, LogOut, X, Home, BarChart3, Settings, Plus, Users, Activity, Shield, FileText, Trophy, Map } from "lucide-react";
+import { Brain, Search, User, BookOpen, Menu, LogOut, X, Home, BarChart3, Settings, Plus, Users, Activity, Shield, FileText, Trophy, Map, Play } from "lucide-react";
 import { NeuralButton } from "./ui/neural-button";
 import { Input } from "./ui/input";
 import {
@@ -23,6 +23,7 @@ const navigationConfig = {
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/paths", label: "Learning Paths", icon: Map },
     { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
+    { href: "/playgrounds", label: "Playgrounds", icon: Play },
   ],
   admin: [
     { href: "/", label: "Home", icon: Home },
@@ -30,6 +31,7 @@ const navigationConfig = {
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/paths", label: "Learning Paths", icon: Map },
     { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
+    { href: "/playgrounds", label: "Playgrounds", icon: Play },
     { href: "/admin/dashboard", label: "Admin Dashboard", icon: BarChart3 },
     { href: "/admin/users", label: "Users", icon: Users },
     { href: "/admin/analytics", label: "Analytics", icon: Activity },
@@ -44,6 +46,7 @@ const navigationConfig = {
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/paths", label: "Learning Paths", icon: Map },
     { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
+    { href: "/playgrounds", label: "Playgrounds", icon: Play },
     { href: "/faculty/dashboard", label: "Dashboard", icon: BarChart3 },
     { href: "/learning", label: "My Learning", icon: BookOpen },
     { href: "/faculty/visualization", label: "Visualization", icon: BarChart3 },
@@ -58,6 +61,7 @@ const navigationConfig = {
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/paths", label: "Learning Paths", icon: Map },
     { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
+    { href: "/playgrounds", label: "Playgrounds", icon: Play },
     { href: "/learning", label: "My Learning", icon: BookOpen },
     { href: "/network", label: "Network", icon: BarChart3 },
   ]
