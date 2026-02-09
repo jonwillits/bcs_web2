@@ -1,24 +1,25 @@
-import { Suspense } from 'react';
+/**
+ * Unified Playground Page
+ *
+ * Single route for all playgrounds (featured + community).
+ * All playgrounds are stored in the database.
+ * Featured templates are seeded on deployment via scripts/seed-playgrounds.ts
+ */
+
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth/config';
 import { arrayToDependencies } from '@/lib/react-playground/sandpack-config';
-import { CATEGORY_LABELS } from '@/types/react-playground';
-import { Eye, ArrowLeft, Edit, Package, Calendar } from 'lucide-react';
-import PlaygroundViewerClient from '@/components/react-playground/PlaygroundViewerClient';
+import { ArrowLeft } from 'lucide-react';
+import UnifiedPlaygroundViewer from '@/components/react-playground/UnifiedPlaygroundViewer';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export const metadata = {
-  title: 'Playground - BCS E-Textbook',
-  description: 'Interactive educational playground',
-};
-
-async function getPlayground(id: string) {
+// Database fetch function
+async function getPlaygroundFromDB(id: string) {
   try {
     const playground = await prisma.playgrounds.findUnique({
       where: { id },
@@ -27,28 +28,21 @@ async function getPlayground(id: string) {
           select: {
             id: true,
             name: true,
-            email: true,
             avatar_url: true,
             university: true,
-            speciality: true,
-          },
-        },
-        template: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
           },
         },
       },
     });
 
-    // Increment view count
+    // Increment view count if found (async, don't block)
     if (playground) {
-      await prisma.playgrounds.update({
-        where: { id },
-        data: { view_count: { increment: 1 } },
-      });
+      prisma.playgrounds
+        .update({
+          where: { id },
+          data: { view_count: { increment: 1 } },
+        })
+        .catch((err) => console.error('Failed to increment view count:', err));
     }
 
     return playground;
@@ -61,14 +55,21 @@ async function getPlayground(id: string) {
 export default async function PlaygroundPage({ params }: PageProps) {
   const { id } = await params;
   const session = await auth();
-  const playground = await getPlayground(id);
+
+  const isAdmin = session?.user?.role === 'admin';
+  const userId = session?.user?.id;
+
+  // Load playground from database
+  const playground = await getPlaygroundFromDB(id);
 
   if (!playground) {
     notFound();
   }
 
-  // Check access permissions
-  if (!playground.is_public && playground.created_by !== session?.user?.id) {
+  const isOwner = userId === playground.created_by;
+
+  // Check access permissions for private playgrounds
+  if (!playground.is_public && !isOwner && !isAdmin) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4">
         <div className="text-center">
@@ -89,161 +90,70 @@ export default async function PlaygroundPage({ params }: PageProps) {
     );
   }
 
-  const isOwner = session?.user?.id === playground.created_by;
-  const isFaculty =
-    session?.user?.role === 'faculty' || session?.user?.role === 'admin';
+  // Edit permission: owner OR admin (not all faculty!)
+  const canEdit = isOwner || isAdmin;
 
-  // Convert requirements array to dependencies object for Sandpack
-  const dependencies = arrayToDependencies(playground.requirements || []);
+  // Fork permission: faculty/admin who is NOT the owner, viewing a public playground
+  const isFacultyOrAdmin = session?.user?.role === 'faculty' || session?.user?.role === 'admin';
+  const canFork = isFacultyOrAdmin && !isOwner && playground.is_public;
 
-  // Get category label
-  const categoryLabel =
-    CATEGORY_LABELS[playground.category as keyof typeof CATEGORY_LABELS] ||
-    playground.category.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  // Version history: owner or admin can view
+  const canViewHistory = isOwner || isAdmin;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
-      {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <Link
-              href="/playgrounds"
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Playgrounds
-            </Link>
-            {(isOwner || isFaculty) && (
-              <Link
-                href={`/playgrounds/builder?edit=${id}`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-neural-primary text-white rounded-lg hover:bg-neural-primary/90 transition-colors text-sm font-medium"
-              >
-                <Edit className="h-4 w-4" />
-                Edit Playground
-              </Link>
-            )}
-          </div>
-
-          {/* Title and Description */}
-          <h1 className="text-3xl font-bold text-white mb-2">{playground.title}</h1>
-          {playground.description && (
-            <p className="text-lg text-gray-400 mb-4">{playground.description}</p>
-          )}
-
-          {/* Metadata */}
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Author */}
-            <div className="flex items-center gap-2">
-              {playground.author.avatar_url ? (
-                <Image
-                  src={playground.author.avatar_url}
-                  alt={playground.author.name}
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
-              ) : (
-                <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-300">
-                    {playground.author.name.charAt(0)}
-                  </span>
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-medium text-white">{playground.author.name}</p>
-                {playground.author.university && (
-                  <p className="text-xs text-gray-500">{playground.author.university}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Category */}
-            <span className="px-3 py-1 bg-neural-primary/20 text-neural-primary rounded-full text-sm font-medium">
-              {categoryLabel}
-            </span>
-
-            {/* Dependencies */}
-            {playground.requirements && playground.requirements.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Package className="h-4 w-4 text-gray-500" />
-                <div className="flex flex-wrap gap-1">
-                  {playground.requirements.slice(0, 4).map((req) => (
-                    <span
-                      key={req}
-                      className="px-2 py-0.5 bg-gray-800 text-gray-400 rounded text-xs font-mono"
-                    >
-                      {req}
-                    </span>
-                  ))}
-                  {playground.requirements.length > 4 && (
-                    <span className="px-2 py-0.5 bg-gray-800 text-gray-500 rounded text-xs">
-                      +{playground.requirements.length - 4} more
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Stats */}
-            <div className="flex items-center gap-4 text-sm text-gray-500 ml-auto">
-              <span className="flex items-center gap-1">
-                <Eye className="h-4 w-4" />
-                {playground.view_count} views
-              </span>
-              <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {new Date(playground.created_at).toLocaleDateString()}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content - Full-width Preview */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Suspense
-          fallback={
-            <div className="bg-[#0a0a0f] rounded-lg border border-gray-800 p-12 text-center flex items-center justify-center" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
-              <div>
-                <div className="w-8 h-8 border-2 border-neural-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-gray-400">Loading playground...</p>
-              </div>
-            </div>
-          }
-        >
-          <div className="rounded-lg border border-gray-800 overflow-hidden" style={{ height: 'calc(100vh - 280px)', minHeight: '500px' }}>
-            <PlaygroundViewerClient
-              code={playground.source_code || ''}
-              dependencies={dependencies}
-              showConsole={true}
-              className="h-full"
-            />
-          </div>
-        </Suspense>
-
-        {/* Additional Info */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Template Info */}
-          {playground.template && (
-            <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
-              <h3 className="text-lg font-semibold text-white mb-2">Based on Template</h3>
-              <p className="text-gray-400">
-                <span className="font-medium text-gray-300">{playground.template.name}</span>{' '}
-                - {playground.template.category.replace(/_/g, ' ')}
-              </p>
-            </div>
-          )}
-
-          {/* Author Info */}
-          {playground.author.speciality && (
-            <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
-              <h3 className="text-lg font-semibold text-white mb-2">About the Author</h3>
-              <p className="text-gray-400">{playground.author.speciality}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <UnifiedPlaygroundViewer
+      title={playground.title}
+      sourceCode={playground.source_code || ''}
+      dependencies={arrayToDependencies(playground.requirements || [])}
+      playgroundId={playground.id}
+      description={playground.description || undefined}
+      author={
+        playground.author
+          ? {
+              name: playground.author.name,
+              avatar: playground.author.avatar_url || undefined,
+              university: playground.author.university || undefined,
+            }
+          : undefined
+      }
+      stats={{
+        viewCount: playground.view_count,
+        createdAt: playground.created_at,
+      }}
+      category={playground.category}
+      requirementsList={playground.requirements || undefined}
+      canEdit={canEdit}
+      editUrl={`/playgrounds/builder?edit=${id}`}
+      canFork={canFork}
+      canViewHistory={canViewHistory}
+      isFeatured={playground.is_featured}
+      isProtected={playground.is_protected}
+    />
   );
+}
+
+// Generate dynamic metadata
+export async function generateMetadata({ params }: PageProps) {
+  const { id } = await params;
+
+  try {
+    const playground = await prisma.playgrounds.findUnique({
+      where: { id },
+      select: { title: true, description: true },
+    });
+
+    if (playground) {
+      return {
+        title: `${playground.title} | Playground`,
+        description: playground.description || 'Interactive educational playground',
+      };
+    }
+  } catch {
+    // Ignore errors
+  }
+
+  return {
+    title: 'Playground - BCS E-Textbook',
+    description: 'Interactive educational playground',
+  };
 }

@@ -94,7 +94,7 @@ const nextConfig: NextConfig = {
             // Connect sources: includes Sandpack bundler, esm.sh, and npm registry for dependency resolution
             "connect-src 'self' https://www.google-analytics.com https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://va.vercel-scripts.com https://*.codesandbox.io https://esm.sh https://registry.npmjs.org https://esm.run",
             // Frame sources: Sandpack preview iframe
-            "frame-src 'self' https://shinylive.io https://*.codesandbox.io",
+            "frame-src 'self' https://*.codesandbox.io",
             "media-src 'self' blob:",
             "worker-src 'self' blob:",
             "object-src 'none'",

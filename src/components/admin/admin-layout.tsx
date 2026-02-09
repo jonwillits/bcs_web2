@@ -4,6 +4,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserCircle, Users, FileText, Shield, BarChart3, Activity, Menu, X } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -54,17 +60,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {/* Mobile Menu Toggle */}
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
-                aria-label="Toggle menu"
-              >
-                {sidebarOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-              </button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+                      aria-label="Toggle menu"
+                    >
+                      {sidebarOpen ? (
+                        <X className="h-6 w-6" />
+                      ) : (
+                        <Menu className="h-6 w-6" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Toggle menu</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <h1 className="text-xl sm:text-2xl font-bold">Admin Dashboard</h1>
             </div>
             <Link

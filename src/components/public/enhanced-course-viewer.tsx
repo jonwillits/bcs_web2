@@ -383,17 +383,17 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                 <NeuralButton
                   variant="outline"
                   size="sm"
-                  aria-label="View Quest Map"
+                  aria-label="View Course Map"
                   className="hidden sm:inline-flex"
                 >
                   <Map className="h-4 w-4 mr-2" />
-                  Quest Map
+                  Course Map
                 </NeuralButton>
                 {/* Mobile: Show icon only */}
                 <NeuralButton
                   variant="outline"
                   size="sm"
-                  aria-label="View Quest Map"
+                  aria-label="View Course Map"
                   className="sm:hidden"
                 >
                   <Map className="h-4 w-4" />

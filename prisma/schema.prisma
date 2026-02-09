@@ -214,6 +214,7 @@ model users {
   sessions             sessions[]
   playgrounds          playgrounds[]
   playground_templates playground_templates[]
+  playground_versions  playground_versions[] @relation("VersionAuthor")
 
   // Collaboration relations
   course_collaborations_as_user    course_collaborators[]   @relation("CourseCollaborator")
@@ -255,12 +256,12 @@ model playground_templates {
   category    String // neural_networks, physics, algorithms, data_viz, etc.
   thumbnail   String?
 
-  // App type (shinylive, pyodide, etc.)
-  app_type String @default("shinylive")
+  // App type
+  app_type String @default("sandpack")
 
-  // Shinylive fields (primary approach)
-  source_code  String?  @db.Text // Full Shiny app.py code
-  requirements String[] @default([]) // Python packages (e.g., ["plotly", "numpy"])
+  // Code fields
+  source_code  String?  @db.Text // React/JS source code
+  requirements String[] @default([]) // npm packages (e.g., ["three", "recharts"])
 
   // Legacy fields (optional, for backward compatibility)
   default_controls      Json? // ControlConfig[] (deprecated)
@@ -297,17 +298,23 @@ model playgrounds {
   category    String
 
   // Ownership & Permissions
-  created_by      String
+  created_by      String? // Nullable for system-seeded templates
   organization_id String?
   is_public       Boolean @default(false)
   share_url       String  @unique @default(cuid())
 
-  // App type (shinylive, pyodide, etc.)
-  app_type String @default("shinylive")
+  // Featured & Protection (for unified template system)
+  is_featured  Boolean   @default(false) // Shows in Featured section
+  is_protected Boolean   @default(false) // Core content, can't be deleted
+  featured_at  DateTime?                 // When admin featured it
+  featured_by  String?                   // Admin who featured it
 
-  // Shinylive fields (primary approach)
-  source_code  String?  @db.Text // Full Shiny app.py code
-  requirements String[] @default([]) // Python packages
+  // App type
+  app_type String @default("sandpack")
+
+  // Code fields
+  source_code  String?  @db.Text // React/JS source code
+  requirements String[] @default([]) // npm packages
 
   // Template & Configuration
   template_id String?
@@ -326,19 +333,54 @@ model playgrounds {
   fork_count Int    @default(0)
   rating     Float?
 
+  // Fork lineage
+  forked_from String? // References source playground ID
+
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
   // Relations
-  author   users                 @relation(fields: [created_by], references: [id], onDelete: Cascade)
-  template playground_templates? @relation(fields: [template_id], references: [id], onDelete: SetNull)
+  author              users?                @relation(fields: [created_by], references: [id], onDelete: SetNull)
+  template            playground_templates? @relation(fields: [template_id], references: [id], onDelete: SetNull)
+  versions            playground_versions[]
+  original_playground playgrounds?          @relation("PlaygroundForks", fields: [forked_from], references: [id], onDelete: SetNull)
+  forked_playgrounds  playgrounds[]         @relation("PlaygroundForks")
 
   @@index([created_by])
   @@index([template_id])
   @@index([category])
   @@index([is_public])
+  @@index([is_featured])
   @@index([share_url])
   @@index([app_type])
+  @@index([forked_from])
+}
+
+// Playground version history for undo/revert functionality
+model playground_versions {
+  id            String @id @default(cuid())
+  playground_id String
+  version       Int // Sequential version number
+
+  // Snapshot of content at this version
+  title        String
+  description  String   @db.Text
+  source_code  String   @db.Text
+  requirements String[] @default([])
+
+  // Metadata
+  created_by String? // Who made this change
+  created_at DateTime @default(now())
+  change_note String?  @db.Text // Optional note about what changed
+  save_type   String   @default("manual") // "manual" | "auto" | "fork_source"
+
+  // Relations
+  playground playgrounds @relation(fields: [playground_id], references: [id], onDelete: Cascade)
+  author     users?      @relation("VersionAuthor", fields: [created_by], references: [id], onDelete: SetNull)
+
+  @@unique([playground_id, version])
+  @@index([playground_id, created_at(sort: Desc)])
+  @@index([created_by])
 }
 
 // ==================== COLLABORATION MODELS ====================

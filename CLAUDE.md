@@ -111,13 +111,14 @@ import Image from 'next/image'
 
 ```
 src/
-├── app/                      # Next.js 15 App Router (26 pages)
-│   ├── api/                  # API Routes (17 endpoints)
+├── app/                      # Next.js 15 App Router
+│   ├── api/                  # API Routes
 │   │   ├── auth/            # Authentication (login, register, verify-email, reset-password)
 │   │   ├── courses/         # Course CRUD + by-slug endpoint
 │   │   ├── modules/         # Module CRUD (supports pagination)
 │   │   ├── profile/         # User profile (GET/PUT)
 │   │   ├── playgrounds/     # Playground CRUD
+│   │   ├── admin/           # Admin endpoints (seed-templates, etc.)
 │   │   └── public/          # Public API (network visualization)
 │   ├── faculty/             # Faculty dashboard
 │   │   ├── courses/         # Course management
@@ -128,41 +129,34 @@ src/
 │   │   ├── [userId]/        # View profile
 │   │   └── edit/            # Edit own profile
 │   ├── playgrounds/         # Interactive playgrounds
-│   │   ├── [id]/            # View playground
-│   │   └── builder/         # Builder interface
+│   │   ├── [id]/            # View playground (unified for templates + community)
+│   │   └── builder/         # Builder interface (React/Sandpack)
 │   ├── auth/                # Auth pages (login, register, etc.)
 │   ├── modules/[slug]/      # Public module viewer
-│   ├── network/             # Network visualization
-│   └── python/              # Python playground demo
+│   └── network/             # Network visualization
 │
-├── components/              # 65+ React components
+├── components/              # React components
 │   ├── ui/                  # Radix UI primitives + shadcn
 │   ├── faculty/             # Faculty dashboard components
 │   ├── public/              # Public-facing (course-catalog, course-viewer, etc.)
-│   ├── playground/          # Playground system
-│   │   ├── builder/         # Builder UI components
-│   │   └── controls/        # Interactive controls (Slider, Button, etc.)
-│   ├── python/              # Python execution components
+│   ├── react-playground/    # React/Sandpack playground system
+│   │   ├── ReactPlaygroundBuilder.tsx  # Builder UI
+│   │   ├── UnifiedPlaygroundViewer.tsx # Viewer component
+│   │   └── PlaygroundInfoDrawer.tsx    # Info drawer
 │   ├── visualization/       # React Flow network graphs
 │   ├── auth/                # Authentication forms
 │   └── layout/              # Layout components
 │
 ├── lib/                     # Core utilities and services
 │   ├── auth/                # NextAuth v5 configuration
-│   ├── playground/          # Playground execution engine & parameter binder
+│   ├── react-playground/    # Playground templates and utilities
+│   │   └── templates.ts     # Featured template definitions
 │   ├── db.ts               # Prisma client singleton
-│   ├── pyodide-loader.ts   # Python runtime (Pyodide) loader
-│   ├── turtle-manager.ts   # Canvas graphics for simulations
-│   ├── web-turtle.ts       # Basic turtle graphics
 │   ├── retry.ts            # Database retry logic for serverless
 │   └── email.ts            # Email sending utilities
 │
-├── templates/               # Playground templates
-│   ├── index.ts            # Template registry
-│   └── braitenberg-vehicles.ts  # Example template
-│
 └── types/
-    └── playground.ts        # Playground TypeScript definitions
+    └── react-playground.ts  # Playground TypeScript definitions
 ```
 
 ### Custom Design System
@@ -193,16 +187,16 @@ return { items, pagination: { page, limit, totalCount, totalPages: Math.ceil(tot
 ```
 
 ### Interactive Playgrounds
-The playground system uses:
-- **Parameter Binder**: Connects UI controls to Python/JS variables
-- **Execution Engine**: Runs code via Pyodide (Python in browser)
-- **Turtle Manager**: Provides canvas graphics for simulations
-- **Templates**: Predefined playground configurations in `/src/templates/`
+The playground system uses React and Sandpack for interactive code demos:
+- **Sandpack**: CodeSandbox's in-browser bundler for React/JS
+- **Templates**: Predefined configurations in `/src/lib/react-playground/templates.ts`
+- **Unified Viewer**: Single route for all playgrounds (featured + community)
+- **Database-backed**: Templates seeded to database with `is_featured` flag
 
 Key files:
-- `/src/lib/playground/parameter-binder.ts` - Two-way data binding
-- `/src/lib/playground/execution-engine.ts` - Code execution
-- `/src/components/playground/PlaygroundRenderer.tsx` - Main renderer
+- `/src/lib/react-playground/templates.ts` - Featured template definitions
+- `/src/components/react-playground/UnifiedPlaygroundViewer.tsx` - Viewer
+- `/src/components/react-playground/ReactPlaygroundBuilder.tsx` - Builder
 
 ### React Hook Dependencies
 When modifying playground components, ensure proper dependency arrays:
@@ -265,11 +259,9 @@ See `/docs/EMAIL_SETUP_GUIDE.md` for detailed setup instructions.
 
 4. **Email Configuration**: Must add `RESEND_API_KEY` and verify domain for production. Development can use `onboarding@resend.dev`.
 
-5. **Content Security Policy**: Python playgrounds require specific CSP headers for Pyodide (see `next.config.ts`).
+5. **Image Domains**: External images must be added to `remotePatterns` in `next.config.ts`.
 
-6. **Image Domains**: External images must be added to `remotePatterns` in `next.config.ts`.
-
-7. **Prisma Client**: Generated client is gitignored. Always run `prisma generate` after pulling schema changes.
+6. **Prisma Client**: Generated client is gitignored. Always run `prisma generate` after pulling schema changes.
 
 ## Recent Features & Current Status
 
@@ -278,7 +270,7 @@ See `/docs/EMAIL_SETUP_GUIDE.md` for detailed setup instructions.
 2. **Pagination** - Course catalog (20/page) and module library (50/page) with smart page controls
 3. **Enhanced Course View** - Overview section and instructor display when no module selected
 4. **Optimized Layouts** - Module content maximized with fixed 280px sidebar
-5. **Interactive Playgrounds** - Python execution with Pyodide, parameter binding, template system
+5. **Interactive Playgrounds** - React/Sandpack playgrounds with featured templates and community submissions
 6. **Email Verification** - User account verification via Resend
 7. **Password Reset** - Forgot password functionality via Resend
 
@@ -322,20 +314,13 @@ The project uses manual testing. When adding features:
 
 **All documentation is in `/docs` directory** (not root). Key files:
 
-- `TECHNICAL_DOCUMENTATION.md` - Full architecture details
-- `FACULTY_USER_GUIDE.md` - End-user guide for educators
-- `PLAYGROUND_BUILDER_ARCHITECTURE.md` - Playground system design
-- `PLAYGROUND_QUICK_START.md` - Getting started with playgrounds
-- `PLAYGROUND_TESTING_GUIDE.md` - Testing interactive components
-- `IMPLEMENTATION_STATUS.md` - Current development status
-- `Development_Guide.md` - Developer onboarding
-- `DEPLOYMENT_GUIDE.md` - Deployment instructions
-- `PRODUCTION_DEPLOYMENT_GUIDE.md` - Production-specific guidance
-- `TESTING_GUIDE.md` - Testing procedures
-- `MOBILE_RESPONSIVENESS.md` - Mobile optimization details
+- `DATABASE_MIGRATION_GUIDE.md` - Database migration workflow
+- `DEV_PROD_WORKFLOW.md` - Development and production workflow
+- `EMAIL_SETUP_GUIDE.md` - Resend email configuration
+- `FEATURE_PROPOSALS.md` - Feature proposals and ideas
+- `MANUAL_TESTING_GUIDE.md` - Manual testing procedures
+- `TESTING_CHECKLIST.md` - Comprehensive testing checklist
 - `UNIVERSITY_OF_ILLINOIS_BRANDING.md` - Design guidelines
-
-**Note**: Outdated files have been removed. All AI development prompts, task reports, and debug documentation have been cleaned up.
 
 ## Environment Setup
 

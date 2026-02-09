@@ -6,7 +6,6 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import type { PlaygroundFormData, PlaygroundCategory } from '@/types/react-playground';
-import { PLAYGROUND_TEMPLATES, getTemplateById } from '@/lib/react-playground/templates';
 
 // Lazy load the builder to reduce initial bundle size
 const ReactPlaygroundBuilder = dynamic(
@@ -67,8 +66,9 @@ function PlaygroundBuilderContent() {
   const isNew = searchParams.get('new') === 'true';
   const { data: session, status } = useSession();
 
-  const [loading, setLoading] = useState(!!editId);
+  const [loading, setLoading] = useState(!!editId || !!templateId);
   const [existingPlayground, setExistingPlayground] = useState<any>(null);
+  const [templatePlayground, setTemplatePlayground] = useState<any>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   // Check if user is faculty/admin
@@ -89,10 +89,26 @@ function PlaygroundBuilderContent() {
 
   // Load existing playground if editing
   useEffect(() => {
-    if (editId) {
+    if (editId && session?.user) {
       fetch(`/api/playgrounds/${editId}`)
         .then((res) => res.json())
         .then((data) => {
+          if (data.error) {
+            alert(data.error);
+            router.push('/playgrounds');
+            return;
+          }
+
+          // Check if user has permission to edit
+          const isOwner = data.created_by === session.user.id;
+          const isAdmin = session.user.role === 'admin';
+
+          if (!isOwner && !isAdmin) {
+            alert('You do not have permission to edit this playground');
+            router.push(`/playgrounds/${editId}`);
+            return;
+          }
+
           setExistingPlayground(data);
           setLoading(false);
         })
@@ -102,10 +118,28 @@ function PlaygroundBuilderContent() {
           setLoading(false);
         });
     }
-  }, [editId]);
+  }, [editId, session?.user, router]);
 
-  // Get template if specified
-  const template = templateId ? getTemplateById(templateId) : null;
+  // Load template if starting from a template (creates new playground with template data)
+  useEffect(() => {
+    if (templateId && !editId) {
+      fetch(`/api/playgrounds/${templateId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.error) {
+            console.error('Failed to load template:', data.error);
+            setLoading(false);
+            return;
+          }
+          setTemplatePlayground(data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('Failed to load template:', error);
+          setLoading(false);
+        });
+    }
+  }, [templateId, editId]);
 
   // Clear localStorage draft when creating new playground
   useEffect(() => {
@@ -125,13 +159,14 @@ function PlaygroundBuilderContent() {
           dependencies: existingPlayground.requirements || [],
         }
       : undefined
-    : template
+    : templatePlayground
     ? {
-        title: template.name,
-        description: template.description,
-        category: template.category,
-        sourceCode: template.sourceCode,
-        dependencies: template.dependencies,
+        // When using a template, give it a new title so user knows it's a copy
+        title: `${templatePlayground.title} (Copy)`,
+        description: templatePlayground.description,
+        category: templatePlayground.category as PlaygroundCategory,
+        sourceCode: templatePlayground.source_code,
+        dependencies: templatePlayground.requirements || [],
       }
     : isNew
     ? {

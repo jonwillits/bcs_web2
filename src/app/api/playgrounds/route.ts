@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const isPublic = searchParams.get('public');
     const createdBy = searchParams.get('createdBy');
+    const featured = searchParams.get('featured');
 
     const skip = (page - 1) * limit;
 
@@ -26,6 +27,11 @@ export async function GET(request: NextRequest) {
 
     if (category) {
       where.category = category;
+    }
+
+    // Filter by featured status
+    if (featured !== null) {
+      where.is_featured = featured === 'true';
     }
 
     if (isPublic !== null) {
@@ -37,7 +43,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Only show public playgrounds unless user is authenticated
-    if (!session?.user) {
+    // Exception: if filtering by createdBy (user's own playgrounds)
+    if (!session?.user && !createdBy) {
       where.is_public = true;
     }
 
@@ -48,9 +55,10 @@ export async function GET(request: NextRequest) {
           where,
           skip,
           take: limit,
-          orderBy: {
-            created_at: 'desc',
-          },
+          orderBy: [
+            { is_featured: 'desc' }, // Featured first
+            { created_at: 'desc' },
+          ],
           include: {
             author: {
               select: {
@@ -116,7 +124,7 @@ export async function POST(request: NextRequest) {
       requirements,
       template_id,
       is_public,
-      app_type, // 'sandpack' (React/JS) or 'shinylive' (Python)
+      app_type, // 'sandpack' (React/JS)
     } = body;
 
     // Validation

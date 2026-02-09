@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Shield, Trash2, Mail } from 'lucide-react';
+import { Search, Shield, Trash2, Mail, Ban, UserCheck } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { NeuralButton } from '@/components/ui/neural-button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +69,10 @@ export default function AdminUsersManagement() {
   // Delete dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
+  // Suspend dialog state
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [userToSuspend, setUserToSuspend] = useState<User | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -165,6 +175,41 @@ export default function AdminUsersManagement() {
       console.error('Error deleting user:', error);
       toast.error('Delete Failed', {
         description: 'Failed to delete user. Please try again.',
+      });
+    }
+  };
+
+  const handleToggleUserStatus = async (user: User, newStatus: 'active' | 'suspended') => {
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: user.role,
+          account_status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error('Update Failed', {
+          description: error.error || 'Failed to update user status. Please try again.',
+        });
+        return;
+      }
+
+      toast.success('Success!', {
+        description: newStatus === 'suspended'
+          ? `${user.name} has been suspended.`
+          : `${user.name} has been reactivated.`,
+      });
+      setSuspendDialogOpen(false);
+      setUserToSuspend(null);
+      fetchUsers(); // Refresh list
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      toast.error('Update Failed', {
+        description: 'Failed to update user status. Please try again.',
       });
     }
   };
@@ -323,25 +368,69 @@ export default function AdminUsersManagement() {
                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="flex items-center justify-end space-x-2">
-                            <NeuralButton
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditUser(user)}
-                            >
-                              <Shield className="h-4 w-4" />
-                            </NeuralButton>
-                            <NeuralButton
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setUserToDelete(user);
-                                setDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-400" />
-                            </NeuralButton>
-                          </div>
+                          <TooltipProvider>
+                            <div className="flex items-center justify-end space-x-2">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <NeuralButton
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditUser(user)}
+                                  >
+                                    <Shield className="h-4 w-4" />
+                                  </NeuralButton>
+                                </TooltipTrigger>
+                                <TooltipContent>Edit user</TooltipContent>
+                              </Tooltip>
+
+                              {user.account_status === 'suspended' ? (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <NeuralButton
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleToggleUserStatus(user, 'active')}
+                                    >
+                                      <UserCheck className="h-4 w-4 text-green-500" />
+                                    </NeuralButton>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Reactivate user</TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <NeuralButton
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setUserToSuspend(user);
+                                        setSuspendDialogOpen(true);
+                                      }}
+                                    >
+                                      <Ban className="h-4 w-4 text-red-400" />
+                                    </NeuralButton>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Suspend user</TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <NeuralButton
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setUserToDelete(user);
+                                      setDeleteDialogOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-400" />
+                                  </NeuralButton>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete user</TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </TooltipProvider>
                         </td>
                       </tr>
                     ))}
@@ -468,6 +557,34 @@ export default function AdminUsersManagement() {
               className="bg-red-500/20 text-red-600 hover:bg-red-500/30"
             >
               Delete User
+            </NeuralButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend Dialog */}
+      <Dialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Suspend User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to suspend {userToSuspend?.name}? They will not be able to access their account.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <NeuralButton variant="ghost" onClick={() => {
+              setSuspendDialogOpen(false);
+              setUserToSuspend(null);
+            }}>
+              Cancel
+            </NeuralButton>
+            <NeuralButton
+              variant="ghost"
+              onClick={() => userToSuspend && handleToggleUserStatus(userToSuspend, 'suspended')}
+              className="bg-red-500/20 text-red-600 hover:bg-red-500/30"
+            >
+              Suspend
             </NeuralButton>
           </DialogFooter>
         </DialogContent>

@@ -15,7 +15,7 @@ A modern, responsive, and feature-rich e-textbook platform designed specifically
 - **Drag-and-Drop Interface**: Intuitive course building experience
 - **Real-Time Preview**: See exactly how students will experience content
 - **User Profiles**: Customizable faculty profiles with specialties and portfolios
-- **Interactive Playgrounds**: Build Python-based interactive simulations (Braitenberg Vehicles, etc.)
+- **Interactive Playgrounds**: Build React-based interactive simulations with Sandpack
 
 ### 👥 **For Students & Public Users**
 - **Enhanced Reading Experience**: Optimized for learning and comprehension
@@ -71,7 +71,7 @@ A modern, responsive, and feature-rich e-textbook platform designed specifically
 4. **Setup database**
    ```bash
    npm run db:generate    # Generate Prisma Client
-   npm run db:push        # Push schema to database (use this, not migrate)
+   npm run db:migrate:dev # Create and apply migrations (ALWAYS USE THIS)
    ```
 
 5. **Start development server**
@@ -99,15 +99,9 @@ A modern, responsive, and feature-rich e-textbook platform designed specifically
 - 📋 **[Development Guide](./docs/Development_Guide.md)** - Developer onboarding
 - 🧪 **[Testing Checklist](./docs/TESTING_CHECKLIST.md)** - Testing procedures
 
-### **Playground System**
-- 🎮 **[Playground Architecture](./docs/PLAYGROUND_BUILDER_ARCHITECTURE.md)** - System design
-- 🚀 **[Quick Start Guide](./docs/PLAYGROUND_QUICK_START.md)** - Get started with playgrounds
-- 🧪 **[Playground Testing](./docs/PLAYGROUND_TESTING_GUIDE.md)** - Testing interactive components
-- 📊 **[Implementation Status](./docs/IMPLEMENTATION_STATUS.md)** - Current development status
-
 ### **Additional Resources**
-- 📱 **[Mobile Responsiveness](./docs/MOBILE_RESPONSIVENESS.md)** - Cross-device compatibility
 - 🎨 **[University Branding](./docs/UNIVERSITY_OF_ILLINOIS_BRANDING.md)** - Design guidelines
+- 💡 **[Feature Proposals](./docs/FEATURE_PROPOSALS.md)** - Feature ideas and proposals
 
 ---
 
@@ -122,7 +116,7 @@ A modern, responsive, and feature-rich e-textbook platform designed specifically
 - **Rich Text**: Tiptap Editor
 - **Visualizations**: React Flow
 - **Forms**: React Hook Form + Zod Validation
-- **Python Runtime**: Pyodide (Python in browser)
+- **Playgrounds**: Sandpack (in-browser React/JS bundler)
 - **State Management**: Tanstack Query (React Query)
 
 ### **Backend**
@@ -313,7 +307,7 @@ Tech Stack: Next.js 15 + React 19 + PostgreSQL
 - ✅ **Pagination**: Efficient browsing for course catalog (20/page) and module library (50/page)
 - ✅ **Enhanced Course View**: Course overview and instructor sections with avatars
 - ✅ **Optimized Layouts**: Module pages maximized for content readability
-- ✅ **Interactive Playgrounds**: Python-based simulations with Pyodide runtime
+- ✅ **Interactive Playgrounds**: React-based simulations with Sandpack
 - ✅ **Email Verification**: Two-factor authentication for user accounts
 - ✅ **Password Reset**: Forgot password functionality
 
@@ -351,4 +345,3 @@ Tech Stack: Next.js 15 + React 19 + PostgreSQL
 ---
 
 *Built with ❤️ for the Brain & Cognitive Sciences community*
-# Trigger deployment

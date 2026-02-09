@@ -16,7 +16,8 @@
     "db:migrate:deploy": "npx prisma migrate deploy",
     "db:generate": "npx prisma generate",
     "seed:achievements": "npx tsx scripts/seed-achievements.ts",
-    "vercel:build": "prisma generate && prisma migrate deploy && npm run seed:achievements && next build",
+    "seed:playgrounds": "npx tsx scripts/seed-playgrounds.ts",
+    "vercel:build": "prisma generate && prisma migrate deploy && npm run seed:achievements && npm run seed:playgrounds && next build",
     "vercel:install": "npm install --legacy-peer-deps",
     "local:setup": "npm run db:generate && npm run db:push && npm run dev"
   },
@@ -81,7 +82,6 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
-    "lz-string": "^1.5.0",
     "medium-zoom": "^1.1.0",
     "monaco-editor": "^0.54.0",
     "next": "^15.5.7",
