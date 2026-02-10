@@ -52,6 +52,9 @@ database_backup*.sql
 .vscode/
 .idea/
 
+# Claude Code
+.claude/
+
 # MCP Servers
 .playwright-mcp/
 
