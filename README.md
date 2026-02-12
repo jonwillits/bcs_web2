@@ -1,347 +1,276 @@
-# 🧠 BCS E-Textbook Platform
+# BCS E-Textbook Platform
 
-## **Interactive Brain & Cognitive Sciences Learning Platform**
+**Interactive Brain & Cognitive Sciences Learning Platform**
 
-A modern, responsive, and feature-rich e-textbook platform designed specifically for Brain and Cognitive Sciences education. Built with Next.js 15, React 19, and cutting-edge visualization technologies.
+A modern e-textbook platform for Brain and Cognitive Sciences education. Built with Next.js 15, React 19, and PostgreSQL.
 
----
-
-## ✨ Features
-
-### 🎓 **For Faculty**
-- **Rich Content Creation**: Advanced text editor with multimedia support
-- **Modular Course Design**: Build courses from reusable learning modules
-- **Interactive Visualizations**: Graph-based course structure design tools
-- **Drag-and-Drop Interface**: Intuitive course building experience
-- **Real-Time Preview**: See exactly how students will experience content
-- **User Profiles**: Customizable faculty profiles with specialties and portfolios
-- **Interactive Playgrounds**: Build React-based interactive simulations with Sandpack
-
-### 👥 **For Students & Public Users**
-- **Enhanced Reading Experience**: Optimized for learning and comprehension
-- **Mobile-First Design**: Perfect experience on all devices
-- **Interactive Navigation**: Breadcrumbs, progress tracking, and smart linking
-- **Course Structure Visualization**: Understand learning pathways with network graphs
-- **Shareable Content**: Direct links to specific modules and sections
-- **Instructor Profiles**: View course creators and their expertise
-- **Paginated Browse**: Efficient browsing of large course catalogs
-
-### 🔧 **Technical Excellence**
-- **Modern Architecture**: Next.js 15 with App Router and React 19
-- **Type-Safe**: Full TypeScript implementation
-- **Responsive Design**: Tailwind CSS with custom neural design system
-- **Graph Visualizations**: Interactive course and module relationship mapping
-- **Performance Optimized**: Fast loading with excellent Core Web Vitals
-- **Accessible**: WCAG 2.1 AA compliant
+**Production**: [brainandcognitivescience.com](https://www.brainandcognitivescience.com/)
+**Development**: [bcs-web2.vercel.app](https://bcs-web2.vercel.app/)
 
 ---
 
-## 🚀 Quick Start
+## Features
+
+### For Faculty
+- **Rich Content Creation** - Tiptap rich text editor with multimedia support
+- **Modular Course Design** - Build courses from reusable, hierarchical learning modules
+- **Course Structure Visualization** - React Flow graph editor for course relationships
+- **Interactive Playgrounds** - Build React-based interactive simulations with Sandpack
+- **Collaboration** - Co-author courses and modules with other faculty, with activity feed
+- **Analytics** - Course enrollment, progress, and engagement statistics
+- **Curriculum Map Editor** - Visual course prerequisite and relationship mapping
+- **Quest Map Editor** - Gamified learning path design with XP, difficulty levels, and prerequisites
+- **Learning Path Curation** - Create multi-course learning sequences
+
+### For Students
+- **Course Enrollment & Progress** - Track progress through courses and modules
+- **Gamification** - Earn XP, unlock achievements, maintain streaks, and level up
+- **Interactive Playgrounds** - Explore featured simulations and fork them
+- **TensorFlow Playground** - Train neural networks with real-time visualization
+- **Learning Dashboard** - View enrolled courses, recent activity, and progress
+- **Course Map** - Visual overview of module prerequisites and learning paths
+- **Full-Text Search** - Search across courses, modules, and playgrounds
+
+### For Admins
+- **User Management** - View, edit, suspend, and manage all user accounts
+- **Faculty Approval** - Review and approve/decline faculty upgrade requests
+- **Content Moderation** - Moderate courses and modules across the platform
+- **Audit Logs** - Track all administrative actions
+- **Platform Analytics** - Usage statistics and engagement metrics
+
+---
+
+## Tech Stack
+
+### Frontend
+- **Framework**: Next.js 15.5 (App Router) + React 19.1
+- **Styling**: Tailwind CSS 3.4 + Custom Neural Design System
+- **Components**: Radix UI + shadcn/ui
+- **Rich Text**: Tiptap Editor
+- **Visualizations**: React Flow (graphs), Recharts (charts)
+- **Playgrounds**: Sandpack (in-browser React/JS bundler)
+- **Forms**: React Hook Form + Zod validation
+- **State**: TanStack Query (React Query)
+
+### Backend
+- **API**: Next.js API Routes (serverless)
+- **Database**: PostgreSQL (Supabase) with Prisma ORM 6.14
+- **Authentication**: NextAuth.js v5
+- **Email**: Resend (verification & password reset)
+- **File Storage**: Supabase Storage
+- **Security**: Row Level Security on all tables
+
+### Development
+- **Language**: TypeScript 5.8 (strict mode)
+- **Linting**: ESLint 9 + typescript-eslint
+- **Build**: Turbopack (dev), Next.js (prod)
+- **Deployment**: Vercel (auto-deploy on push to `main`)
+
+---
+
+## Quick Start
 
 ### Prerequisites
-- **Node.js** 18.0 or higher
-- **PostgreSQL** 12.0 or higher
-- **npm** or **yarn** package manager
+- Node.js >= 18.17
+- PostgreSQL 12+
+- npm >= 8.0
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/RITIKHARIANI/bcs_web2.git
-   cd bcs-etextbook-redesigned
-   ```
+```bash
+git clone https://github.com/RITIKHARIANI/bcs_web2.git
+cd bcs-etextbook-redesigned
+npm install
+```
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### Environment Variables
 
-3. **Setup environment variables**
-   ```bash
-   # Copy .env to .env.local and configure:
-   # - DATABASE_URL (PostgreSQL connection)
-   # - NEXTAUTH_URL (http://localhost:3000)
-   # - NEXTAUTH_SECRET (generate with: openssl rand -base64 32)
-   # - EMAIL_PROVIDER (console for dev, resend for production)
-   # - RESEND_API_KEY (get from https://resend.com)
-   # - EMAIL_FROM (onboarding@resend.dev for dev, verified domain for prod)
-   # - EMAIL_FROM_NAME (BCS E-Textbook)
-   ```
-
-4. **Setup database**
-   ```bash
-   npm run db:generate    # Generate Prisma Client
-   npm run db:migrate:dev # Create and apply migrations (ALWAYS USE THIS)
-   ```
-
-5. **Start development server**
-   ```bash
-   npm run dev            # Uses Turbopack for fast refresh
-   ```
-
-6. **Open your browser**
-   ```
-   http://localhost:3000
-   ```
-
----
-
-## 📖 Documentation
-
-### **User Guides**
-- 📘 **[Faculty User Guide](./docs/FACULTY_USER_GUIDE.md)** - Complete guide for educators
-- 📧 **[Email Setup Guide](./docs/EMAIL_SETUP_GUIDE.md)** - Resend email configuration
-
-### **Technical Documentation**
-- 🤖 **[CLAUDE.md](./CLAUDE.md)** - AI-assisted development guide
-- 🔧 **[Technical Documentation](./docs/TECHNICAL_DOCUMENTATION.md)** - Architecture and development details
-- 🔄 **[Dev/Prod Workflow](./docs/DEV_PROD_WORKFLOW.md)** - Fork-based development & deployment workflow
-- 📋 **[Development Guide](./docs/Development_Guide.md)** - Developer onboarding
-- 🧪 **[Testing Checklist](./docs/TESTING_CHECKLIST.md)** - Testing procedures
-
-### **Additional Resources**
-- 🎨 **[University Branding](./docs/UNIVERSITY_OF_ILLINOIS_BRANDING.md)** - Design guidelines
-- 💡 **[Feature Proposals](./docs/FEATURE_PROPOSALS.md)** - Feature ideas and proposals
-
----
-
-## 🛠️ Technology Stack
-
-### **Frontend**
-- **Framework**: Next.js 15.5.0 with App Router
-- **UI Library**: React 19.1.0
-- **Styling**: Tailwind CSS 3.4 + Custom Neural Design System
-- **Components**: Radix UI + shadcn/ui
-- **Icons**: Lucide React
-- **Rich Text**: Tiptap Editor
-- **Visualizations**: React Flow
-- **Forms**: React Hook Form + Zod Validation
-- **Playgrounds**: Sandpack (in-browser React/JS bundler)
-- **State Management**: Tanstack Query (React Query)
-
-### **Backend**
-- **API**: Next.js API Routes (Edge & Serverless)
-- **Database**: PostgreSQL with Prisma ORM 6.14
-- **Authentication**: NextAuth.js v5 (beta.29)
-- **Email Service**: Resend (email verification & password reset)
-- **Session Management**: JWT-based sessions
-- **Data Fetching**: Server Components + API Routes
-
-### **Development Tools**
-- **Language**: TypeScript 5.8
-- **Build Tool**: Turbopack (Next.js built-in)
-- **Linting**: ESLint 9 + typescript-eslint
-- **Package Manager**: npm
-- **Version Control**: Git + GitHub
-
----
-
-## 🌟 Key Features Deep Dive
-
-### **🎨 Neural-Inspired Design System**
-Our custom design system takes inspiration from neural networks and cognitive science principles:
-- **Neural Color Palette**: Blues and purples representing synaptic connections
-- **Organic Shapes**: Rounded corners and flowing layouts
-- **Interactive Elements**: Hover effects mimicking neural activation
-- **Accessibility First**: High contrast, keyboard navigation, screen reader support
-
-### **📊 Interactive Graph Visualizations**
-Revolutionary course design and navigation tools:
-- **Course Structure Editor**: Drag-and-drop interface for building learning pathways
-- **Module Relationship Viewer**: Understand how content connects across courses
-- **Student Navigation Aid**: Visual course maps help learners understand their journey
-
-### **📱 Mobile-Optimized Experience**
-Perfect learning experience on any device:
-- **Touch-Friendly Interface**: 44px minimum touch targets
-- **Responsive Typography**: Optimized reading experience at any size
-- **Offline-Ready Architecture**: Progressive enhancement for low connectivity
-- **Fast Performance**: Sub-3-second load times on mobile networks
-
-### **🔒 Enterprise-Grade Security**
-Built with security as a foundation:
-- **Authentication**: Secure session management with NextAuth.js
-- **Authorization**: Role-based access control
-- **Data Protection**: Prisma ORM prevents SQL injection
-- **Input Validation**: Comprehensive validation on all user inputs
-
----
-
-## 📈 Performance Metrics
-
-### **Core Web Vitals**
-- **Largest Contentful Paint (LCP)**: < 2.5s
-- **First Input Delay (FID)**: < 100ms
-- **Cumulative Layout Shift (CLS)**: < 0.1
-
-### **Loading Performance**
-- **Homepage**: 1.8s average load time
-- **Course Pages**: 2.4s average load time
-- **Rich Text Editor**: 1.4s initialization
-- **Graph Visualizations**: 3.8s render time
-
-### **Bundle Optimization**
-- **Initial JavaScript Bundle**: 102 kB (excellent)
-- **Code Splitting**: Automatic route-based splitting
-- **Tree Shaking**: Unused code elimination
-- **Image Optimization**: Next.js automatic optimization
-
----
-
-## 🧪 Quality Assurance
-
-### **Code Quality**
-- **TypeScript**: Strict mode with comprehensive type coverage
-- **ESLint**: Zero warnings in production builds
-- **Code Review**: All changes reviewed before merge
-- **Performance**: Regular Lighthouse audits
-
-### **Browser Support**
-- **Chrome**: Latest 2 versions ✅
-- **Firefox**: Latest 2 versions ✅
-- **Safari**: Latest 2 versions ✅
-- **Edge**: Latest 2 versions ✅
-- **Mobile Safari**: iOS 12+ ✅
-- **Chrome Mobile**: Android 8+ ✅
-
-### **Accessibility Compliance**
-- **WCAG 2.1 AA**: Full compliance
-- **Screen Readers**: Tested with NVDA, JAWS, VoiceOver
-- **Keyboard Navigation**: All features accessible
-- **High Contrast**: Support for system preferences
-
----
-
-## 🚀 Deployment
-
-### **Vercel (Production)**
-The platform is deployed on Vercel with automatic deployments from the `main` branch:
+Create a `.env` file with:
 
 ```bash
-# Deploy to production
-git push origin main  # Auto-deploys to Vercel
-
-# Manual deployment
-npm install -g vercel
-vercel --prod
+DATABASE_URL="postgresql://..."       # Transaction pooler (port 6543)
+DIRECT_URL="postgresql://..."         # Session pooler (port 5432, for migrations)
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret"        # openssl rand -base64 32
+EMAIL_PROVIDER="console"             # "console" for dev, "resend" for prod
+RESEND_API_KEY="re_..."              # Required for email sending
+EMAIL_FROM="onboarding@resend.dev"
+EMAIL_FROM_NAME="BCS E-Textbook"
 ```
 
-**Environment Variables Required**:
-- `DATABASE_URL` - PostgreSQL connection (use port 6543 for serverless)
-- `NEXTAUTH_URL` - Production domain URL
+### Database Setup
+
+```bash
+npm run db:generate       # Generate Prisma Client
+npm run db:migrate:dev    # Create and apply migrations
+npm run seed:achievements # Seed achievement definitions
+npm run seed:playgrounds  # Seed playground templates
+```
+
+### Development Server
+
+```bash
+npm run dev    # Start with Turbopack at http://localhost:3000
+```
+
+---
+
+## Project Structure
+
+```
+src/
+├── app/                          # Next.js 15 App Router
+│   ├── api/                      # ~65 API endpoints
+│   │   ├── achievements/         # Achievement listing & user achievements
+│   │   ├── admin/                # User mgmt, faculty requests, audit, analytics, content moderation
+│   │   ├── auth/                 # Register, login, verify-email, forgot/reset-password
+│   │   ├── courses/              # CRUD, enrollment, collaborators, by-slug, quest-map
+│   │   ├── curriculum/           # Curriculum map data
+│   │   ├── dashboard/            # Dashboard statistics
+│   │   ├── faculty/              # Analytics, student lists, layout endpoints
+│   │   ├── media/                # File upload/download (Supabase storage)
+│   │   ├── modules/              # CRUD, clone, collaborators, resources
+│   │   ├── paths/                # Learning path CRUD
+│   │   ├── playgrounds/          # CRUD, fork, versioning, revert
+│   │   ├── profile/              # User profile GET/PUT
+│   │   ├── progress/             # Module completion, course progress, streaks
+│   │   ├── public/               # Public course data, network visualization
+│   │   ├── search/               # Full-text search
+│   │   └── visualization/        # Course structure data
+│   ├── admin/                    # Admin pages (dashboard, users, content, audit, analytics)
+│   ├── auth/                     # Auth pages (login, register, verify, reset, pending)
+│   ├── courses/[slug]/           # Course viewer + module viewer + course map
+│   ├── curriculum/               # Curriculum map
+│   ├── faculty/                  # Faculty pages (courses, modules, paths, editors, profile)
+│   ├── student/                  # Student profile & progress
+│   ├── playgrounds/              # Playground gallery, viewer, builder, TensorFlow playground
+│   ├── modules/                  # Module browsing & standalone viewer
+│   ├── paths/                    # Learning paths
+│   ├── search/                   # Search results
+│   ├── learning/                 # Learning dashboard
+│   └── guide/                    # User guide
+│
+├── components/                   # ~120 React components
+│   ├── ui/                       # 25+ Radix/shadcn primitives
+│   ├── admin/                    # Admin dashboard components
+│   ├── auth/                     # Auth forms (unified registration w/ role-specific fields)
+│   ├── collaboration/            # Activity feed, collaborator panel
+│   ├── curriculum/               # Curriculum map views
+│   ├── editor/                   # Tiptap rich text editor
+│   ├── faculty/                  # Faculty dashboard, forms, analytics
+│   ├── layout/                   # App layout, responsive wrappers
+│   ├── learning/                 # Learning dashboard components
+│   ├── modules/                  # Module tree sidebar, navigation
+│   ├── progress/                 # Progress tracking UI
+│   ├── public/                   # Course catalog, course viewer, instructor sections
+│   ├── quest-map/                # Quest map visualization
+│   ├── react-playground/         # Sandpack builder, viewer, version history
+│   ├── search/                   # Search results UI
+│   ├── tensorflow-playground/    # Neural network playground (controls, visualization)
+│   └── visualization/            # React Flow graph viewers/editors
+│
+├── hooks/                        # Custom hooks (floating panel, media query, responsive)
+├── lib/                          # Utilities & services
+│   ├── achievements/             # Achievement definitions & checker
+│   ├── admin/                    # Audit logging
+│   ├── auth/                     # NextAuth v5 config, password utils
+│   ├── collaboration/            # Activity tracking, permissions
+│   ├── constants/                # Academic interests, faculty titles, majors
+│   ├── modules/                  # Hierarchy & tree utils
+│   ├── react-playground/         # Sandpack config
+│   ├── tensorflow-playground/    # Neural network engine
+│   ├── db.ts                     # Prisma singleton
+│   ├── email.ts                  # Email service (Resend)
+│   ├── retry.ts                  # DB retry for serverless
+│   ├── search.ts                 # Full-text search
+│   ├── storage.ts                # Supabase file storage
+│   └── utils.ts                  # General utilities
+├── types/                        # TypeScript definitions
+└── middleware.ts                  # Role-based route protection
+```
+
+### Database Schema (22 Models)
+
+| Category | Models |
+|---|---|
+| **Core Content** | `users`, `courses`, `modules`, `course_modules`, `module_media`, `media_files` |
+| **Playgrounds** | `playgrounds`, `playground_templates`, `playground_versions` |
+| **Collaboration** | `course_collaborators`, `module_collaborators`, `collaboration_activity` |
+| **Tracking** | `course_tracking`, `module_progress`, `learning_sessions` |
+| **Gamification** | `achievements`, `user_achievements`, `user_gamification_stats` |
+| **Admin/Auth** | `sessions`, `faculty_requests`, `admin_audit_logs` |
+| **Curriculum** | `learning_paths` |
+
+---
+
+## Available Scripts
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Start dev server with Turbopack |
+| `npm run build` | Production build (includes Prisma generation) |
+| `npm run lint` | Run ESLint |
+| `npm run db:migrate:dev` | Create and apply database migration |
+| `npm run db:generate` | Generate Prisma Client |
+| `npm run db:studio` | Open Prisma Studio |
+| `npm run seed:achievements` | Seed achievement definitions |
+| `npm run seed:playgrounds` | Seed playground templates (hash-based upsert) |
+| `npm run vercel:build` | Full Vercel build (generate + migrate + seed + build) |
+
+---
+
+## Deployment
+
+Deployed on **Vercel** with automatic deploys from the `main` branch.
+
+### Build Process
+1. `prisma generate` - Generate Prisma Client
+2. `prisma migrate deploy` - Apply pending migrations
+3. `seed:achievements` - Seed achievements
+4. `seed:playgrounds` - Seed playground templates (hash-based, preserves UI edits)
+5. `next build` - Build Next.js
+
+### Required Environment Variables
+- `DATABASE_URL` - PostgreSQL (transaction pooler, port 6543)
+- `DIRECT_URL` - PostgreSQL (session pooler, port 5432, for migrations)
+- `NEXTAUTH_URL` - Canonical URL
 - `NEXTAUTH_SECRET` - Secure random string
-- `EMAIL_PROVIDER` - Email service (`resend` for production)
-- `RESEND_API_KEY` - API key from Resend dashboard
-- `EMAIL_FROM` - Verified sender email (e.g., `noreply@yourdomain.com`)
-- `EMAIL_FROM_NAME` - Sender display name (e.g., `BCS E-Textbook`)
-
-See the [Development & Production Workflow Guide](./docs/DEV_PROD_WORKFLOW.md) for complete deployment instructions, including fork-based workflow, environment configuration, and domain setup.
+- `EMAIL_PROVIDER` - `resend` for production
+- `RESEND_API_KEY` - From [resend.com](https://resend.com)
+- `EMAIL_FROM` - Verified sender email
+- `EMAIL_FROM_NAME` - Display name
 
 ---
 
-## 🤝 Contributing
+## Documentation
 
-### **Development Workflow**
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes with tests
-4. Commit with conventional format: `feat(scope): description`
-5. Push and create a Pull Request
+All documentation is in the [`/docs`](./docs/) directory:
 
-### **Code Standards**
-- **TypeScript**: Strict mode enabled, no `any` types
-- **ESLint**: Must pass without errors or warnings
-- **Testing**: New features require test coverage
-- **Documentation**: Update relevant documentation files
-
-### **Getting Help**
-- 📧 **Email**: [support@bcsplatform.edu]
-- 💬 **Discussions**: GitHub Discussions tab
-- 🐛 **Bug Reports**: GitHub Issues with detailed reproduction steps
-- 💡 **Feature Requests**: GitHub Issues with use case description
+| File | Description |
+|---|---|
+| [DATABASE_MIGRATION_GUIDE.md](./docs/DATABASE_MIGRATION_GUIDE.md) | Database migration workflow |
+| [DEV_PROD_WORKFLOW.md](./docs/DEV_PROD_WORKFLOW.md) | Development and production workflow |
+| [EMAIL_SETUP_GUIDE.md](./docs/EMAIL_SETUP_GUIDE.md) | Resend email configuration |
+| [FEATURE_PROPOSALS.md](./docs/FEATURE_PROPOSALS.md) | Feature ideas and proposals |
+| [MANUAL_TESTING_GUIDE.md](./docs/MANUAL_TESTING_GUIDE.md) | Manual testing procedures |
+| [TESTING_CHECKLIST.md](./docs/TESTING_CHECKLIST.md) | Comprehensive testing checklist |
+| [UNIVERSITY_OF_ILLINOIS_BRANDING.md](./docs/UNIVERSITY_OF_ILLINOIS_BRANDING.md) | Design guidelines |
+| [USER_GUIDE.md](./docs/USER_GUIDE.md) | Platform user guide (also at `/guide`) |
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-### **Inspiration**
-- **Cognito Pathways UI**: Design inspiration and component patterns
-- **Neural Network Research**: Color palettes and visual metaphors
-- **Modern Educational Tools**: UX patterns and accessibility standards
-
-### **Built With Open Source**
-- [Next.js](https://nextjs.org/) - React framework
-- [React](https://reactjs.org/) - UI library
-- [Tailwind CSS](https://tailwindcss.com/) - Styling framework
-- [Prisma](https://prisma.io/) - Database toolkit
-- [NextAuth.js](https://next-auth.js.org/) - Authentication
-- [React Flow](https://reactflow.dev/) - Graph visualizations
-- [Radix UI](https://radix-ui.com/) - Primitive components
-
----
-
-## 📊 Project Statistics
+## Project Statistics
 
 ```
-Lines of Code: ~23,600
-TypeScript/React Files: 65+ components
-API Routes: 17 endpoints
-Database Models: 9 (users, courses, modules, playgrounds, etc.)
-Pages: 26 routes
-Documentation Files: 13
-Tech Stack: Next.js 15 + React 19 + PostgreSQL
+Database Models:    22
+API Endpoints:     ~65
+Page Routes:       ~45
+React Components:  ~120
+Prisma Migrations: 13
 ```
 
 ---
 
-## 🎯 Recent Updates
+**Version**: 2.0.0 | **Last Updated**: February 2025
 
-### **Latest Features (January 2025)**
-- ✅ **User Profile System**: Faculty profiles with portfolios, specialties, and course listings
-- ✅ **Pagination**: Efficient browsing for course catalog (20/page) and module library (50/page)
-- ✅ **Enhanced Course View**: Course overview and instructor sections with avatars
-- ✅ **Optimized Layouts**: Module pages maximized for content readability
-- ✅ **Interactive Playgrounds**: React-based simulations with Sandpack
-- ✅ **Email Verification**: Two-factor authentication for user accounts
-- ✅ **Password Reset**: Forgot password functionality
-
-### **Future Enhancements**
-- [ ] **Playground Templates**: Additional interactive simulation templates
-- [ ] **Student Progress Tracking**: Analytics and completion tracking
-- [ ] **Assessment Tools**: Built-in quizzes and evaluation features
-- [ ] **Collaboration Features**: Faculty peer review and co-authoring
-- [ ] **Advanced Analytics**: Usage patterns and learning insights
-- [ ] **Mobile Apps**: Native applications for iOS and Android
-
----
-
-## 📈 Success Metrics
-
-### **Platform Usage**
-- **Faculty Adoption**: 95% of BCS faculty actively creating content
-- **Student Engagement**: 40% improvement in course completion rates
-- **Performance**: 98% uptime with sub-3-second load times
-- **Accessibility**: 100% WCAG 2.1 AA compliance maintained
-
-### **Educational Impact**
-- **Content Quality**: Rich multimedia content in 100% of courses
-- **Learning Efficiency**: 25% reduction in time to competency
-- **Student Satisfaction**: 4.8/5 average rating
-- **Faculty Productivity**: 50% faster course creation process
-
----
-
-**Version**: 2.0.0
-**Last Updated**: January 2025
-**Status**: ✅ **Production Ready**
 **Repository**: [github.com/RITIKHARIANI/bcs_web2](https://github.com/RITIKHARIANI/bcs_web2)
-
----
-
-*Built with ❤️ for the Brain & Cognitive Sciences community*

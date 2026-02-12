@@ -4,12 +4,14 @@
  * Runs during deployment to ensure featured playground templates exist in the database.
  * This script can be executed via: npm run seed:playgrounds
  *
- * Default behavior: creates new templates, skips existing ones (preserves UI edits).
- * Use --force flag to update existing templates with source code from this file:
- *   npx tsx scripts/seed-playgrounds.ts --force
+ * Uses hash-based change detection:
+ * - Computes a SHA-256 hash of each template's content (sourceCode, name, description, category, dependencies)
+ * - On deploy, only upserts if the seed file's hash differs from the DB hash
+ * - UI-only edits made on the deployed site are preserved between deploys
  */
 
 import { PrismaClient } from '@prisma/client';
+import { createHash } from 'crypto';
 
 // Use DIRECT_URL for seeding (like migrations) to bypass PgBouncer
 const prisma = new PrismaClient({
@@ -19,6 +21,24 @@ const prisma = new PrismaClient({
     }
   }
 });
+
+/** Compute a SHA-256 hash of the template's key fields to detect seed file changes. */
+function computeTemplateHash(template: {
+  sourceCode: string;
+  name: string;
+  description: string;
+  category: string;
+  dependencies: string[];
+}): string {
+  const content = JSON.stringify({
+    sourceCode: template.sourceCode,
+    name: template.name,
+    description: template.description,
+    category: template.category,
+    dependencies: template.dependencies,
+  });
+  return createHash('sha256').update(content).digest('hex');
+}
 
 // Template definitions (duplicated from src/lib/react-playground/templates.ts to avoid import issues during build)
 // Keep these in sync with the source file
@@ -961,24 +981,23 @@ export default function App() {
 ];
 
 async function seedPlaygrounds() {
-  const forceUpdate = process.argv.includes('--force');
-
   try {
-    console.log('Starting playground template seeding...');
-    if (forceUpdate) console.log('   --force flag detected: will update existing templates');
+    console.log('Starting playground template seeding (hash-based)...');
 
     let created = 0;
     let updated = 0;
     let skipped = 0;
 
     for (const template of PLAYGROUND_TEMPLATES) {
+      const hash = computeTemplateHash(template);
+
       const existing = await prisma.playgrounds.findUnique({
         where: { id: template.id },
-        select: { id: true },
+        select: { id: true, source_hash: true },
       });
 
-      if (existing && !forceUpdate) {
-        console.log(`   Skipping "${template.name}" (already exists)`);
+      if (existing && existing.source_hash === hash) {
+        console.log(`   Skipping "${template.name}" (hash unchanged)`);
         skipped++;
         continue;
       }
@@ -991,6 +1010,7 @@ async function seedPlaygrounds() {
           category: template.category,
           source_code: template.sourceCode,
           requirements: template.dependencies || [],
+          source_hash: hash,
         },
         create: {
           id: template.id,
@@ -999,6 +1019,7 @@ async function seedPlaygrounds() {
           category: template.category,
           source_code: template.sourceCode,
           requirements: template.dependencies || [],
+          source_hash: hash,
           is_public: true,
           is_featured: true,
           is_protected: true,
@@ -1007,7 +1028,7 @@ async function seedPlaygrounds() {
       });
 
       if (existing) {
-        console.log(`   Updated "${template.name}"`);
+        console.log(`   Updated "${template.name}" (hash changed)`);
         updated++;
       } else {
         console.log(`   Created "${template.name}"`);
@@ -1018,7 +1039,7 @@ async function seedPlaygrounds() {
     console.log(`\nPlayground template seeding complete!`);
     console.log(`   - Created: ${created} new templates`);
     console.log(`   - Updated: ${updated} existing templates`);
-    console.log(`   - Skipped: ${skipped} existing templates`);
+    console.log(`   - Skipped: ${skipped} unchanged templates`);
 
     await prisma.$disconnect();
     process.exit(0);

@@ -306,6 +306,7 @@ model playgrounds {
   // Featured & Protection (for unified template system)
   is_featured  Boolean   @default(false) // Shows in Featured section
   is_protected Boolean   @default(false) // Core content, can't be deleted
+  source_hash  String?   // Hash of seed source code, used to detect seed file changes
   featured_at  DateTime?                 // When admin featured it
   featured_by  String?                   // Admin who featured it
 
