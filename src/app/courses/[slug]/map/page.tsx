@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import { auth } from '@/lib/auth/config';
 import { prisma } from '@/lib/db';
-import { QuestMapPublic } from '@/components/quest-map/QuestMapPublic';
-import { QuestMapAuthenticated } from '@/components/quest-map/QuestMapAuthenticated';
+import { CourseMapPublic } from '@/components/course-map/CourseMapPublic';
+import { CourseMapAuthenticated } from '@/components/course-map/CourseMapAuthenticated';
 import { redirect } from 'next/navigation';
 import { Header } from '@/components/Header';
 
@@ -23,23 +23,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!course) {
     return {
-      title: 'Quest Map - Course Not Found',
+      title: 'Course Map - Course Not Found',
       description: 'The requested course could not be found.'
     };
   }
 
   return {
-    title: `${course.title} - Quest Map`,
-    description: course.description || `Interactive quest map for ${course.title}`,
+    title: `${course.title} - Course Map`,
+    description: course.description || `Interactive course map for ${course.title}`,
     openGraph: {
-      title: `${course.title} - Learning Quest Map`,
+      title: `${course.title} - Course Map`,
       description: course.description || `Explore the learning journey for ${course.title}`,
       type: 'website'
     }
   };
 }
 
-export default async function QuestMapPage({ params }: PageProps) {
+export default async function CourseMapPage({ params }: PageProps) {
   const session = await auth();
   const { slug } = await params;
 
@@ -67,15 +67,15 @@ export default async function QuestMapPage({ params }: PageProps) {
     });
 
     if (enrollment) {
-      // User is enrolled - show personalized quest map
-      content = <QuestMapAuthenticated courseSlug={slug} userId={session.user.id} />;
+      // User is enrolled - show personalized course map
+      content = <CourseMapAuthenticated courseSlug={slug} userId={session.user.id} />;
     } else {
       // Not enrolled but authenticated - show public preview with enrollment CTA
-      content = <QuestMapPublic courseSlug={slug} isAuthenticated={true} />;
+      content = <CourseMapPublic courseSlug={slug} isAuthenticated={true} />;
     }
   } else {
     // Not logged in - show public preview with sign-in CTA
-    content = <QuestMapPublic courseSlug={slug} isAuthenticated={false} />;
+    content = <CourseMapPublic courseSlug={slug} isAuthenticated={false} />;
   }
 
   return (

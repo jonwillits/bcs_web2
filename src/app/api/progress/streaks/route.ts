@@ -8,7 +8,7 @@ import { withDatabaseRetry } from '@/lib/retry';
  * Get user's learning streak data and session history
  * Returns current streak, longest streak, and calendar heatmap data
  *
- * Quest Map Feature - Learning streaks endpoint
+ * Course Map Feature - Learning streaks endpoint
  */
 export async function GET(request: Request) {
   const session = await auth();

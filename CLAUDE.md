@@ -142,10 +142,10 @@ src/
 │   │   ├── achievements/         # Achievement listing & user achievements
 │   │   ├── admin/                # User management, faculty requests, audit logs, analytics, content moderation
 │   │   ├── auth/                 # Authentication (login, register, verify-email, reset-password)
-│   │   ├── courses/              # Course CRUD, enrollment, collaborators, by-slug, quest-map
-│   │   ├── curriculum/           # Curriculum map data
+│   │   ├── courses/              # Course CRUD, enrollment, collaborators, by-slug, course-map
+│   │   ├── program/              # Program map data
 │   │   ├── dashboard/            # Dashboard statistics
-│   │   ├── faculty/              # Faculty analytics, student lists, curriculum/quest-map layout
+│   │   ├── faculty/              # Faculty analytics, student lists, program/course-map layout
 │   │   ├── health/               # Health check
 │   │   ├── media/                # File upload/download (Supabase storage)
 │   │   ├── modules/              # Module CRUD, clone, collaborators, resources
@@ -162,13 +162,13 @@ src/
 │   ├── courses/[slug]/           # Public course viewer
 │   │   ├── [moduleSlug]/         # Module viewer within course
 │   │   └── map/                  # Course structure map
-│   ├── curriculum/map/           # Global curriculum map
+│   ├── program/map/              # Global program map
 │   ├── faculty/                  # Faculty dashboard
 │   │   ├── courses/              # Course management (create, edit, analytics)
 │   │   ├── modules/              # Module management (create, edit)
 │   │   ├── paths/                # Learning path management
-│   │   ├── curriculum/           # Curriculum map editor
-│   │   ├── quest-map/            # Quest map editor
+│   │   ├── program/              # Program map editor
+│   │   ├── course-map/           # Course map editor
 │   │   ├── visualization/        # Graph editor
 │   │   └── profile/              # Faculty profile
 │   ├── student/                  # Student profile & progress
@@ -192,7 +192,7 @@ src/
 │   ├── admin/                    # Admin layout, analytics, audit logs, user management, content moderation
 │   ├── auth/                     # Login, register (unified w/ student/faculty fields), verify, reset forms
 │   ├── collaboration/            # Activity feed, collaborator panel, faculty search
-│   ├── curriculum/               # Curriculum map (authenticated + public)
+│   ├── program-map/              # Program map (authenticated + public)
 │   ├── editor/                   # Tiptap rich text editor
 │   ├── error/                    # Error boundary
 │   ├── faculty/                  # Dashboard, course/module forms, analytics, learning paths, editors
@@ -204,7 +204,7 @@ src/
 │   ├── progress/                 # Progress bar, cards, mark-complete button
 │   ├── providers/                # React providers (Auth, Query, Theme)
 │   ├── public/                   # Course catalog, course viewer, module catalog, instructor sections
-│   ├── quest-map/                # Quest map (authenticated + public)
+│   ├── course-map/               # Course map (authenticated + public)
 │   ├── react-playground/         # Builder, viewer, preview, info drawer, version history, dependencies
 │   ├── search/                   # Search result cards, universal search results
 │   ├── student/                  # Student profile, start course button
@@ -232,8 +232,8 @@ src/
 │   ├── storage.ts                # Supabase file storage
 │   ├── supabase.ts               # Supabase client
 │   ├── utils.ts                  # General utilities (cn, formatting)
-│   ├── curriculum-layout.ts      # Curriculum map layout calculations
-│   └── quest-map-layout.ts       # Quest map layout calculations
+│   ├── program-layout.ts         # Program map layout calculations
+│   └── course-map-layout.ts      # Course map layout calculations
 │
 ├── types/                        # TypeScript type definitions
 │   ├── auth.ts                   # Authentication types
@@ -251,7 +251,7 @@ src/
 **Tracking**: `course_tracking`, `module_progress`, `learning_sessions`
 **Gamification**: `achievements`, `user_achievements`, `user_gamification_stats`
 **Admin/Auth**: `sessions`, `faculty_requests`, `admin_audit_logs`
-**Curriculum**: `learning_paths`
+**Learning Paths**: `learning_paths`
 
 ### Custom Design System
 
@@ -320,11 +320,11 @@ Key files:
 - `/src/lib/collaboration/permissions.ts` - Permission logic
 - `/src/components/collaboration/` - UI components
 
-### Gamification / Quest Map
+### Gamification / Course Map
 Courses support gamified learning:
 - Modules have XP rewards, difficulty levels, quest types
 - Prerequisite chains between modules
-- Visual quest map with position coordinates
+- Visual course map with position coordinates
 - Achievements with badge tiers (gray, bronze, silver, gold)
 - User XP, levels, and streaks
 
@@ -403,8 +403,8 @@ See `/docs/EMAIL_SETUP_GUIDE.md` for detailed setup instructions.
 8. **Collaboration System** - Faculty co-authoring for courses and modules with activity feed
 9. **Admin Dashboard** - User management, faculty approval, content moderation, audit logs, analytics
 10. **Progress Tracking** - Module completion, course progress, streaks, learning sessions
-11. **Gamification** - Achievements, XP, levels, streaks, quest map with difficulty levels
-12. **Curriculum Map** - Visual course prerequisite and relationship mapping
+11. **Gamification** - Achievements, XP, levels, streaks, course map with difficulty levels
+12. **Program Map** - Visual course prerequisite and relationship mapping
 13. **Learning Paths** - Curated multi-course learning sequences
 14. **Full-Text Search** - Search across courses, modules, and playgrounds
 15. **Media Management** - File upload/download via Supabase storage

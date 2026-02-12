@@ -8,7 +8,7 @@ import { withDatabaseRetry } from '@/lib/retry';
  * Returns learning path details with courses
  * Shows user progress if authenticated
  *
- * Curriculum Visualization Feature - Learning Path Detail
+ * Program Visualization Feature - Learning Path Detail
  */
 
 type CourseStatus = 'locked' | 'available' | 'in_progress' | 'completed';
@@ -72,8 +72,8 @@ export async function GET(
         tags: true,
         featured: true,
         prerequisite_course_ids: true,
-        curriculum_position_x: true,
-        curriculum_position_y: true,
+        program_position_x: true,
+        program_position_y: true,
         users: {
           select: {
             id: true,
@@ -121,8 +121,8 @@ export async function GET(
       });
     }
 
-    // Transform courses to curriculum nodes
-    const curriculumNodes = courses.map(course => {
+    // Transform courses to program map nodes
+    const programNodes = courses.map(course => {
       const progress = progressMap.get(course.id);
       const status = userId
         ? calculateCourseStatus(course, progressMap)
@@ -136,8 +136,8 @@ export async function GET(
         tags: course.tags,
         featured: course.featured,
         position: {
-          x: course.curriculum_position_x ?? 50,
-          y: course.curriculum_position_y ?? 50
+          x: course.program_position_x ?? 50,
+          y: course.program_position_y ?? 50
         },
         prerequisites: course.prerequisite_course_ids || [],
         moduleCount: course.course_modules.length,
@@ -162,8 +162,8 @@ export async function GET(
     // Calculate path progress for authenticated users
     let pathProgress = null;
     if (userId) {
-      const completedCourses = curriculumNodes.filter(c => c.isCompleted).length;
-      const totalCourses = curriculumNodes.length;
+      const completedCourses = programNodes.filter(c => c.isCompleted).length;
+      const totalCourses = programNodes.length;
       const overallCompletion = totalCourses > 0
         ? Math.round((completedCourses / totalCourses) * 100)
         : 0;
@@ -172,7 +172,7 @@ export async function GET(
         coursesCompleted: completedCourses,
         coursesTotal: totalCourses,
         completionPct: overallCompletion,
-        coursesInProgress: curriculumNodes.filter(c => c.status === 'in_progress').length
+        coursesInProgress: programNodes.filter(c => c.status === 'in_progress').length
       };
     }
 
@@ -191,7 +191,7 @@ export async function GET(
         },
         createdAt: path.created_at.toISOString()
       },
-      courses: curriculumNodes,
+      courses: programNodes,
       ...(pathProgress && { pathProgress })
     };
   });

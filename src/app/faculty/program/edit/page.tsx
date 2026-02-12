@@ -1,14 +1,14 @@
 import { auth } from '@/lib/auth/config';
 import { redirect } from 'next/navigation';
-import { CurriculumMapEditor } from '@/components/faculty/CurriculumMapEditor';
+import { ProgramMapEditor } from '@/components/faculty/ProgramMapEditor';
 import { Header } from '@/components/Header';
 
 export const metadata = {
-  title: 'Edit Curriculum Map | Faculty Dashboard',
-  description: 'Edit curriculum map layout and course prerequisites'
+  title: 'Edit Program Map | Faculty Dashboard',
+  description: 'Edit program map layout and course prerequisites'
 };
 
-export default async function CurriculumEditPage() {
+export default async function ProgramEditPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -26,13 +26,13 @@ export default async function CurriculumEditPage() {
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-900">Curriculum Map Editor</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Program Map Editor</h1>
           <p className="text-slate-600 mt-2">
-            Organize your curriculum by positioning courses and setting prerequisites.
+            Organize your program by positioning courses and setting prerequisites.
           </p>
         </div>
 
-        <CurriculumMapEditor />
+        <ProgramMapEditor />
       </div>
     </>
   );

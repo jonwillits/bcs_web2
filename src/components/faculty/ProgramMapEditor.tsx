@@ -13,7 +13,7 @@ import {
   Settings,
   AlertCircle
 } from 'lucide-react';
-import { autoLayoutCourses, needsAutoLayout, validatePrerequisites } from '@/lib/curriculum-layout';
+import { autoLayoutCourses, needsAutoLayout, validatePrerequisites } from '@/lib/program-layout';
 import { toast } from 'sonner';
 
 interface Course {
@@ -22,15 +22,15 @@ interface Course {
   slug: string;
   description: string | null;
   prerequisite_course_ids: string[];
-  curriculum_position_x: number;
-  curriculum_position_y: number;
+  program_position_x: number;
+  program_position_y: number;
   featured: boolean;
   tags: string[];
   author: string;
   moduleCount: number;
 }
 
-export function CurriculumMapEditor() {
+export function ProgramMapEditor() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,7 +44,7 @@ export function CurriculumMapEditor() {
   useEffect(() => {
     async function fetchCourses() {
       try {
-        const response = await fetch('/api/faculty/curriculum/layout');
+        const response = await fetch('/api/faculty/program/layout');
         if (!response.ok) throw new Error('Failed to fetch courses');
         const data = await response.json();
 
@@ -108,8 +108,8 @@ export function CurriculumMapEditor() {
         course.id === draggedCourse
           ? {
               ...course,
-              curriculum_position_x: Math.max(5, Math.min(95, x)),
-              curriculum_position_y: Math.max(5, Math.min(95, y))
+              program_position_x: Math.max(5, Math.min(95, x)),
+              program_position_y: Math.max(5, Math.min(95, y))
             }
           : course
       )
@@ -142,7 +142,7 @@ export function CurriculumMapEditor() {
         return;
       }
 
-      const response = await fetch('/api/faculty/curriculum/layout', {
+      const response = await fetch('/api/faculty/program/layout', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ courses })
@@ -152,12 +152,12 @@ export function CurriculumMapEditor() {
 
       setHasUnsavedChanges(false);
       toast.success('Success!', {
-        description: 'Curriculum layout saved successfully!',
+        description: 'Program map layout saved successfully!',
       });
     } catch (error) {
       console.error('Error saving:', error);
       toast.error('Save Failed', {
-        description: 'Failed to save curriculum layout. Please try again.',
+        description: 'Failed to save program map layout. Please try again.',
       });
     } finally {
       setSaving(false);
@@ -185,10 +185,10 @@ export function CurriculumMapEditor() {
         const prereq = courses.find(c => c.id === prereqId);
         if (!prereq) return null;
 
-        const startX = (prereq.curriculum_position_x / 100) * mapDimensions.width;
-        const startY = (prereq.curriculum_position_y / 100) * mapDimensions.height;
-        const endX = (course.curriculum_position_x / 100) * mapDimensions.width;
-        const endY = (course.curriculum_position_y / 100) * mapDimensions.height;
+        const startX = (prereq.program_position_x / 100) * mapDimensions.width;
+        const startY = (prereq.program_position_y / 100) * mapDimensions.height;
+        const endX = (course.program_position_x / 100) * mapDimensions.width;
+        const endY = (course.program_position_y / 100) * mapDimensions.height;
 
         const controlY1 = startY + (endY - startY) / 2;
         const controlY2 = startY + (endY - startY) / 2;
@@ -225,7 +225,7 @@ export function CurriculumMapEditor() {
             <div className="flex items-center gap-2">
               <Info className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="font-medium">Curriculum Map Editor</p>
+                <p className="font-medium">Program Map Editor</p>
                 <p className="text-sm text-slate-600">
                   Drag courses to position them. Click a course to edit prerequisites.
                 </p>
@@ -299,8 +299,8 @@ export function CurriculumMapEditor() {
                       ${draggedCourse === course.id ? 'opacity-50' : ''}
                     `}
                     style={{
-                      left: `${course.curriculum_position_x}%`,
-                      top: `${course.curriculum_position_y}%`
+                      left: `${course.program_position_x}%`,
+                      top: `${course.program_position_y}%`
                     }}
                   >
                     <span className="line-clamp-2">{course.title}</span>
@@ -336,7 +336,7 @@ export function CurriculumMapEditor() {
                     <p><strong>Author:</strong> {selectedCourse.author}</p>
                     <p><strong>Modules:</strong> {selectedCourse.moduleCount}</p>
                     <p>
-                      <strong>Position:</strong> ({selectedCourse.curriculum_position_x.toFixed(1)}%, {selectedCourse.curriculum_position_y.toFixed(1)}%)
+                      <strong>Position:</strong> ({selectedCourse.program_position_x.toFixed(1)}%, {selectedCourse.program_position_y.toFixed(1)}%)
                     </p>
                   </div>
 

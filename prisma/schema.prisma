@@ -43,10 +43,10 @@ model courses {
   created_at      DateTime               @default(now())
   updated_at      DateTime               @updatedAt
 
-  // Curriculum Map & Learning Paths (Curriculum Visualization Feature)
+  // Program Map & Learning Paths (Program Visualization Feature)
   prerequisite_course_ids String[]       @default([]) // Array of course IDs that must be completed first
-  curriculum_position_x   Float?         @default(50) // Percentage (0-100) for horizontal position on curriculum map
-  curriculum_position_y   Float?         @default(50) // Percentage (0-100) for vertical position on curriculum map
+  program_position_x      Float?         @default(50) // Percentage (0-100) for horizontal position on program map
+  program_position_y      Float?         @default(50) // Percentage (0-100) for vertical position on program map
 
   course_modules  course_modules[]
   users           users                  @relation(fields: [author_id], references: [id], onDelete: Restrict)
@@ -111,10 +111,10 @@ model modules {
   cloned_from      String?                // References modules.id (NULL if original)
   clone_count      Int                    @default(0) // Number of times this module was cloned
 
-  // Quest Map & Gamification (Quest Map Feature)
+  // Course Map & Gamification (Course Map Feature)
   prerequisite_module_ids String[]       @default([]) // Array of module IDs that must be completed first
-  quest_map_position_x    Float?         @default(50) // Percentage (0-100) for horizontal position
-  quest_map_position_y    Float?         @default(50) // Percentage (0-100) for vertical position
+  course_map_position_x   Float?         @default(50) // Percentage (0-100) for horizontal position
+  course_map_position_y   Float?         @default(50) // Percentage (0-100) for vertical position
   xp_reward              Int            @default(100) // XP earned on completion
   difficulty_level       String         @default("beginner") // beginner | intermediate | advanced | boss
   estimated_minutes      Int?           // Estimated time to complete
@@ -234,12 +234,12 @@ model users {
   reviewed_requests     faculty_requests[]      @relation("FacultyReviewer")
   admin_actions         admin_audit_logs[]      @relation("AdminActor")
 
-  // Gamification relations (Quest Map Feature)
+  // Gamification relations (Course Map Feature)
   achievements          user_achievements[]     @relation("UserAchievements")
   gamification_stats    user_gamification_stats? @relation("UserGamificationStats")
   learning_sessions     learning_sessions[]     @relation("LearningSession")
 
-  // Curriculum & Learning Paths (Curriculum Visualization Feature)
+  // Program Map & Learning Paths (Program Visualization Feature)
   created_learning_paths learning_paths[]       @relation("LearningPathCreator")
 
   @@index([role])
@@ -573,7 +573,7 @@ model module_progress {
   @@index([user_id, module_id]) // For standalone progress queries
 }
 
-// ==================== GAMIFICATION (QUEST MAP FEATURE) ====================
+// ==================== GAMIFICATION (COURSE MAP FEATURE) ====================
 
 model achievements {
   id           String   @id @default(cuid())

@@ -96,7 +96,7 @@ export function LearningPathForm({ initialData, isEdit = false }: LearningPathFo
   useEffect(() => {
     async function fetchCourses() {
       try {
-        const response = await fetch('/api/faculty/curriculum/layout');
+        const response = await fetch('/api/faculty/program/layout');
         if (!response.ok) throw new Error('Failed to fetch courses');
         const data = await response.json();
         setCourses(data.courses);

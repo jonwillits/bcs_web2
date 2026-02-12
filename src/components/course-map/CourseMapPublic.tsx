@@ -22,7 +22,7 @@ interface Quest {
   status: 'viewable';
 }
 
-interface QuestMapData {
+interface CourseMapData {
   course: {
     id: string;
     title: string;
@@ -43,32 +43,32 @@ interface QuestMapData {
   totalXP: number;
 }
 
-interface QuestMapPublicProps {
+interface CourseMapPublicProps {
   courseSlug: string;
   isAuthenticated?: boolean;
 }
 
-export function QuestMapPublic({ courseSlug, isAuthenticated = false }: QuestMapPublicProps) {
-  const [data, setData] = useState<QuestMapData | null>(null);
+export function CourseMapPublic({ courseSlug, isAuthenticated = false }: CourseMapPublicProps) {
+  const [data, setData] = useState<CourseMapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [mapDimensions, setMapDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Fetch public quest map data
+  // Fetch public course map data
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
         const response = await fetch(`/api/courses/by-slug/${courseSlug}/map`);
         if (!response.ok) {
-          throw new Error('Failed to fetch quest map');
+          throw new Error('Failed to fetch course map');
         }
         const json = await response.json();
         setData(json);
       } catch (error) {
-        console.error('Error fetching quest map:', error);
+        console.error('Error fetching course map:', error);
       } finally {
         setLoading(false);
       }
@@ -133,7 +133,7 @@ export function QuestMapPublic({ courseSlug, isAuthenticated = false }: QuestMap
       <div className="flex items-center justify-center h-full bg-slate-950 text-white">
         <div className="text-center">
           <MapIcon className="h-12 w-12 animate-pulse mx-auto mb-4 text-blue-400" />
-          <p className="text-lg">Loading quest map...</p>
+          <p className="text-lg">Loading course map...</p>
         </div>
       </div>
     );
@@ -143,7 +143,7 @@ export function QuestMapPublic({ courseSlug, isAuthenticated = false }: QuestMap
     return (
       <div className="flex items-center justify-center h-full bg-slate-950 text-white">
         <div className="text-center">
-          <p className="text-lg text-red-400">Failed to load quest map</p>
+          <p className="text-lg text-red-400">Failed to load course map</p>
           <Link href={`/courses/${courseSlug}`}>
             <NeuralButton variant="outline" className="mt-4">
               Back to Course
@@ -161,9 +161,9 @@ export function QuestMapPublic({ courseSlug, isAuthenticated = false }: QuestMap
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <QuestBreadcrumb
             items={[
-              { label: 'Curriculum', href: '/curriculum/map' },
+              { label: 'Program', href: '/program/map' },
               { label: data.course.title, href: `/courses/${courseSlug}` },
-              { label: 'Quest Map' }
+              { label: 'Course Map' }
             ]}
             icon={<MapIcon size={20} className="sm:w-6 sm:h-6" />}
           />

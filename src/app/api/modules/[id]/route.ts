@@ -34,10 +34,10 @@ const updateModuleSchema = z.object({
   visibility: z.enum(['public', 'private']).optional(),
   tags: z.array(z.string().min(1).max(50)).max(20).optional(),
 
-  // Quest Map fields
+  // Course Map fields
   prerequisite_module_ids: z.array(z.string()).optional(),
-  quest_map_position_x: z.number().min(0).max(100).optional(),
-  quest_map_position_y: z.number().min(0).max(100).optional(),
+  course_map_position_x: z.number().min(0).max(100).optional(),
+  course_map_position_y: z.number().min(0).max(100).optional(),
   xp_reward: z.number().int().min(0).max(10000).optional(),
   difficulty_level: z.enum(['beginner', 'intermediate', 'advanced', 'boss']).optional(),
   estimated_minutes: z.number().int().min(0).max(999).optional(),

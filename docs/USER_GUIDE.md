@@ -15,7 +15,7 @@ Welcome to the **Brain & Cognitive Sciences (BCS) E-Textbook Platform** — an i
 7. [Interactive Playgrounds](#7-interactive-playgrounds)
 8. [Learning Paths](#8-learning-paths)
 9. [Network Visualization](#9-network-visualization)
-10. [Curriculum Map](#10-curriculum-map)
+10. [Program Map](#10-program-map)
 11. [User Profiles](#11-user-profiles)
 12. [Student Features](#12-student-features)
 13. [Faculty Features](#13-faculty-features)
@@ -140,7 +140,7 @@ The header is a sticky bar at the top of every page. It contains:
 - **Navigation Links** — The first several links are shown inline; additional links appear in a **More** dropdown menu. The links you see depend on your role:
 
 **All Users:**
-- Home, Courses, Modules, Learning Paths, Curriculum, Playgrounds
+- Home, Courses, Modules, Learning Paths, Program Map, Playgrounds
 
 **Students (additional):**
 - My Learning, Network
@@ -156,7 +156,7 @@ The header is a sticky bar at the top of every page. It contains:
   - My Profile
   - My Achievements
   - Admin Tools (admin only): Admin Dashboard, User Management, Platform Analytics, Audit Logs
-  - Faculty Tools (faculty/admin only): Dashboard, My Courses, My Modules, Quest Map Editor
+  - Faculty Tools (faculty/admin only): Dashboard, My Courses, My Modules, Course Map Editor
   - My Learning
   - Edit Profile
   - Sign Out
@@ -183,7 +183,7 @@ Navigate to `/courses` (or click **Courses** in the header) to open the Course C
 At the top of the page you'll find:
 
 - **Search Bar** — Search across course titles, descriptions, authors, and tags
-- **Quick Links** — Shortcuts to the Curriculum Map and Learning Paths
+- **Quick Links** — Shortcuts to the Program Map and Learning Paths
 - **Stats Dashboard** — Four cards showing Total Courses, Total Instructors, Total Modules, and Featured Courses
 
 ### Featured Courses Section
@@ -219,7 +219,7 @@ A sticky header bar at the top shows:
 - **Back to Catalog** link
 - **Course Title** and author
 - **Module Count**
-- **Course Map** button — opens the Quest Map visualization for this course
+- **Course Map** button — opens the Course Map visualization for this course
 - **Share** button — copies the course URL to your clipboard
 - **Fullscreen** toggle
 
@@ -419,11 +419,11 @@ Click any node to navigate to the corresponding course or module.
 
 ---
 
-## 10. Curriculum Map
+## 10. Program Map
 
-Navigate to `/curriculum/map` to see a full curriculum visualization.
+Navigate to `/program/map` to see a full program map visualization.
 
-The curriculum map shows how courses relate to each other, including prerequisites. What you see depends on your authentication status:
+The program map shows how courses relate to each other, including prerequisites. What you see depends on your authentication status:
 
 - **Authenticated + Enrolled** — A personalized view highlighting your progress and enrolled courses
 - **Authenticated + Not Enrolled** — The full map with an option to enroll
@@ -509,7 +509,7 @@ Navigate to `/faculty/dashboard` to access your faculty control center. The dash
   - Create Module (`/faculty/modules/create`)
   - Create Course (`/faculty/courses/create`)
   - Module Library (`/faculty/modules`)
-  - Curriculum Map (`/faculty/curriculum/edit`)
+  - Program Map (`/faculty/program/edit`)
   - Learning Paths (`/faculty/paths`)
 - **Recent Activity** — Your last 5 recently updated modules and courses, each showing the title, status badge, date, and links to View or Edit
 
@@ -573,11 +573,11 @@ See [Interactive Playgrounds > Creating a Playground](#creating-a-playground-fac
 
 When viewing a playground created by another user, click the **Fork** button to create your own copy. The forked version opens in the builder for you to modify.
 
-### Quest Map Editor
+### Course Map Editor
 
-Navigate to `/faculty/curriculum/edit` to access the Quest Map Editor. This tool lets you:
+Navigate to `/faculty/course-map` to access the Course Map Editor. This tool lets you:
 
-- **Position Modules** — Drag module nodes on a 2D canvas to arrange the quest map
+- **Position Modules** — Drag module nodes on a 2D canvas to arrange the course map
 - **Set Prerequisites** — Define which modules must be completed before others
 - **Configure Module Properties** — Set difficulty levels, quest types, and XP rewards
 - **Auto-Layout** — The system can automatically arrange modules if no positions are set
@@ -595,9 +595,9 @@ Quest type indicators:
 - 👑 Boss
 - ⭐ Bonus
 
-### Curriculum Map Editor
+### Program Map Editor
 
-Navigate to `/faculty/curriculum/edit` to arrange courses on the curriculum map. Drag course nodes to position them, define prerequisites between courses, and save the layout.
+Navigate to `/faculty/program/edit` to arrange courses on the program map. Drag course nodes to position them, define prerequisites between courses, and save the layout.
 
 ### Managing Learning Paths
 
@@ -701,7 +701,7 @@ Each log entry shows:
 | Course Catalog | `/courses` | Public |
 | Course Viewer | `/courses/[slug]` | Public |
 | Module in Course | `/courses/[slug]/[moduleSlug]` | Public |
-| Quest Map | `/courses/[slug]/map` | Public |
+| Course Map | `/courses/[slug]/map` | Public |
 | Module Library | `/modules` | Public |
 | Module Viewer | `/modules/[slug]` | Public |
 | Playground Gallery | `/playgrounds` | Public |
@@ -711,7 +711,7 @@ Each log entry shows:
 | Learning Paths | `/paths` | Public |
 | Learning Path Detail | `/paths/[slug]` | Public |
 | Network Visualization | `/network` | Public |
-| Curriculum Map | `/curriculum/map` | Public |
+| Program Map | `/program/map` | Public |
 | User Profile | `/profile/[userId]` | Public |
 | Achievements | `/profile/achievements` | Authenticated |
 | Login | `/auth/login` | Guest |
@@ -729,8 +729,8 @@ Each log entry shows:
 | Faculty Learning Paths | `/faculty/paths` | Faculty |
 | Create Learning Path | `/faculty/paths/create` | Faculty |
 | Edit Learning Path | `/faculty/paths/edit/[slug]` | Faculty |
-| Curriculum Map Editor | `/faculty/curriculum/edit` | Faculty |
-| Quest Map Editor | `/faculty/quest-map` | Faculty |
+| Program Map Editor | `/faculty/program/edit` | Faculty |
+| Course Map Editor | `/faculty/course-map` | Faculty |
 | Faculty Visualization | `/faculty/visualization` | Faculty |
 | Admin Dashboard | `/admin/dashboard` | Admin |
 | User Management | `/admin/users` | Admin |

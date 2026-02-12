@@ -840,7 +840,7 @@ Inspired by official UI brand colors: Illini Orange and Illini Blue
   border: 2px solid hsl(var(--neural-primary) / 0.2);
 }
 
-/* Quest Map Custom Scrollbar */
+/* Course Map Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -856,7 +856,7 @@ Inspired by official UI brand colors: Illini Orange and Illini Blue
   background: #475569;
 }
 
-/* Quest Map Animations */
+/* Course Map Animations */
 @keyframes pulse-slow {
   0%, 100% {
     opacity: 1;

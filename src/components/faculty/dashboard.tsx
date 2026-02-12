@@ -288,16 +288,16 @@ export function FacultyDashboard({ user }: FacultyDashboardProps) {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Map className="mr-2 h-5 w-5 text-blue-600" />
-                Curriculum Map
+                Program Map
               </CardTitle>
               <CardDescription>
                 Organize courses visually and set prerequisites
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/faculty/curriculum/edit">
+              <Link href="/faculty/program/edit">
                 <NeuralButton variant="outline" className="w-full">
-                  Edit Curriculum
+                  Edit Program Map
                 </NeuralButton>
               </Link>
             </CardContent>

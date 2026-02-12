@@ -8,8 +8,8 @@ import { z } from 'zod';
 const moduleUpdateSchema = z.object({
   id: z.string(),
   prerequisite_module_ids: z.array(z.string()),
-  quest_map_position_x: z.number().min(0).max(100),
-  quest_map_position_y: z.number().min(0).max(100),
+  course_map_position_x: z.number().min(0).max(100),
+  course_map_position_y: z.number().min(0).max(100),
 });
 
 const updateLayoutSchema = z.object({
@@ -17,7 +17,7 @@ const updateLayoutSchema = z.object({
 });
 
 /**
- * GET - Fetch all modules with quest map data for layout editor
+ * GET - Fetch all modules with course map data for layout editor
  */
 export async function GET() {
   try {
@@ -37,8 +37,8 @@ export async function GET() {
         slug: true,
         description: true,
         prerequisite_module_ids: true,
-        quest_map_position_x: true,
-        quest_map_position_y: true,
+        course_map_position_x: true,
+        course_map_position_y: true,
         xp_reward: true,
         difficulty_level: true,
         quest_type: true,
@@ -51,7 +51,7 @@ export async function GET() {
 
     return NextResponse.json({ modules });
   } catch (error) {
-    console.error('Error fetching quest map modules:', error);
+    console.error('Error fetching course map modules:', error);
     return NextResponse.json(
       { error: 'Failed to fetch modules' },
       { status: 500 }
@@ -60,7 +60,7 @@ export async function GET() {
 }
 
 /**
- * PUT - Update quest map layout (positions and prerequisites)
+ * PUT - Update course map layout (positions and prerequisites)
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -79,8 +79,8 @@ export async function PUT(request: NextRequest) {
           where: { id: module.id },
           data: {
             prerequisite_module_ids: module.prerequisite_module_ids,
-            quest_map_position_x: module.quest_map_position_x,
-            quest_map_position_y: module.quest_map_position_y,
+            course_map_position_x: module.course_map_position_x,
+            course_map_position_y: module.course_map_position_y,
           },
         })
       )
@@ -88,7 +88,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating quest map layout:', error);
+    console.error('Error updating course map layout:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -98,7 +98,7 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Failed to update quest map layout' },
+      { error: 'Failed to update course map layout' },
       { status: 500 }
     );
   }

@@ -7,7 +7,7 @@ import { withDatabaseRetry } from '@/lib/retry';
  * GET /api/paths
  * Returns list of all learning paths
  *
- * Curriculum Visualization Feature - Learning Paths
+ * Program Visualization Feature - Learning Paths
  */
 export async function GET() {
   const data = await withDatabaseRetry(async () => {

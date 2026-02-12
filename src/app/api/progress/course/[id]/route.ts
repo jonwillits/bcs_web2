@@ -8,7 +8,7 @@ import { withDatabaseRetry } from '@/lib/retry';
  * Get user's progress for a specific course
  * Returns a map of module IDs to their progress status
  *
- * Quest Map Feature - Progress data endpoint
+ * Course Map Feature - Progress data endpoint
  */
 export async function GET(
   request: Request,

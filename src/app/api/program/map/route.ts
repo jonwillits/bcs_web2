@@ -4,12 +4,12 @@ import { prisma } from '@/lib/db';
 import { withDatabaseRetry } from '@/lib/retry';
 
 /**
- * GET /api/curriculum/map
- * Returns curriculum map with all published courses
+ * GET /api/program/map
+ * Returns program map with all published courses
  * Authenticated: Shows personalized progress
  * Public: Shows all courses without progress
  *
- * Curriculum Visualization Feature - Level 0 (Curriculum Map)
+ * Program Visualization Feature - Level 0 (Program Map)
  */
 
 type CourseStatus = 'locked' | 'available' | 'in_progress' | 'completed';
@@ -39,8 +39,8 @@ export async function GET() {
         tags: true,
         featured: true,
         prerequisite_course_ids: true,
-        curriculum_position_x: true,
-        curriculum_position_y: true,
+        program_position_x: true,
+        program_position_y: true,
         users: {
           select: {
             id: true,
@@ -98,8 +98,8 @@ export async function GET() {
       });
     }
 
-    // Transform courses to curriculum nodes
-    const curriculumNodes = courses.map(course => {
+    // Transform courses to program map nodes
+    const programNodes = courses.map(course => {
       const progress = progressMap.get(course.id);
       const status = userId
         ? calculateCourseStatus(course, progressMap)
@@ -113,8 +113,8 @@ export async function GET() {
         tags: course.tags,
         featured: course.featured,
         position: {
-          x: course.curriculum_position_x ?? 50,
-          y: course.curriculum_position_y ?? 50
+          x: course.program_position_x ?? 50,
+          y: course.program_position_y ?? 50
         },
         prerequisites: course.prerequisite_course_ids || [],
         moduleCount: course.course_modules.length,
@@ -137,7 +137,7 @@ export async function GET() {
     });
 
     return {
-      courses: curriculumNodes,
+      courses: programNodes,
       totalCourses: courses.length,
       // User stats (only for authenticated users)
       ...(userId && userStats && {

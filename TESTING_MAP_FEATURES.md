@@ -1,4 +1,4 @@
-# Testing Guide: Curriculum Map & Learning Paths
+# Testing Guide: Program Map & Learning Paths
 
 ## Test Environment
 - **URL**: https://bcs-web2.vercel.app
@@ -7,18 +7,18 @@
 
 ---
 
-## Test 1: Curriculum Map Editor
+## Test 1: Program Map Editor
 
 ### Objective
-Verify faculty can visually organize curriculum and set prerequisites.
+Verify faculty can visually organize the program map and set prerequisites.
 
 ### Steps
 
 1. **Access the Editor**
    - Login as faculty
    - Go to Faculty Dashboard
-   - Click "Edit Curriculum" card
-   - ✅ Should load `/faculty/curriculum/edit`
+   - Click "Edit Program Map" card
+   - ✅ Should load `/faculty/program/edit`
 
 2. **Verify Auto-Layout**
    - Page loads with courses positioned
@@ -48,7 +48,7 @@ Verify faculty can visually organize curriculum and set prerequisites.
 
 6. **Test Save Functionality**
    - Click "Save Layout" button
-   - ✅ Should show "Curriculum layout saved successfully!"
+   - ✅ Should show "Program map layout saved successfully!"
    - ✅ "Unsaved changes" warning should disappear
    - Refresh page
    - ✅ Positions should be preserved
@@ -201,14 +201,14 @@ Verify deletion works and checks permissions.
 ## Test 6: Student View Integration
 
 ### Objective
-Verify students can view curriculum/paths but not edit.
+Verify students can view program map/paths but not edit.
 
 ### Steps
 
-1. **Test Curriculum Map Access**
+1. **Test Program Map Access**
    - Logout from faculty account
-   - Go to `/curriculum/map` (without login)
-   - ✅ Should load public curriculum map view
+   - Go to `/program/map` (without login)
+   - ✅ Should load public program map view
    - ✅ Should see courses positioned as faculty arranged them
    - ✅ Should NOT see edit controls
 
@@ -220,14 +220,14 @@ Verify students can view curriculum/paths but not edit.
    - ✅ Should show only courses in that path
 
 3. **Test Navigation Flow**
-   - From course catalog, click "View Curriculum Map"
-   - ✅ Should load curriculum map
+   - From course catalog, click "View Program Map"
+   - ✅ Should load program map
    - Click a course node
-   - ✅ Should zoom to course quest map (module level)
+   - ✅ Should zoom to course map (module level)
    - Check breadcrumb
-   - ✅ Should show: "Curriculum > [Course Name] > Quest Map"
-   - Click "Curriculum" in breadcrumb
-   - ✅ Should return to curriculum map
+   - ✅ Should show: "Program > [Course Name] > Course Map"
+   - Click "Program" in breadcrumb
+   - ✅ Should return to program map
 
 ---
 
@@ -239,7 +239,7 @@ Verify features work on mobile devices.
 ### Steps
 
 1. **Open on Mobile** (or use browser dev tools, mobile view)
-   - Test curriculum map editor
+   - Test program map editor
    - ✅ Drag should work on touch devices
    - ✅ Sidebar should be readable
    - ✅ Buttons should be tappable
@@ -262,7 +262,7 @@ Verify features work on mobile devices.
 2. ⚠️ **Overlapping nodes** - Auto-layout might place courses too close
 3. ⚠️ **Long course names** - Might overflow node circles
 4. ⚠️ **Many prerequisites** - Too many lines might look cluttered
-5. ⚠️ **Empty curriculum** - What happens if no courses published?
+5. ⚠️ **Empty program map** - What happens if no courses published?
 
 ---
 
@@ -331,12 +331,12 @@ After testing, decide:
 
 **Minimum Viable Test** (15 minutes):
 - [ ] Login as faculty
-- [ ] Open curriculum editor
+- [ ] Open program map editor
 - [ ] Drag one course
 - [ ] Edit one prerequisite
 - [ ] Save layout
 - [ ] Create one learning path with 3 courses
 - [ ] View path as student
-- [ ] Navigate: Curriculum → Course → Module via breadcrumb
+- [ ] Navigate: Program → Course → Module via breadcrumb
 
 If all above work → **Core functionality is solid** ✅

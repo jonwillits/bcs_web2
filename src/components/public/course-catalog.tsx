@@ -252,10 +252,10 @@ export function CourseCatalog({ initialSearch = '' }: CourseCatalogProps) {
 
               {/* Navigation Links */}
               <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center">
-                <Link href="/curriculum/map">
+                <Link href="/program/map">
                   <NeuralButton variant="neural" size="lg" className="w-full sm:w-auto">
                     <Map className="h-5 w-5 mr-2" />
-                    View Curriculum Map
+                    View Program Map
                   </NeuralButton>
                 </Link>
                 <Link href="/paths">

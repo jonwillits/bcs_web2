@@ -22,7 +22,7 @@ const navigationConfig = {
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/paths", label: "Learning Paths", icon: Map },
-    { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
+    { href: "/program/map", label: "Program", icon: BarChart3 },
     { href: "/playgrounds", label: "Playgrounds", icon: Play },
   ],
   admin: [
@@ -30,7 +30,7 @@ const navigationConfig = {
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/paths", label: "Learning Paths", icon: Map },
-    { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
+    { href: "/program/map", label: "Program", icon: BarChart3 },
     { href: "/playgrounds", label: "Playgrounds", icon: Play },
     { href: "/admin/dashboard", label: "Admin Dashboard", icon: BarChart3 },
     { href: "/admin/users", label: "Users", icon: Users },
@@ -45,7 +45,7 @@ const navigationConfig = {
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/paths", label: "Learning Paths", icon: Map },
-    { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
+    { href: "/program/map", label: "Program", icon: BarChart3 },
     { href: "/playgrounds", label: "Playgrounds", icon: Play },
     { href: "/faculty/dashboard", label: "Dashboard", icon: BarChart3 },
     { href: "/learning", label: "My Learning", icon: BookOpen },
@@ -60,7 +60,7 @@ const navigationConfig = {
     { href: "/courses", label: "Courses", icon: BookOpen },
     { href: "/modules", label: "Modules", icon: BookOpen },
     { href: "/paths", label: "Learning Paths", icon: Map },
-    { href: "/curriculum/map", label: "Curriculum", icon: BarChart3 },
+    { href: "/program/map", label: "Program", icon: BarChart3 },
     { href: "/playgrounds", label: "Playgrounds", icon: Play },
     { href: "/learning", label: "My Learning", icon: BookOpen },
     { href: "/network", label: "Network", icon: BarChart3 },
@@ -287,9 +287,9 @@ export function Header() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/faculty/quest-map" className="flex items-center">
+                        <Link href="/faculty/course-map" className="flex items-center">
                           <BarChart3 className="mr-2 h-4 w-4" />
-                          Quest Map Editor
+                          Course Map Editor
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -318,9 +318,9 @@ export function Header() {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/faculty/quest-map" className="flex items-center">
+                        <Link href="/faculty/course-map" className="flex items-center">
                           <BarChart3 className="mr-2 h-4 w-4" />
-                          Quest Map Editor
+                          Course Map Editor
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />

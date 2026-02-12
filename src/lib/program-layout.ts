@@ -1,5 +1,5 @@
 /**
- * Auto-layout algorithm for curriculum map
+ * Auto-layout algorithm for program map
  * Uses hierarchical layout based on prerequisite depth
  */
 
@@ -10,8 +10,8 @@ interface MinimalCourse {
 }
 
 type PositionedCourse<T extends MinimalCourse> = T & {
-  curriculum_position_x: number;
-  curriculum_position_y: number;
+  program_position_x: number;
+  program_position_y: number;
   depth: number; // Calculated prerequisite depth
 };
 
@@ -98,8 +98,8 @@ export function autoLayoutCourses<T extends MinimalCourse>(courses: T[]): Positi
 
       positioned.push({
         ...course,
-        curriculum_position_x: parseFloat(x.toFixed(2)),
-        curriculum_position_y: parseFloat(y.toFixed(2))
+        program_position_x: parseFloat(x.toFixed(2)),
+        program_position_y: parseFloat(y.toFixed(2))
       });
     });
   });
@@ -110,14 +110,14 @@ export function autoLayoutCourses<T extends MinimalCourse>(courses: T[]): Positi
 /**
  * Detect if courses need auto-layout (most are at default position)
  */
-export function needsAutoLayout<T extends MinimalCourse & { curriculum_position_x?: number; curriculum_position_y?: number }>(courses: T[]): boolean {
+export function needsAutoLayout<T extends MinimalCourse & { program_position_x?: number; program_position_y?: number }>(courses: T[]): boolean {
   if (courses.length === 0) return false;
 
   // Count courses at default position (50, 50)
   const defaultCount = courses.filter(
     c =>
-      (c.curriculum_position_x === null || c.curriculum_position_x === 50) &&
-      (c.curriculum_position_y === null || c.curriculum_position_y === 50)
+      (c.program_position_x === null || c.program_position_x === 50) &&
+      (c.program_position_y === null || c.program_position_y === 50)
   ).length;
 
   // If more than 50% are at default, suggest auto-layout

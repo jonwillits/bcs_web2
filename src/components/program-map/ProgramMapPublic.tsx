@@ -25,38 +25,38 @@ interface Course {
   };
 }
 
-interface CurriculumMapData {
+interface ProgramMapData {
   courses: Course[];
   totalCourses: number;
 }
 
-interface CurriculumMapPublicProps {
+interface ProgramMapPublicProps {
   pathTitle?: string;
   pathSlug?: string;
 }
 
-export function CurriculumMapPublic({ pathTitle, pathSlug }: CurriculumMapPublicProps) {
-  const [data, setData] = useState<CurriculumMapData | null>(null);
+export function ProgramMapPublic({ pathTitle, pathSlug }: ProgramMapPublicProps) {
+  const [data, setData] = useState<ProgramMapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapDimensions, setMapDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Fetch curriculum map data
+  // Fetch program map data
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
         const url = pathSlug
           ? `/api/paths/${pathSlug}`
-          : '/api/curriculum/map';
+          : '/api/program/map';
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error('Failed to fetch curriculum map');
+          throw new Error('Failed to fetch program map');
         }
         const json = await response.json();
 
-        // Handle response structure difference between curriculum and path endpoints
+        // Handle response structure difference between program and path endpoints
         if (pathSlug) {
           setData({
             courses: json.courses,
@@ -66,7 +66,7 @@ export function CurriculumMapPublic({ pathTitle, pathSlug }: CurriculumMapPublic
           setData(json);
         }
       } catch (error) {
-        console.error('Error fetching curriculum map:', error);
+        console.error('Error fetching program map:', error);
       } finally {
         setLoading(false);
       }
@@ -131,7 +131,7 @@ export function CurriculumMapPublic({ pathTitle, pathSlug }: CurriculumMapPublic
       <div className="flex items-center justify-center h-full bg-slate-950 text-white">
         <div className="text-center">
           <MapIcon className="h-12 w-12 animate-pulse mx-auto mb-4 text-blue-400" />
-          <p className="text-lg">Loading curriculum map...</p>
+          <p className="text-lg">Loading program map...</p>
         </div>
       </div>
     );
@@ -141,7 +141,7 @@ export function CurriculumMapPublic({ pathTitle, pathSlug }: CurriculumMapPublic
     return (
       <div className="flex items-center justify-center h-full bg-slate-950 text-white">
         <div className="text-center">
-          <p className="text-lg text-red-400">Failed to load curriculum map</p>
+          <p className="text-lg text-red-400">Failed to load program map</p>
         </div>
       </div>
     );
@@ -153,7 +153,7 @@ export function CurriculumMapPublic({ pathTitle, pathSlug }: CurriculumMapPublic
         { label: 'Learning Paths', href: '/paths' },
         { label: pathTitle || 'Path' }
       ]
-    : [{ label: 'Curriculum Map' }];
+    : [{ label: 'Program Map' }];
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100">

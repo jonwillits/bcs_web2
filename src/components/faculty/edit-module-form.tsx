@@ -53,10 +53,10 @@ const editModuleSchema = z.object({
   visibility: z.enum(['public', 'private']).default('public'),
   tags: z.array(z.string()).default([]),
 
-  // Quest Map fields
+  // Course Map fields
   prerequisiteModuleIds: z.array(z.string()).default([]),
-  questMapPositionX: z.number().min(0).max(100).default(50),
-  questMapPositionY: z.number().min(0).max(100).default(50),
+  courseMapPositionX: z.number().min(0).max(100).default(50),
+  courseMapPositionY: z.number().min(0).max(100).default(50),
   xpReward: z.number().int().min(0).max(10000).default(100),
   difficultyLevel: z.enum(['beginner', 'intermediate', 'advanced', 'boss']).default('beginner'),
   estimatedMinutes: z.number().int().min(0).max(999).optional(),
@@ -93,10 +93,10 @@ interface Module {
     slug: string
   }[]
 
-  // Quest Map fields
+  // Course Map fields
   prerequisite_module_ids: string[]
-  quest_map_position_x: number
-  quest_map_position_y: number
+  course_map_position_x: number
+  course_map_position_y: number
   xp_reward: number
   difficulty_level: 'beginner' | 'intermediate' | 'advanced' | 'boss'
   estimated_minutes: number | null
@@ -143,8 +143,8 @@ async function updateModule(id: string, data: EditModuleFormData) {
   const {
     parentModuleId,
     prerequisiteModuleIds,
-    questMapPositionX,
-    questMapPositionY,
+    courseMapPositionX,
+    courseMapPositionY,
     xpReward,
     difficultyLevel,
     estimatedMinutes,
@@ -156,8 +156,8 @@ async function updateModule(id: string, data: EditModuleFormData) {
     ...rest,
     parent_module_id: parentModuleId,
     prerequisite_module_ids: prerequisiteModuleIds,
-    quest_map_position_x: questMapPositionX,
-    quest_map_position_y: questMapPositionY,
+    course_map_position_x: courseMapPositionX,
+    course_map_position_y: courseMapPositionY,
     xp_reward: xpReward,
     difficulty_level: difficultyLevel,
     estimated_minutes: estimatedMinutes,
@@ -289,7 +289,7 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
   const watchedVisibility = watch('visibility')
   const watchedParentId = watch('parentModuleId')
 
-  // Quest map field watchers
+  // Course map field watchers
   const watchedPrerequisites = watch('prerequisiteModuleIds')
   const watchedDifficulty = watch('difficultyLevel')
   const watchedQuestType = watch('questType')
@@ -307,10 +307,10 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
       setValue('tags', module.tags || [])
       setTags(module.tags || [])
 
-      // Initialize quest map fields
+      // Initialize course map fields
       setValue('prerequisiteModuleIds', module.prerequisite_module_ids || [])
-      setValue('questMapPositionX', module.quest_map_position_x ?? 50)
-      setValue('questMapPositionY', module.quest_map_position_y ?? 50)
+      setValue('courseMapPositionX', module.course_map_position_x ?? 50)
+      setValue('courseMapPositionY', module.course_map_position_y ?? 50)
       setValue('xpReward', module.xp_reward ?? 100)
       setValue('difficultyLevel', module.difficulty_level || 'beginner')
       setValue('estimatedMinutes', module.estimated_minutes ?? undefined)
@@ -535,14 +535,14 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
         </CardContent>
       </Card>
 
-      {/* Quest Map Settings */}
+      {/* Course Map Settings */}
       <Card className="cognitive-card">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Map className="mr-2 h-5 w-5 text-neural-primary" />
-            Quest Map Settings
+            Course Map Settings
           </CardTitle>
-          <CardDescription>Configure gamification and quest map properties</CardDescription>
+          <CardDescription>Configure gamification and course map properties</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Prerequisites */}
@@ -699,31 +699,31 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Map className="h-4 w-4 text-neural-primary" />
-              <Label>Quest Map Position (%)</Label>
+              <Label>Course Map Position (%)</Label>
             </div>
             <p className="text-sm text-muted-foreground">
-              Position on the quest map grid (0-100 for X and Y coordinates)
+              Position on the course map grid (0-100 for X and Y coordinates)
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="questMapPositionX" className="text-sm">X Position (Horizontal)</Label>
+                <Label htmlFor="courseMapPositionX" className="text-sm">X Position (Horizontal)</Label>
                 <Input
-                  id="questMapPositionX"
+                  id="courseMapPositionX"
                   type="number"
                   min={0}
                   max={100}
-                  {...register('questMapPositionX', { valueAsNumber: true })}
+                  {...register('courseMapPositionX', { valueAsNumber: true })}
                   placeholder="50"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="questMapPositionY" className="text-sm">Y Position (Vertical)</Label>
+                <Label htmlFor="courseMapPositionY" className="text-sm">Y Position (Vertical)</Label>
                 <Input
-                  id="questMapPositionY"
+                  id="courseMapPositionY"
                   type="number"
                   min={0}
                   max={100}
-                  {...register('questMapPositionY', { valueAsNumber: true })}
+                  {...register('courseMapPositionY', { valueAsNumber: true })}
                   placeholder="50"
                 />
               </div>

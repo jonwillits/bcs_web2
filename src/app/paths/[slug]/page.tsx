@@ -2,8 +2,8 @@ import { auth } from '@/lib/auth/config';
 import { prisma } from '@/lib/db';
 import { withDatabaseRetry } from '@/lib/retry';
 import { redirect, notFound } from 'next/navigation';
-import { CurriculumMapAuthenticated } from '@/components/curriculum/CurriculumMapAuthenticated';
-import { CurriculumMapPublic } from '@/components/curriculum/CurriculumMapPublic';
+import { ProgramMapAuthenticated } from '@/components/program-map/ProgramMapAuthenticated';
+import { ProgramMapPublic } from '@/components/program-map/ProgramMapPublic';
 import { Header } from '@/components/Header';
 
 export const dynamic = 'force-dynamic';
@@ -62,13 +62,13 @@ export default async function LearningPathPage({ params }: PageProps) {
       <Header />
       <div className="flex-1 overflow-hidden">
         {session?.user?.id ? (
-          <CurriculumMapAuthenticated
+          <ProgramMapAuthenticated
             userId={session.user.id}
             pathTitle={path.title}
             pathSlug={path.slug}
           />
         ) : (
-          <CurriculumMapPublic
+          <ProgramMapPublic
             pathTitle={path.title}
             pathSlug={path.slug}
           />

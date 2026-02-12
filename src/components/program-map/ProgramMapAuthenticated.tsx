@@ -7,7 +7,6 @@ import {
   Check,
   Lock,
   Play,
-  Trophy,
   Target,
   BookOpen,
   Award,
@@ -15,80 +14,101 @@ import {
 } from 'lucide-react';
 import { QuestBreadcrumb } from '@/components/navigation/QuestBreadcrumb';
 
-type QuestStatus = 'locked' | 'available' | 'active' | 'completed';
+type CourseStatus = 'locked' | 'available' | 'in_progress' | 'completed';
 
-interface Quest {
+interface Course {
   id: string;
   title: string;
   slug: string;
   description: string;
+  tags: string[];
+  featured: boolean;
   position: { x: number; y: number };
   prerequisites: string[];
-  xp: number;
-  difficulty: string;
-  estimatedMinutes: number | null;
-  type: string;
-  status: QuestStatus;
-  completedAt: string | null;
+  moduleCount: number;
+  instructor: {
+    name: string;
+    avatar_url: string | null;
+    title: string | null;
+    department: string | null;
+  };
+  status: CourseStatus;
+  completionPct: number;
+  modulesCompleted: number;
+  modulesTotal: number;
   startedAt: string | null;
-  xpEarned: number;
+  isCompleted: boolean;
 }
 
-interface QuestMapData {
-  course: {
-    id: string;
-    title: string;
-    slug: string;
-    description: string | null;
-  };
-  quests: Quest[];
+interface ProgramMapData {
+  courses: Course[];
+  totalCourses: number;
   userProgress: {
     totalXP: number;
     level: number;
-    completedCount: number;
-    totalCount: number;
-    completionPct: number;
     currentStreak: number;
     longestStreak: number;
+    coursesStarted: number;
+    coursesCompleted: number;
   };
 }
 
-interface QuestMapAuthenticatedProps {
-  courseSlug: string;
+interface ProgramMapAuthenticatedProps {
   userId: string;
+  pathTitle?: string; // If viewing a learning path
+  pathSlug?: string;
 }
 
-export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthenticatedProps) {
-  const [data, setData] = useState<QuestMapData | null>(null);
+export function ProgramMapAuthenticated({
+  userId,
+  pathTitle,
+  pathSlug
+}: ProgramMapAuthenticatedProps) {
+  const [data, setData] = useState<ProgramMapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapDimensions, setMapDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Fetch authenticated quest map data
+  // Fetch program map data
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/courses/by-slug/${courseSlug}/quest-map`);
+        const url = pathSlug
+          ? `/api/paths/${pathSlug}`
+          : '/api/program/map';
+        const response = await fetch(url);
         if (!response.ok) {
-          if (response.status === 403) {
-            // Not enrolled - redirect to course page
-            router.push(`/courses/${courseSlug}`);
-            return;
-          }
-          throw new Error('Failed to fetch quest map');
+          throw new Error('Failed to fetch program map');
         }
         const json = await response.json();
-        setData(json);
+
+        // Handle response structure difference between program and path endpoints
+        if (pathSlug) {
+          setData({
+            courses: json.courses,
+            totalCourses: json.courses.length,
+            userProgress: {
+              totalXP: 0,
+              level: 1,
+              currentStreak: 0,
+              longestStreak: 0,
+              coursesStarted: json.pathProgress?.coursesInProgress || 0,
+              coursesCompleted: json.pathProgress?.coursesCompleted || 0
+            }
+          });
+        } else {
+          setData(json);
+        }
       } catch (error) {
-        console.error('Error fetching quest map:', error);
+        console.error('Error fetching program map:', error);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [courseSlug, router]);
+  }, [pathSlug]);
 
   // Update map dimensions on resize
   useEffect(() => {
@@ -110,15 +130,15 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
   const connectionPaths = useMemo(() => {
     if (!data || mapDimensions.width === 0) return null;
 
-    return data.quests.flatMap(quest =>
-      quest.prerequisites.map(prereqId => {
-        const prereq = data.quests.find(q => q.id === prereqId);
+    return data.courses.flatMap(course =>
+      course.prerequisites.map(prereqId => {
+        const prereq = data.courses.find(c => c.id === prereqId);
         if (!prereq) return null;
 
         const startX = (prereq.position.x / 100) * mapDimensions.width;
         const startY = (prereq.position.y / 100) * mapDimensions.height;
-        const endX = (quest.position.x / 100) * mapDimensions.width;
-        const endY = (quest.position.y / 100) * mapDimensions.height;
+        const endX = (course.position.x / 100) * mapDimensions.width;
+        const endY = (course.position.y / 100) * mapDimensions.height;
 
         const controlY1 = startY + (endY - startY) / 2;
         const controlY2 = startY + (endY - startY) / 2;
@@ -130,7 +150,7 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
 
         return (
           <path
-            key={`${prereq.id}-${quest.id}`}
+            key={`${prereq.id}-${course.id}`}
             d={`M ${startX} ${startY} C ${startX} ${controlY1}, ${endX} ${controlY2}, ${endX} ${endY}`}
             fill="none"
             stroke={stroke}
@@ -144,11 +164,11 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
     );
   }, [data, mapDimensions]);
 
-  const getStatusColor = (status: QuestStatus) => {
+  const getStatusColor = (status: CourseStatus) => {
     switch (status) {
       case 'completed':
         return 'bg-green-500 text-white border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.5)]';
-      case 'active':
+      case 'in_progress':
         return 'bg-blue-600 text-white border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.6)] animate-pulse-slow';
       case 'available':
         return 'bg-purple-600 text-white border-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.5)]';
@@ -157,17 +177,17 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
     }
   };
 
-  const getStatusIcon = (status: QuestStatus, type: string) => {
-    if (status === 'completed') return <Check size={20} strokeWidth={3} />;
-    if (status === 'locked') return <Lock size={18} />;
-    if (type === 'boss') return <Trophy size={20} />;
-    if (status === 'active') return <Play size={20} fill="currentColor" />;
-    return <Target size={20} />;
+  const getStatusIcon = (status: CourseStatus) => {
+    if (status === 'completed') return <Check size={24} strokeWidth={3} />;
+    if (status === 'locked') return <Lock size={22} />;
+    if (status === 'in_progress') return <Play size={24} fill="currentColor" />;
+    return <Target size={24} />;
   };
 
-  const handleNodeClick = (quest: Quest) => {
-    if (quest.status !== 'locked') {
-      router.push(`/courses/${courseSlug}/${quest.slug}`);
+  const handleNodeClick = (course: Course) => {
+    if (course.status !== 'locked') {
+      // Zoom into course map
+      router.push(`/courses/${course.slug}/map`);
     }
   };
 
@@ -176,7 +196,7 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
       <div className="flex items-center justify-center h-full bg-slate-950 text-white">
         <div className="text-center">
           <MapIcon className="h-12 w-12 animate-pulse mx-auto mb-4 text-blue-400" />
-          <p className="text-lg">Loading your quest map...</p>
+          <p className="text-lg">Loading program map...</p>
         </div>
       </div>
     );
@@ -186,12 +206,19 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
     return (
       <div className="flex items-center justify-center h-full bg-slate-950 text-white">
         <div className="text-center">
-          <p className="text-lg text-red-400">Failed to load quest map</p>
-          <p className="text-slate-500 mt-2">Please try refreshing the page</p>
+          <p className="text-lg text-red-400">Failed to load program map</p>
         </div>
       </div>
     );
   }
+
+  // Breadcrumb items
+  const breadcrumbItems = pathSlug
+    ? [
+        { label: 'Learning Paths', href: '/paths' },
+        { label: pathTitle || 'Path' }
+      ]
+    : [{ label: 'Program Map' }];
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
@@ -199,11 +226,7 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-slate-900/80 border-b border-slate-800 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <QuestBreadcrumb
-            items={[
-              { label: 'Curriculum', href: '/curriculum/map' },
-              { label: data.course.title, href: `/courses/${courseSlug}` },
-              { label: 'Quest Map' }
-            ]}
+            items={breadcrumbItems}
             icon={<MapIcon size={24} />}
           />
         </div>
@@ -225,17 +248,16 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
             )}
           </div>
 
-          {/* Completion */}
+          {/* Course Completion */}
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
-              <span className="hidden sm:inline">{data.userProgress.completionPct}% Complete</span>
-              <span className="sm:hidden">{data.userProgress.completionPct}%</span>
-              <span className="text-slate-500">({data.userProgress.completedCount}/{data.userProgress.totalCount})</span>
+              <span className="hidden sm:inline">{data.userProgress.coursesCompleted}/{data.totalCourses} Courses</span>
+              <span className="sm:hidden">{data.userProgress.coursesCompleted}/{data.totalCourses}</span>
             </div>
             <div className="w-24 sm:w-32 h-2 bg-slate-800 rounded-full mt-1 overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-1000 ease-out"
-                style={{ width: `${data.userProgress.completionPct}%` }}
+                style={{ width: `${(data.userProgress.coursesCompleted / data.totalCourses) * 100}%` }}
               />
             </div>
           </div>
@@ -250,46 +272,48 @@ export function QuestMapAuthenticated({ courseSlug, userId }: QuestMapAuthentica
             {connectionPaths}
           </svg>
 
-          {/* Quest Nodes */}
-          {data.quests.map(quest => (
+          {/* Course Nodes */}
+          {data.courses.map(course => (
             <button
-              key={quest.id}
-              onClick={() => handleNodeClick(quest)}
-              disabled={quest.status === 'locked'}
+              key={course.id}
+              onClick={() => handleNodeClick(course)}
+              disabled={course.status === 'locked'}
               className={`
-                absolute w-16 h-16 -ml-8 -mt-8 rounded-full
+                absolute w-20 h-20 -ml-10 -mt-10 rounded-full
                 flex items-center justify-center border-4
                 transition-all duration-300 hover:scale-110
                 focus:outline-none focus:ring-4 focus:ring-offset-4 focus:ring-offset-slate-950 focus:ring-blue-500
                 z-10
-                ${getStatusColor(quest.status)}
-                ${quest.status === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'}
+                ${getStatusColor(course.status)}
+                ${course.status === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'}
               `}
               style={{
-                left: `${quest.position.x}%`,
-                top: `${quest.position.y}%`
+                left: `${course.position.x}%`,
+                top: `${course.position.y}%`
               }}
             >
-              {getStatusIcon(quest.status, quest.type)}
+              {getStatusIcon(course.status)}
 
               {/* Tooltip */}
-              <div className="absolute top-20 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-20">
+              <div className="absolute top-24 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-20">
                 <span className={`
                   px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm border shadow-lg
-                  ${quest.status === 'completed'
+                  ${course.status === 'completed'
                     ? 'bg-green-900/80 border-green-500/50 text-green-200'
-                    : quest.status === 'active'
+                    : course.status === 'in_progress'
                     ? 'bg-blue-900/80 border-blue-500/50 text-blue-200'
-                    : quest.status === 'available'
+                    : course.status === 'available'
                     ? 'bg-purple-900/80 border-purple-500/50 text-purple-200'
                     : 'bg-slate-900/80 border-slate-700 text-slate-500'
                   }
                 `}>
-                  {quest.title}
+                  {course.title}
                 </span>
                 <div className="text-center mt-1">
                   <span className="text-xs text-slate-400">
-                    {quest.xpEarned > 0 ? `${quest.xpEarned} XP earned` : `${quest.xp} XP`}
+                    {course.isCompleted
+                      ? `${course.completionPct}% Complete`
+                      : `${course.moduleCount} Modules`}
                   </span>
                 </div>
               </div>

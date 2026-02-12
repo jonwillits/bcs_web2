@@ -2,14 +2,14 @@ import { Suspense } from 'react';
 import { auth } from '@/lib/auth/config';
 import { redirect } from 'next/navigation';
 import { hasFacultyAccess } from '@/lib/auth/utils';
-import { QuestMapEditor } from '@/components/faculty/QuestMapEditor';
+import { CourseMapEditor } from '@/components/faculty/CourseMapEditor';
 import { AuthenticatedLayout } from '@/components/layouts/app-layout';
 import { Loader2, Map } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const metadata = {
-  title: 'Quest Map Editor | Faculty Dashboard',
-  description: 'Edit the quest map layout for published modules',
+  title: 'Course Map Editor | Faculty Dashboard',
+  description: 'Edit the course map layout for published modules',
 };
 
 function LoadingState() {
@@ -20,7 +20,7 @@ function LoadingState() {
   );
 }
 
-export default async function QuestMapPage() {
+export default async function CourseMapPage() {
   const session = await auth();
 
   if (!session?.user) {
@@ -42,7 +42,7 @@ export default async function QuestMapPage() {
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground">
-                Quest Map Editor
+                Course Map Editor
               </h1>
               <p className="text-sm md:text-base text-muted-foreground mt-1">
                 Organize and visualize your module learning paths
@@ -57,9 +57,9 @@ export default async function QuestMapPage() {
             <div className="flex gap-3">
               <Map className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="text-xs md:text-sm text-blue-900 space-y-1">
-                <p className="font-medium">Quest Map Layout</p>
+                <p className="font-medium">Course Map Layout</p>
                 <p className="text-blue-800">
-                  Drag modules to position them on the quest map. Connect modules by setting prerequisites in the sidebar.
+                  Drag modules to position them on the course map. Connect modules by setting prerequisites in the sidebar.
                   Use auto-layout to automatically organize modules based on their dependencies.
                 </p>
                 <ul className="list-disc list-inside space-y-0.5 text-blue-800 mt-2">
@@ -75,7 +75,7 @@ export default async function QuestMapPage() {
 
         {/* Editor */}
         <Suspense fallback={<LoadingState />}>
-          <QuestMapEditor />
+          <CourseMapEditor />
         </Suspense>
       </div>
     </AuthenticatedLayout>

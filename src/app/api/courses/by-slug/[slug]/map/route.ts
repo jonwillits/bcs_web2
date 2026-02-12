@@ -4,10 +4,10 @@ import { withDatabaseRetry } from '@/lib/retry';
 
 /**
  * GET /api/courses/[slug]/map
- * Public endpoint to fetch course structure for quest map visualization
+ * Public endpoint to fetch course structure for course map visualization
  * No authentication required - for course preview/marketing
  *
- * Quest Map Feature - Public preview endpoint
+ * Course Map Feature - Public preview endpoint
  */
 export async function GET(
   request: Request,
@@ -32,10 +32,10 @@ export async function GET(
                 parent_module_id: true,
                 sort_order: true,
                 status: true,
-                // Quest map fields
+                // Course map fields
                 prerequisite_module_ids: true,
-                quest_map_position_x: true,
-                quest_map_position_y: true,
+                course_map_position_x: true,
+                course_map_position_y: true,
                 xp_reward: true,
                 difficulty_level: true,
                 estimated_minutes: true,
@@ -90,8 +90,8 @@ export async function GET(
         description: m.description || '',
         moduleNumber: m.module_number,
         position: {
-          x: m.quest_map_position_x ?? 50,
-          y: m.quest_map_position_y ?? 50
+          x: m.course_map_position_x ?? 50,
+          y: m.course_map_position_y ?? 50
         },
         prerequisites: m.prerequisite_module_ids || [],
         xp: m.xp_reward,

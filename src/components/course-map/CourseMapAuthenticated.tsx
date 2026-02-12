@@ -7,6 +7,7 @@ import {
   Check,
   Lock,
   Play,
+  Trophy,
   Target,
   BookOpen,
   Award,
@@ -14,101 +15,80 @@ import {
 } from 'lucide-react';
 import { QuestBreadcrumb } from '@/components/navigation/QuestBreadcrumb';
 
-type CourseStatus = 'locked' | 'available' | 'in_progress' | 'completed';
+type QuestStatus = 'locked' | 'available' | 'active' | 'completed';
 
-interface Course {
+interface Quest {
   id: string;
   title: string;
   slug: string;
   description: string;
-  tags: string[];
-  featured: boolean;
   position: { x: number; y: number };
   prerequisites: string[];
-  moduleCount: number;
-  instructor: {
-    name: string;
-    avatar_url: string | null;
-    title: string | null;
-    department: string | null;
-  };
-  status: CourseStatus;
-  completionPct: number;
-  modulesCompleted: number;
-  modulesTotal: number;
+  xp: number;
+  difficulty: string;
+  estimatedMinutes: number | null;
+  type: string;
+  status: QuestStatus;
+  completedAt: string | null;
   startedAt: string | null;
-  isCompleted: boolean;
+  xpEarned: number;
 }
 
-interface CurriculumMapData {
-  courses: Course[];
-  totalCourses: number;
+interface CourseMapData {
+  course: {
+    id: string;
+    title: string;
+    slug: string;
+    description: string | null;
+  };
+  quests: Quest[];
   userProgress: {
     totalXP: number;
     level: number;
+    completedCount: number;
+    totalCount: number;
+    completionPct: number;
     currentStreak: number;
     longestStreak: number;
-    coursesStarted: number;
-    coursesCompleted: number;
   };
 }
 
-interface CurriculumMapAuthenticatedProps {
+interface CourseMapAuthenticatedProps {
+  courseSlug: string;
   userId: string;
-  pathTitle?: string; // If viewing a learning path
-  pathSlug?: string;
 }
 
-export function CurriculumMapAuthenticated({
-  userId,
-  pathTitle,
-  pathSlug
-}: CurriculumMapAuthenticatedProps) {
-  const [data, setData] = useState<CurriculumMapData | null>(null);
+export function CourseMapAuthenticated({ courseSlug, userId }: CourseMapAuthenticatedProps) {
+  const [data, setData] = useState<CourseMapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapDimensions, setMapDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Fetch curriculum map data
+  // Fetch authenticated course map data
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        const url = pathSlug
-          ? `/api/paths/${pathSlug}`
-          : '/api/curriculum/map';
-        const response = await fetch(url);
+        const response = await fetch(`/api/courses/by-slug/${courseSlug}/course-map`);
         if (!response.ok) {
-          throw new Error('Failed to fetch curriculum map');
+          if (response.status === 403) {
+            // Not enrolled - redirect to course page
+            router.push(`/courses/${courseSlug}`);
+            return;
+          }
+          throw new Error('Failed to fetch course map');
         }
         const json = await response.json();
-
-        // Handle response structure difference between curriculum and path endpoints
-        if (pathSlug) {
-          setData({
-            courses: json.courses,
-            totalCourses: json.courses.length,
-            userProgress: {
-              totalXP: 0,
-              level: 1,
-              currentStreak: 0,
-              longestStreak: 0,
-              coursesStarted: json.pathProgress?.coursesInProgress || 0,
-              coursesCompleted: json.pathProgress?.coursesCompleted || 0
-            }
-          });
-        } else {
-          setData(json);
-        }
+        setData(json);
       } catch (error) {
-        console.error('Error fetching curriculum map:', error);
+        console.error('Error fetching course map:', error);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
-  }, [pathSlug]);
+  }, [courseSlug, router]);
 
   // Update map dimensions on resize
   useEffect(() => {
@@ -130,15 +110,15 @@ export function CurriculumMapAuthenticated({
   const connectionPaths = useMemo(() => {
     if (!data || mapDimensions.width === 0) return null;
 
-    return data.courses.flatMap(course =>
-      course.prerequisites.map(prereqId => {
-        const prereq = data.courses.find(c => c.id === prereqId);
+    return data.quests.flatMap(quest =>
+      quest.prerequisites.map(prereqId => {
+        const prereq = data.quests.find(q => q.id === prereqId);
         if (!prereq) return null;
 
         const startX = (prereq.position.x / 100) * mapDimensions.width;
         const startY = (prereq.position.y / 100) * mapDimensions.height;
-        const endX = (course.position.x / 100) * mapDimensions.width;
-        const endY = (course.position.y / 100) * mapDimensions.height;
+        const endX = (quest.position.x / 100) * mapDimensions.width;
+        const endY = (quest.position.y / 100) * mapDimensions.height;
 
         const controlY1 = startY + (endY - startY) / 2;
         const controlY2 = startY + (endY - startY) / 2;
@@ -150,7 +130,7 @@ export function CurriculumMapAuthenticated({
 
         return (
           <path
-            key={`${prereq.id}-${course.id}`}
+            key={`${prereq.id}-${quest.id}`}
             d={`M ${startX} ${startY} C ${startX} ${controlY1}, ${endX} ${controlY2}, ${endX} ${endY}`}
             fill="none"
             stroke={stroke}
@@ -164,11 +144,11 @@ export function CurriculumMapAuthenticated({
     );
   }, [data, mapDimensions]);
 
-  const getStatusColor = (status: CourseStatus) => {
+  const getStatusColor = (status: QuestStatus) => {
     switch (status) {
       case 'completed':
         return 'bg-green-500 text-white border-green-400 shadow-[0_0_15px_rgba(34,197,94,0.5)]';
-      case 'in_progress':
+      case 'active':
         return 'bg-blue-600 text-white border-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.6)] animate-pulse-slow';
       case 'available':
         return 'bg-purple-600 text-white border-purple-400 shadow-[0_0_15px_rgba(147,51,234,0.5)]';
@@ -177,17 +157,17 @@ export function CurriculumMapAuthenticated({
     }
   };
 
-  const getStatusIcon = (status: CourseStatus) => {
-    if (status === 'completed') return <Check size={24} strokeWidth={3} />;
-    if (status === 'locked') return <Lock size={22} />;
-    if (status === 'in_progress') return <Play size={24} fill="currentColor" />;
-    return <Target size={24} />;
+  const getStatusIcon = (status: QuestStatus, type: string) => {
+    if (status === 'completed') return <Check size={20} strokeWidth={3} />;
+    if (status === 'locked') return <Lock size={18} />;
+    if (type === 'boss') return <Trophy size={20} />;
+    if (status === 'active') return <Play size={20} fill="currentColor" />;
+    return <Target size={20} />;
   };
 
-  const handleNodeClick = (course: Course) => {
-    if (course.status !== 'locked') {
-      // Zoom into course quest map
-      router.push(`/courses/${course.slug}/map`);
+  const handleNodeClick = (quest: Quest) => {
+    if (quest.status !== 'locked') {
+      router.push(`/courses/${courseSlug}/${quest.slug}`);
     }
   };
 
@@ -196,7 +176,7 @@ export function CurriculumMapAuthenticated({
       <div className="flex items-center justify-center h-full bg-slate-950 text-white">
         <div className="text-center">
           <MapIcon className="h-12 w-12 animate-pulse mx-auto mb-4 text-blue-400" />
-          <p className="text-lg">Loading curriculum map...</p>
+          <p className="text-lg">Loading your course map...</p>
         </div>
       </div>
     );
@@ -206,19 +186,12 @@ export function CurriculumMapAuthenticated({
     return (
       <div className="flex items-center justify-center h-full bg-slate-950 text-white">
         <div className="text-center">
-          <p className="text-lg text-red-400">Failed to load curriculum map</p>
+          <p className="text-lg text-red-400">Failed to load course map</p>
+          <p className="text-slate-500 mt-2">Please try refreshing the page</p>
         </div>
       </div>
     );
   }
-
-  // Breadcrumb items
-  const breadcrumbItems = pathSlug
-    ? [
-        { label: 'Learning Paths', href: '/paths' },
-        { label: pathTitle || 'Path' }
-      ]
-    : [{ label: 'Curriculum Map' }];
 
   return (
     <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
@@ -226,7 +199,11 @@ export function CurriculumMapAuthenticated({
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-slate-900/80 border-b border-slate-800 backdrop-blur-md shrink-0">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <QuestBreadcrumb
-            items={breadcrumbItems}
+            items={[
+              { label: 'Program', href: '/program/map' },
+              { label: data.course.title, href: `/courses/${courseSlug}` },
+              { label: 'Course Map' }
+            ]}
             icon={<MapIcon size={24} />}
           />
         </div>
@@ -248,16 +225,17 @@ export function CurriculumMapAuthenticated({
             )}
           </div>
 
-          {/* Course Completion */}
+          {/* Completion */}
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
-              <span className="hidden sm:inline">{data.userProgress.coursesCompleted}/{data.totalCourses} Courses</span>
-              <span className="sm:hidden">{data.userProgress.coursesCompleted}/{data.totalCourses}</span>
+              <span className="hidden sm:inline">{data.userProgress.completionPct}% Complete</span>
+              <span className="sm:hidden">{data.userProgress.completionPct}%</span>
+              <span className="text-slate-500">({data.userProgress.completedCount}/{data.userProgress.totalCount})</span>
             </div>
             <div className="w-24 sm:w-32 h-2 bg-slate-800 rounded-full mt-1 overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-1000 ease-out"
-                style={{ width: `${(data.userProgress.coursesCompleted / data.totalCourses) * 100}%` }}
+                style={{ width: `${data.userProgress.completionPct}%` }}
               />
             </div>
           </div>
@@ -272,48 +250,46 @@ export function CurriculumMapAuthenticated({
             {connectionPaths}
           </svg>
 
-          {/* Course Nodes */}
-          {data.courses.map(course => (
+          {/* Quest Nodes */}
+          {data.quests.map(quest => (
             <button
-              key={course.id}
-              onClick={() => handleNodeClick(course)}
-              disabled={course.status === 'locked'}
+              key={quest.id}
+              onClick={() => handleNodeClick(quest)}
+              disabled={quest.status === 'locked'}
               className={`
-                absolute w-20 h-20 -ml-10 -mt-10 rounded-full
+                absolute w-16 h-16 -ml-8 -mt-8 rounded-full
                 flex items-center justify-center border-4
                 transition-all duration-300 hover:scale-110
                 focus:outline-none focus:ring-4 focus:ring-offset-4 focus:ring-offset-slate-950 focus:ring-blue-500
                 z-10
-                ${getStatusColor(course.status)}
-                ${course.status === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'}
+                ${getStatusColor(quest.status)}
+                ${quest.status === 'locked' ? 'cursor-not-allowed' : 'cursor-pointer'}
               `}
               style={{
-                left: `${course.position.x}%`,
-                top: `${course.position.y}%`
+                left: `${quest.position.x}%`,
+                top: `${quest.position.y}%`
               }}
             >
-              {getStatusIcon(course.status)}
+              {getStatusIcon(quest.status, quest.type)}
 
               {/* Tooltip */}
-              <div className="absolute top-24 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-20">
+              <div className="absolute top-20 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none z-20">
                 <span className={`
                   px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm border shadow-lg
-                  ${course.status === 'completed'
+                  ${quest.status === 'completed'
                     ? 'bg-green-900/80 border-green-500/50 text-green-200'
-                    : course.status === 'in_progress'
+                    : quest.status === 'active'
                     ? 'bg-blue-900/80 border-blue-500/50 text-blue-200'
-                    : course.status === 'available'
+                    : quest.status === 'available'
                     ? 'bg-purple-900/80 border-purple-500/50 text-purple-200'
                     : 'bg-slate-900/80 border-slate-700 text-slate-500'
                   }
                 `}>
-                  {course.title}
+                  {quest.title}
                 </span>
                 <div className="text-center mt-1">
                   <span className="text-xs text-slate-400">
-                    {course.isCompleted
-                      ? `${course.completionPct}% Complete`
-                      : `${course.moduleCount} Modules`}
+                    {quest.xpEarned > 0 ? `${quest.xpEarned} XP earned` : `${quest.xp} XP`}
                   </span>
                 </div>
               </div>

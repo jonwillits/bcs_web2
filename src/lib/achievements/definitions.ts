@@ -283,7 +283,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     }
   },
 
-  // ============ CURRICULUM MAP ACHIEVEMENTS ============
+  // ============ PROGRAM MAP ACHIEVEMENTS ============
   {
     id: 'prerequisite-chain',
     title: 'Chain Breaker',

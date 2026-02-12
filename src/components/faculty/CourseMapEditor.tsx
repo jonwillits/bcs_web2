@@ -16,7 +16,7 @@ import {
   Target,
   Zap
 } from 'lucide-react';
-import { autoLayoutModules, needsAutoLayout, validatePrerequisites } from '@/lib/quest-map-layout';
+import { autoLayoutModules, needsAutoLayout, validatePrerequisites } from '@/lib/course-map-layout';
 import { toast } from 'sonner';
 
 interface Module {
@@ -25,8 +25,8 @@ interface Module {
   slug: string;
   description: string | null;
   prerequisite_module_ids: string[];
-  quest_map_position_x: number;
-  quest_map_position_y: number;
+  course_map_position_x: number;
+  course_map_position_y: number;
   xp_reward: number;
   difficulty_level: 'beginner' | 'intermediate' | 'advanced' | 'boss';
   quest_type: 'standard' | 'challenge' | 'boss' | 'bonus';
@@ -49,7 +49,7 @@ const QUEST_TYPE_ICONS = {
   bonus: '⭐'
 };
 
-export function QuestMapEditor() {
+export function CourseMapEditor() {
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,7 +63,7 @@ export function QuestMapEditor() {
   useEffect(() => {
     async function fetchModules() {
       try {
-        const response = await fetch('/api/faculty/quest-map/layout');
+        const response = await fetch('/api/faculty/course-map/layout');
         if (!response.ok) throw new Error('Failed to fetch modules');
         const data = await response.json();
 
@@ -128,8 +128,8 @@ export function QuestMapEditor() {
         module.id === draggedModule
           ? {
               ...module,
-              quest_map_position_x: Math.max(5, Math.min(95, x)),
-              quest_map_position_y: Math.max(5, Math.min(95, y))
+              course_map_position_x: Math.max(5, Math.min(95, x)),
+              course_map_position_y: Math.max(5, Math.min(95, y))
             }
           : module
       )
@@ -162,7 +162,7 @@ export function QuestMapEditor() {
         return;
       }
 
-      const response = await fetch('/api/faculty/quest-map/layout', {
+      const response = await fetch('/api/faculty/course-map/layout', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ modules })
@@ -172,12 +172,12 @@ export function QuestMapEditor() {
 
       setHasUnsavedChanges(false);
       toast.success('Success!', {
-        description: 'Quest map layout saved successfully!',
+        description: 'Course map layout saved successfully!',
       });
     } catch (error) {
       console.error('Error saving:', error);
       toast.error('Save Failed', {
-        description: 'Failed to save quest map layout. Please try again.',
+        description: 'Failed to save course map layout. Please try again.',
       });
     } finally {
       setSaving(false);
@@ -205,10 +205,10 @@ export function QuestMapEditor() {
         const prereq = modules.find(m => m.id === prereqId);
         if (!prereq) return null;
 
-        const startX = (prereq.quest_map_position_x / 100) * mapDimensions.width;
-        const startY = (prereq.quest_map_position_y / 100) * mapDimensions.height;
-        const endX = (module.quest_map_position_x / 100) * mapDimensions.width;
-        const endY = (module.quest_map_position_y / 100) * mapDimensions.height;
+        const startX = (prereq.course_map_position_x / 100) * mapDimensions.width;
+        const startY = (prereq.course_map_position_y / 100) * mapDimensions.height;
+        const endX = (module.course_map_position_x / 100) * mapDimensions.width;
+        const endY = (module.course_map_position_y / 100) * mapDimensions.height;
 
         const controlY1 = startY + (endY - startY) / 2;
         const controlY2 = startY + (endY - startY) / 2;
@@ -245,7 +245,7 @@ export function QuestMapEditor() {
             <div className="flex items-start gap-2 flex-1">
               <Info className="h-5 w-5 text-neural-primary flex-shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <p className="font-medium text-sm md:text-base">Quest Map Editor</p>
+                <p className="font-medium text-sm md:text-base">Course Map Editor</p>
                 <p className="text-xs md:text-sm text-muted-foreground">
                   Drag modules to position them. Click to edit prerequisites.
                 </p>
@@ -320,8 +320,8 @@ export function QuestMapEditor() {
                       ${draggedModule === module.id ? 'opacity-50' : ''}
                     `}
                     style={{
-                      left: `${module.quest_map_position_x}%`,
-                      top: `${module.quest_map_position_y}%`
+                      left: `${module.course_map_position_x}%`,
+                      top: `${module.course_map_position_y}%`
                     }}
                   >
                     <span className="text-sm sm:text-base mb-0.5">{QUEST_TYPE_ICONS[module.quest_type]}</span>
@@ -372,7 +372,7 @@ export function QuestMapEditor() {
 
                   <div className="text-xs md:text-sm text-muted-foreground space-y-1.5 md:space-y-2">
                     <p>
-                      <strong>Position:</strong> ({selectedModule.quest_map_position_x.toFixed(1)}%, {selectedModule.quest_map_position_y.toFixed(1)}%)
+                      <strong>Position:</strong> ({selectedModule.course_map_position_x.toFixed(1)}%, {selectedModule.course_map_position_y.toFixed(1)}%)
                     </p>
                     <p>
                       <strong>Status:</strong>{' '}

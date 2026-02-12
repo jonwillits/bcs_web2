@@ -221,7 +221,7 @@ const ACHIEVEMENT_DEFINITIONS = [
     criteria: { type: 'learning_paths_completed', count: 3 }
   },
 
-  // ============ CURRICULUM MAP ACHIEVEMENTS ============
+  // ============ PROGRAM MAP ACHIEVEMENTS ============
   {
     id: 'prerequisite-chain',
     title: 'Chain Breaker',

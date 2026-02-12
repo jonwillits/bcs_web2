@@ -4,11 +4,11 @@ import { prisma } from '@/lib/db';
 import { withDatabaseRetry } from '@/lib/retry';
 
 /**
- * GET /api/courses/[slug]/quest-map
+ * GET /api/courses/[slug]/course-map
  * Authenticated endpoint to fetch course structure with user progress
- * Returns quest map with personalized unlock states
+ * Returns course map with personalized unlock states
  *
- * Quest Map Feature - Authenticated personalized endpoint
+ * Course Map Feature - Authenticated personalized endpoint
  */
 
 type QuestStatus = 'locked' | 'available' | 'active' | 'completed';
@@ -19,8 +19,8 @@ interface ModuleData {
   slug: string;
   description: string | null;
   prerequisite_module_ids: string[];
-  quest_map_position_x: number | null;
-  quest_map_position_y: number | null;
+  course_map_position_x: number | null;
+  course_map_position_y: number | null;
   xp_reward: number;
   difficulty_level: string;
   estimated_minutes: number | null;
@@ -61,8 +61,8 @@ export async function GET(
                 slug: true,
                 description: true,
                 prerequisite_module_ids: true,
-                quest_map_position_x: true,
-                quest_map_position_y: true,
+                course_map_position_x: true,
+                course_map_position_y: true,
                 xp_reward: true,
                 difficulty_level: true,
                 estimated_minutes: true,
@@ -140,8 +140,8 @@ export async function GET(
         slug: m.slug,
         description: m.description || '',
         position: {
-          x: m.quest_map_position_x ?? 50,
-          y: m.quest_map_position_y ?? 50
+          x: m.course_map_position_x ?? 50,
+          y: m.course_map_position_y ?? 50
         },
         prerequisites: m.prerequisite_module_ids || [],
         xp: m.xp_reward,

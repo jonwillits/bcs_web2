@@ -53,13 +53,13 @@ export default async function LearningPathsPage() {
             </div>
             <p className="text-slate-400 max-w-2xl">
               Follow curated learning paths designed by expert instructors. Each path guides you through
-              a structured curriculum to achieve specific learning goals.
+              a structured program to achieve specific learning goals.
             </p>
             <div className="mt-6">
-              <Link href="/curriculum/map">
+              <Link href="/program/map">
                 <NeuralButton className="bg-blue-600 text-white hover:bg-blue-700 border-blue-500">
                   <Map className="h-4 w-4 mr-2" />
-                  View Full Curriculum Map
+                  View Full Program Map
                 </NeuralButton>
               </Link>
             </div>

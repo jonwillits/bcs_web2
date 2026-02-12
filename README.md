@@ -18,8 +18,8 @@ A modern e-textbook platform for Brain and Cognitive Sciences education. Built w
 - **Interactive Playgrounds** - Build React-based interactive simulations with Sandpack
 - **Collaboration** - Co-author courses and modules with other faculty, with activity feed
 - **Analytics** - Course enrollment, progress, and engagement statistics
-- **Curriculum Map Editor** - Visual course prerequisite and relationship mapping
-- **Quest Map Editor** - Gamified learning path design with XP, difficulty levels, and prerequisites
+- **Program Map Editor** - Visual course prerequisite and relationship mapping
+- **Course Map Editor** - Gamified learning path design with XP, difficulty levels, and prerequisites
 - **Learning Path Curation** - Create multi-course learning sequences
 
 ### For Students
@@ -124,8 +124,8 @@ src/
 │   │   ├── achievements/         # Achievement listing & user achievements
 │   │   ├── admin/                # User mgmt, faculty requests, audit, analytics, content moderation
 │   │   ├── auth/                 # Register, login, verify-email, forgot/reset-password
-│   │   ├── courses/              # CRUD, enrollment, collaborators, by-slug, quest-map
-│   │   ├── curriculum/           # Curriculum map data
+│   │   ├── courses/              # CRUD, enrollment, collaborators, by-slug, course-map
+│   │   ├── program/              # Program map data
 │   │   ├── dashboard/            # Dashboard statistics
 │   │   ├── faculty/              # Analytics, student lists, layout endpoints
 │   │   ├── media/                # File upload/download (Supabase storage)
@@ -140,7 +140,7 @@ src/
 │   ├── admin/                    # Admin pages (dashboard, users, content, audit, analytics)
 │   ├── auth/                     # Auth pages (login, register, verify, reset, pending)
 │   ├── courses/[slug]/           # Course viewer + module viewer + course map
-│   ├── curriculum/               # Curriculum map
+│   ├── program/                  # Program map
 │   ├── faculty/                  # Faculty pages (courses, modules, paths, editors, profile)
 │   ├── student/                  # Student profile & progress
 │   ├── playgrounds/              # Playground gallery, viewer, builder, TensorFlow playground
@@ -155,7 +155,7 @@ src/
 │   ├── admin/                    # Admin dashboard components
 │   ├── auth/                     # Auth forms (unified registration w/ role-specific fields)
 │   ├── collaboration/            # Activity feed, collaborator panel
-│   ├── curriculum/               # Curriculum map views
+│   ├── program-map/              # Program map views
 │   ├── editor/                   # Tiptap rich text editor
 │   ├── faculty/                  # Faculty dashboard, forms, analytics
 │   ├── layout/                   # App layout, responsive wrappers
@@ -163,7 +163,7 @@ src/
 │   ├── modules/                  # Module tree sidebar, navigation
 │   ├── progress/                 # Progress tracking UI
 │   ├── public/                   # Course catalog, course viewer, instructor sections
-│   ├── quest-map/                # Quest map visualization
+│   ├── course-map/               # Course map visualization
 │   ├── react-playground/         # Sandpack builder, viewer, version history
 │   ├── search/                   # Search results UI
 │   ├── tensorflow-playground/    # Neural network playground (controls, visualization)
@@ -199,7 +199,7 @@ src/
 | **Tracking** | `course_tracking`, `module_progress`, `learning_sessions` |
 | **Gamification** | `achievements`, `user_achievements`, `user_gamification_stats` |
 | **Admin/Auth** | `sessions`, `faculty_requests`, `admin_audit_logs` |
-| **Curriculum** | `learning_paths` |
+| **Learning Paths** | `learning_paths` |
 
 ---
 

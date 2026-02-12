@@ -1,8 +1,8 @@
 /**
- * Quest Map Layout Utilities
+ * Course Map Layout Utilities
  *
- * Handles auto-layout algorithm and validation for module quest maps.
- * Similar to curriculum-layout but for modules instead of courses.
+ * Handles auto-layout algorithm and validation for module course maps.
+ * Similar to program-layout but for modules instead of courses.
  */
 
 // Base interface with required fields for layout calculations
@@ -10,8 +10,8 @@ export interface LayoutModule {
   id: string;
   title: string;
   prerequisite_module_ids: string[];
-  quest_map_position_x: number;
-  quest_map_position_y: number;
+  course_map_position_x: number;
+  course_map_position_y: number;
 }
 
 // For internal use with depth calculation - using type alias with intersection
@@ -28,7 +28,7 @@ export function needsAutoLayout<T extends LayoutModule>(modules: T[]): boolean {
 
   // Check if any module is at default position (50, 50)
   const hasDefaultPositions = modules.some(
-    module => module.quest_map_position_x === 50 && module.quest_map_position_y === 50
+    module => module.course_map_position_x === 50 && module.course_map_position_y === 50
   );
 
   if (hasDefaultPositions) return true;
@@ -36,8 +36,8 @@ export function needsAutoLayout<T extends LayoutModule>(modules: T[]): boolean {
   // Check for overlapping modules (within 10% distance)
   for (let i = 0; i < modules.length; i++) {
     for (let j = i + 1; j < modules.length; j++) {
-      const dx = modules[i].quest_map_position_x - modules[j].quest_map_position_x;
-      const dy = modules[i].quest_map_position_y - modules[j].quest_map_position_y;
+      const dx = modules[i].course_map_position_x - modules[j].course_map_position_x;
+      const dy = modules[i].course_map_position_y - modules[j].course_map_position_y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < 10) {
@@ -119,8 +119,8 @@ export function autoLayoutModules<T extends LayoutModule>(modules: T[]): ModuleW
     modulesAtDepth.forEach((mod, index) => {
       result.push({
         ...mod,
-        quest_map_position_x: horizontalSpacing * (depth + 1),
-        quest_map_position_y: verticalSpacing * (index + 1),
+        course_map_position_x: horizontalSpacing * (depth + 1),
+        course_map_position_y: verticalSpacing * (index + 1),
         depth
       } as ModuleWithDepth<T>);
     });

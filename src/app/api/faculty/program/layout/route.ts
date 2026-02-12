@@ -4,8 +4,8 @@ import { prisma } from '@/lib/db';
 import { withDatabaseRetry } from '@/lib/retry';
 
 /**
- * GET /api/faculty/curriculum/layout
- * Fetch all courses for curriculum editor
+ * GET /api/faculty/program/layout
+ * Fetch all courses for program editor
  * Faculty/Admin only
  */
 export async function GET() {
@@ -28,7 +28,7 @@ export async function GET() {
   const courses = await withDatabaseRetry(async () => {
     return await prisma.courses.findMany({
       where: {
-        status: 'published' // Only show published courses in curriculum
+        status: 'published' // Only show published courses in program map
       },
       select: {
         id: true,
@@ -36,8 +36,8 @@ export async function GET() {
         slug: true,
         description: true,
         prerequisite_course_ids: true,
-        curriculum_position_x: true,
-        curriculum_position_y: true,
+        program_position_x: true,
+        program_position_y: true,
         featured: true,
         tags: true,
         users: {
@@ -64,8 +64,8 @@ export async function GET() {
       slug: course.slug,
       description: course.description,
       prerequisite_course_ids: course.prerequisite_course_ids || [],
-      curriculum_position_x: course.curriculum_position_x ?? 50,
-      curriculum_position_y: course.curriculum_position_y ?? 50,
+      program_position_x: course.program_position_x ?? 50,
+      program_position_y: course.program_position_y ?? 50,
       featured: course.featured,
       tags: course.tags,
       author: course.users.name,
@@ -75,8 +75,8 @@ export async function GET() {
 }
 
 /**
- * PUT /api/faculty/curriculum/layout
- * Save curriculum layout (positions and prerequisites)
+ * PUT /api/faculty/program/layout
+ * Save program map layout (positions and prerequisites)
  * Faculty/Admin only
  */
 export async function PUT(request: Request) {
@@ -104,7 +104,7 @@ export async function PUT(request: Request) {
 
   // Validate data
   for (const course of courses) {
-    if (!course.id || typeof course.curriculum_position_x !== 'number' || typeof course.curriculum_position_y !== 'number') {
+    if (!course.id || typeof course.program_position_x !== 'number' || typeof course.program_position_y !== 'number') {
       return NextResponse.json({ error: 'Invalid course data' }, { status: 400 });
     }
   }
@@ -117,8 +117,8 @@ export async function PUT(request: Request) {
         prisma.courses.update({
           where: { id: course.id },
           data: {
-            curriculum_position_x: course.curriculum_position_x,
-            curriculum_position_y: course.curriculum_position_y,
+            program_position_x: course.program_position_x,
+            program_position_y: course.program_position_y,
             prerequisite_course_ids: course.prerequisite_course_ids || []
           }
         })
