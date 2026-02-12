@@ -4,9 +4,9 @@
  * Runs during deployment to ensure featured playground templates exist in the database.
  * This script can be executed via: npm run seed:playgrounds
  *
- * Uses upsert to:
- * - Create new templates if they don't exist
- * - Update existing templates if definitions change
+ * Default behavior: creates new templates, skips existing ones (preserves UI edits).
+ * Use --force flag to update existing templates with source code from this file:
+ *   npx tsx scripts/seed-playgrounds.ts --force
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -26,12 +26,34 @@ const PLAYGROUND_TEMPLATES = [
   {
     id: 'client-vehicles-demo',
     name: 'Braitenberg Vehicles 3D Lab',
-    description: 'Interactive 3D simulation with fish tank, draggable lamps, and nematodes',
+    description: 'Interactive 3D simulation demonstrating Braitenberg vehicle sensor-motor wiring with four vehicle types',
     category: 'simulations',
     tags: ['3d', 'three.js', 'braitenberg', 'simulation', 'client'],
     dependencies: ['react', 'react-dom', 'three'],
     sourceCode: `import React, { useState, useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
+
+/* ── Constants ── */
+const TANK_HALF_X = 2.3, TANK_HALF_Z = 1.5;
+const TANK_Y_MIN = 2.8, TANK_Y_MAX = 3.7;
+const TANK_BASE_Y = 2.45;
+const WALL_MARGIN = 0.3;
+const NUM_WORMS = 6;
+const NUM_SEGMENTS = 8;
+const SEG_RADIUS = 0.04;
+const SEG_SPACING = 0.07;
+const SENSOR_OFFSET_ANGLE = 0.35; // ~20 degrees
+const BASE_SPEED = 0.6;
+const SENSOR_GAIN = 2.5;
+const WHEEL_BASE = 0.12;
+const EPSILON = 0.01;
+
+const VEHICLE_CONFIG = {
+  fear:       { color: 0xff7777, label: '2a: Fear',       cross: false, inhibit: false },
+  aggression: { color: 0x77ff77, label: '2b: Aggression', cross: true,  inhibit: false },
+  love:       { color: 0x77ddff, label: '3a: Love',       cross: true,  inhibit: true  },
+  explorer:   { color: 0xffcc77, label: '3b: Explorer',   cross: false, inhibit: true  },
+};
 
 const styles = {
   card: { background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: 12, border: '1px solid rgba(99, 102, 241, 0.2)', padding: '1.5rem', marginBottom: '1rem' },
@@ -44,7 +66,7 @@ const styles = {
 function MobileWarning({ onContinue }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', padding: '2rem', textAlign: 'center', color: 'white', fontFamily: 'system-ui' }}>
-      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🖥️</div>
+      <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>&#128421;</div>
       <h2 style={{ marginBottom: '0.5rem' }}>Desktop Recommended</h2>
       <p style={{ color: '#888', marginBottom: '2rem', maxWidth: 300 }}>This 3D simulation requires mouse controls for the best experience.</p>
       <button onClick={onContinue} style={styles.btn}>Continue Anyway</button>
@@ -52,60 +74,128 @@ function MobileWarning({ onContinue }) {
   );
 }
 
-function LabDescription() {
+/* ── Wiring Diagram Overlay ── */
+function WiringDiagram({ behaviorType }) {
+  const cfg = VEHICLE_CONFIG[behaviorType];
+  const sign = cfg.inhibit ? '(-)' : '(+)';
   return (
-    <div style={{ padding: '2rem', color: 'white', maxWidth: 900, margin: '0 auto', fontFamily: 'system-ui' }}>
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2.5rem', background: 'linear-gradient(135deg, #6366f1 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem' }}>Braitenberg Vehicles 3D Lab</h1>
-        <p style={{ color: '#888', fontSize: '1.1rem' }}>Explore emergent behavior from simple sensor-motor connections</p>
-      </div>
+    <div style={{ position: 'absolute', bottom: 16, right: 16, background: 'rgba(0,0,0,0.75)', borderRadius: 10, padding: '12px 16px', fontSize: '0.72rem', color: '#ccc', fontFamily: 'monospace', lineHeight: 1.8, border: '1px solid rgba(99,102,241,0.25)', pointerEvents: 'none', minWidth: 170 }}>
+      <div style={{ color: '#a5b4fc', fontWeight: 700, marginBottom: 4, fontFamily: 'system-ui', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Wiring: {cfg.label}</div>
+      {cfg.cross ? (
+        <>
+          <div>L-sensor --\\  /-- R-motor {sign}</div>
+          <div style={{ paddingLeft: '5.5ch' }}>X</div>
+          <div>R-sensor --/  \\-- L-motor {sign}</div>
+        </>
+      ) : (
+        <>
+          <div>L-sensor -------- L-motor {sign}</div>
+          <div>R-sensor -------- R-motor {sign}</div>
+        </>
+      )}
+    </div>
+  );
+}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        {[
-          { icon: '🐛', title: 'Nematodes', desc: 'Simple creatures that swim in the tank with two different behavior patterns' },
-          { icon: '💡', title: 'Light Sources', desc: 'Double-click lamps to toggle them and observe how creatures respond' },
-          { icon: '🎥', title: 'Camera Control', desc: 'Click and drag to orbit around the scene, scroll to zoom in/out' },
-        ].map(item => (
-          <div key={item.title} style={styles.card}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>{item.icon}</div>
-            <h3 style={{ color: '#a5b4fc', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{item.title}</h3>
-            <p style={{ color: '#888', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>{item.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ ...styles.card, background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)' }}>
-        <h3 style={{ color: '#a5b4fc', marginBottom: '1rem', fontSize: '1rem' }}>Vehicle Behaviors</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(255, 153, 153, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: '1.2rem' }}>🔴</span>
-            </div>
-            <div>
-              <div style={{ color: '#ff9999', fontWeight: 600, marginBottom: '0.25rem' }}>Vehicle 1: Sinusoidal</div>
-              <div style={{ color: '#888', fontSize: '0.85rem' }}>Smooth, wave-like movement patterns</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(153, 255, 153, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <span style={{ fontSize: '1.2rem' }}>🟢</span>
-            </div>
-            <div>
-              <div style={{ color: '#99ff99', fontWeight: 600, marginBottom: '0.25rem' }}>Vehicle 2: Erratic</div>
-              <div style={{ color: '#888', fontSize: '0.85rem' }}>Random, unpredictable movements</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ textAlign: 'center', padding: '1rem', color: '#666', fontSize: '0.9rem' }}>
-        👆 Select <strong style={{ color: '#a5b4fc' }}>Vehicle 1</strong> or <strong style={{ color: '#a5b4fc' }}>Vehicle 2</strong> tabs to start the simulation
+/* ── Sensor HUD ── */
+function SensorHUD({ data }) {
+  if (!data) return null;
+  const bar = (val, max, color) => (
+    <div style={{ width: 80, height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ width: Math.min(val / max, 1) * 100 + '%', height: '100%', background: color, borderRadius: 3 }} />
+    </div>
+  );
+  return (
+    <div style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.75)', borderRadius: 10, padding: '10px 14px', fontSize: '0.7rem', color: '#ccc', fontFamily: 'monospace', border: '1px solid rgba(99,102,241,0.25)', pointerEvents: 'none', minWidth: 150 }}>
+      <div style={{ color: '#a5b4fc', fontWeight: 700, marginBottom: 6, fontFamily: 'system-ui', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Focus Nematode</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '58px 1fr', gap: '4px 8px', alignItems: 'center' }}>
+        <span>L-sensor</span>{bar(data.sL, 3, '#f9a825')}
+        <span>R-sensor</span>{bar(data.sR, 3, '#f9a825')}
+        <span>L-motor</span>{bar(data.mL, 4, '#66bb6a')}
+        <span>R-motor</span>{bar(data.mR, 4, '#66bb6a')}
       </div>
     </div>
   );
 }
 
-function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
+/* ── Lab Description ── */
+function LabDescription() {
+  const wiringCard = (title, color, cross, inhibit, desc, why) => {
+    const sign = inhibit ? '(-)' : '(+)';
+    return (
+      <div style={{ ...styles.card, borderColor: color + '40' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+          <div style={{ width: 14, height: 14, borderRadius: '50%', background: color, boxShadow: '0 0 8px ' + color }} />
+          <h4 style={{ margin: 0, color, fontSize: '1rem' }}>{title}</h4>
+        </div>
+        <div style={{ fontFamily: 'monospace', fontSize: '0.75rem', background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: 6, marginBottom: '0.75rem', lineHeight: 1.7, color: '#aaa' }}>
+          {cross ? (
+            <>{('L-sensor --\\\\  /-- R-motor ' + sign)}<br/>{('             X')}<br/>{('R-sensor --/  \\\\-- L-motor ' + sign)}</>
+          ) : (
+            <>{('L-sensor ---- L-motor ' + sign)}<br/>{('R-sensor ---- R-motor ' + sign)}</>
+          )}
+        </div>
+        <p style={{ color: '#bbb', fontSize: '0.85rem', margin: '0 0 0.5rem 0', lineHeight: 1.5 }}>{desc}</p>
+        <p style={{ color: '#888', fontSize: '0.8rem', margin: 0, fontStyle: 'italic', lineHeight: 1.5 }}>{why}</p>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ padding: '2rem', color: 'white', maxWidth: 920, margin: '0 auto', fontFamily: 'system-ui' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2.2rem', background: 'linear-gradient(135deg, #6366f1 0%, #a78bfa 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem' }}>Braitenberg Vehicles 3D Lab</h1>
+        <p style={{ color: '#888', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto' }}>In 1984, Valentino Braitenberg showed that wiring two sensors to two motors in different ways produces creatures that appear to have personalities -- fear, aggression, love, and curiosity -- from nothing but simple circuits.</p>
+      </div>
+
+      <h2 style={{ color: '#a5b4fc', fontSize: '1.1rem', marginBottom: '1rem' }}>How It Works</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        {[
+          { title: 'Sensors', desc: 'Each creature has two light sensors on its head (left and right). Each sensor measures how much light it receives from the lamps. The closer and brighter the light source, the stronger the reading.' },
+          { title: 'Motors', desc: 'Each creature has two motors (left and right) that control its movement. A faster left motor turns the creature right, and vice versa. Speed difference = turning.' },
+          { title: 'Wiring', desc: 'The key insight: HOW you connect sensors to motors determines the entire personality. Same-side or crossed? Stronger signal means faster or slower? These two choices create four distinct behaviors.' },
+        ].map(item => (
+          <div key={item.title} style={styles.card}>
+            <h3 style={{ color: '#a5b4fc', marginBottom: '0.5rem', fontSize: '1rem', marginTop: 0 }}>{item.title}</h3>
+            <p style={{ color: '#888', fontSize: '0.85rem', lineHeight: 1.6, margin: 0 }}>{item.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <h2 style={{ color: '#a5b4fc', fontSize: '1.1rem', marginBottom: '1rem' }}>The Four Vehicle Types</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        {wiringCard('Vehicle 2a: Fear', '#ff7777', false, false,
+          'Same-side wiring, excitatory. More light on left sensor = faster left motor = turns AWAY from light. Speeds up near light sources.',
+          'Why it works: The motor on the same side as the brighter sensor spins faster, pivoting the creature away. And since more light means more speed, it flees faster the closer it gets.'
+        )}
+        {wiringCard('Vehicle 2b: Aggression', '#77ff77', true, false,
+          'Crossed wiring, excitatory. More light on left sensor = faster RIGHT motor = turns TOWARD light. Charges at light sources at high speed.',
+          'Why it works: Crossing the wires reverses the turning direction. Now the creature steers toward stimulation, and excitatory connections mean it accelerates on approach -- ramming straight into the light.'
+        )}
+        {wiringCard('Vehicle 3a: Love', '#77ddff', true, true,
+          'Crossed wiring, inhibitory. More light on left sensor = SLOWER right motor = turns toward light but slows down. Gently approaches and hovers near light sources.',
+          'Why it works: Crossed wires still steer it toward light, but inhibitory connections mean more stimulation produces less motor output. It approaches gently and comes to rest near the light -- as if attracted.'
+        )}
+        {wiringCard('Vehicle 3b: Explorer', '#ffcc77', false, true,
+          'Same-side wiring, inhibitory. More light on left sensor = SLOWER left motor = turns away from light and slows near it. Moves fastest in dark areas.',
+          'Why it works: Same-side wiring pushes it away from light, and inhibitory connections mean light slows it down. It speeds up in darkness and sluggishly drifts away from bright areas -- exploring the dim regions.'
+        )}
+      </div>
+
+      <div style={{ ...styles.card, background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%)', textAlign: 'center', padding: '1.5rem 2rem' }}>
+        <h3 style={{ color: '#a5b4fc', marginTop: 0, marginBottom: '0.75rem' }}>The Key Insight</h3>
+        <p style={{ color: '#ccc', fontSize: '1rem', lineHeight: 1.6, margin: 0 }}>Same sensors + same motors + <strong style={{ color: '#fff' }}>different wiring</strong> = completely different personalities. No programming, no intelligence, no goals -- just circuits.</p>
+      </div>
+
+      <div style={{ textAlign: 'center', padding: '1.5rem 1rem 0.5rem', color: '#666', fontSize: '0.9rem' }}>
+        Select a vehicle tab above to start the simulation. Toggle lamps on/off to see how behavior changes in real time.
+      </div>
+    </div>
+  );
+}
+
+/* ── ThreeScene ── */
+function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle, focusDataRef }) {
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -118,6 +208,13 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
   const orbitRef = useRef({ theta: Math.PI / 4, phi: Math.PI / 3, radius: 14 });
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+  const lampsRef = useRef(lamps);
+  const isPausedRef = useRef(isPaused);
+  const heatmapRef = useRef(null);
+  const frameCountRef = useRef(0);
+
+  useEffect(() => { lampsRef.current = lamps; }, [lamps]);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -125,18 +222,15 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x080810);
     scene.fog = new THREE.Fog(0x080810, 15, 35);
     sceneRef.current = scene;
 
-    // Camera
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
     cameraRef.current = camera;
     updateCameraPosition();
 
-    // Renderer with better quality
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -147,231 +241,266 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Enhanced lighting
-    const ambientLight = new THREE.AmbientLight(0x404060, 0.4);
-    scene.add(ambientLight);
-
+    // Lighting
+    scene.add(new THREE.AmbientLight(0x404060, 0.4));
     const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
     mainLight.position.set(8, 12, 8);
     mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 2048;
-    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.mapSize.set(2048, 2048);
     scene.add(mainLight);
-
-    // Subtle blue rim light
     const rimLight = new THREE.DirectionalLight(0x6366f1, 0.3);
     rimLight.position.set(-5, 5, -5);
     scene.add(rimLight);
 
-    // Room floor with gradient effect
-    const floorGeo = new THREE.PlaneGeometry(25, 25);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x12121a, roughness: 0.9, metalness: 0.1 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+    // Floor
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(25, 25), new THREE.MeshStandardMaterial({ color: 0x12121a, roughness: 0.9, metalness: 0.1 }));
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Enhanced table with wood grain effect
-    const tableGeo = new THREE.BoxGeometry(7, 0.35, 4.5);
-    const tableMat = new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 0.7, metalness: 0.05 });
-    const table = new THREE.Mesh(tableGeo, tableMat);
+    // Table
+    const table = new THREE.Mesh(new THREE.BoxGeometry(7, 0.35, 4.5), new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 0.7, metalness: 0.05 }));
     table.position.set(0, 1.5, 0);
     table.castShadow = true;
     table.receiveShadow = true;
     scene.add(table);
-
-    // Table legs
     const legGeo = new THREE.CylinderGeometry(0.08, 0.1, 1.5, 8);
     const legMat = new THREE.MeshStandardMaterial({ color: 0x3a2a20, roughness: 0.8 });
-    [[-3, 0.75, -2], [3, 0.75, -2], [-3, 0.75, 2], [3, 0.75, 2]].forEach(([x, y, z]) => {
-      const leg = new THREE.Mesh(legGeo, legMat);
-      leg.position.set(x, y, z);
-      leg.castShadow = true;
-      scene.add(leg);
-    });
+    [[-3, 0.75, -2], [3, 0.75, -2], [-3, 0.75, 2], [3, 0.75, 2]].forEach(([x, y, z]) => { const leg = new THREE.Mesh(legGeo, legMat); leg.position.set(x, y, z); leg.castShadow = true; scene.add(leg); });
 
-    // Enhanced fish tank
+    // Tank
     const tankGroup = new THREE.Group();
-    tankGroup.position.set(0, 2.45, 0);
-
-    // Tank glass with better transparency
-    const glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0xaaddff, transparent: true, opacity: 0.25,
-      roughness: 0.05, metalness: 0, transmission: 0.9,
-      thickness: 0.1, envMapIntensity: 1
-    });
-    [[0, 0.8, 1.8, 5.5, 1.6, 0.06], [0, 0.8, -1.8, 5.5, 1.6, 0.06], [2.7, 0.8, 0, 0.06, 1.6, 3.6], [-2.7, 0.8, 0, 0.06, 1.6, 3.6]].forEach(([x, y, z, w, h, d]) => {
-      const wallGeo = new THREE.BoxGeometry(w, h, d);
-      const wall = new THREE.Mesh(wallGeo, glassMat);
-      wall.position.set(x, y, z);
-      tankGroup.add(wall);
-    });
-
-    // Water with animated caustics effect
-    const waterGeo = new THREE.BoxGeometry(5.3, 1.2, 3.5);
-    const waterMat = new THREE.MeshPhysicalMaterial({
-      color: 0x1a5a8a, transparent: true, opacity: 0.5,
-      roughness: 0.1, metalness: 0.1, transmission: 0.6
-    });
-    const water = new THREE.Mesh(waterGeo, waterMat);
+    tankGroup.position.set(0, TANK_BASE_Y, 0);
+    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xaaddff, transparent: true, opacity: 0.25, roughness: 0.05, metalness: 0, transmission: 0.9, thickness: 0.1 });
+    [[0, 0.8, 1.8, 5.5, 1.6, 0.06], [0, 0.8, -1.8, 5.5, 1.6, 0.06], [2.7, 0.8, 0, 0.06, 1.6, 3.6], [-2.7, 0.8, 0, 0.06, 1.6, 3.6]].forEach(([x, y, z, w, h, d]) => { const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), glassMat); wall.position.set(x, y, z); tankGroup.add(wall); });
+    const water = new THREE.Mesh(new THREE.BoxGeometry(5.3, 1.2, 3.5), new THREE.MeshPhysicalMaterial({ color: 0x1a5a8a, transparent: true, opacity: 0.5, roughness: 0.1, metalness: 0.1, transmission: 0.6 }));
     water.position.set(0, 0.55, 0);
     tankGroup.add(water);
-
-    // Tank bottom with sand texture
-    const bottomGeo = new THREE.BoxGeometry(5.5, 0.15, 3.6);
-    const bottomMat = new THREE.MeshStandardMaterial({ color: 0x3a6a5a, roughness: 0.9 });
-    const bottom = new THREE.Mesh(bottomGeo, bottomMat);
+    const bottom = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.15, 3.6), new THREE.MeshStandardMaterial({ color: 0x3a6a5a, roughness: 0.9 }));
     tankGroup.add(bottom);
-
-    // Add some decorative pebbles
     const pebbleGeo = new THREE.SphereGeometry(0.08, 8, 6);
     const pebbleMat = new THREE.MeshStandardMaterial({ color: 0x556655, roughness: 0.8 });
-    for (let i = 0; i < 15; i++) {
-      const pebble = new THREE.Mesh(pebbleGeo, pebbleMat);
-      pebble.position.set((Math.random() - 0.5) * 4.5, 0.1, (Math.random() - 0.5) * 3);
-      pebble.scale.set(0.8 + Math.random() * 0.5, 0.6 + Math.random() * 0.3, 0.8 + Math.random() * 0.5);
-      tankGroup.add(pebble);
-    }
-
+    for (let i = 0; i < 15; i++) { const p = new THREE.Mesh(pebbleGeo, pebbleMat); p.position.set((Math.random() - 0.5) * 4.5, 0.1, (Math.random() - 0.5) * 3); p.scale.set(0.8 + Math.random() * 0.5, 0.6 + Math.random() * 0.3, 0.8 + Math.random() * 0.5); tankGroup.add(p); }
     scene.add(tankGroup);
 
-    // Worm-like nematodes - thin and long
-    const nematodeColor = behaviorType === 1 ? 0xff7777 : 0x77ff77;
-    const nematodeMat = new THREE.MeshStandardMaterial({
-      color: nematodeColor, roughness: 0.5, metalness: 0.05,
-      emissive: nematodeColor, emissiveIntensity: 0.2
-    });
+    // Heatmap plane
+    const hmCanvas = document.createElement('canvas');
+    hmCanvas.width = 64; hmCanvas.height = 64;
+    const hmCtx = hmCanvas.getContext('2d');
+    const hmTexture = new THREE.CanvasTexture(hmCanvas);
+    const hmPlane = new THREE.Mesh(new THREE.PlaneGeometry(5.3, 3.5), new THREE.MeshBasicMaterial({ map: hmTexture, transparent: true, opacity: 0.35, depthWrite: false }));
+    hmPlane.rotation.x = -Math.PI / 2;
+    hmPlane.position.set(0, TANK_BASE_Y + 1.21, 0);
+    scene.add(hmPlane);
+    heatmapRef.current = { canvas: hmCanvas, ctx: hmCtx, texture: hmTexture, mesh: hmPlane };
 
-    for (let i = 0; i < 10; i++) {
-      // Create segmented worm body using multiple small spheres
+    // Nematodes
+    const cfg = VEHICLE_CONFIG[behaviorType];
+    const nematodeMat = new THREE.MeshStandardMaterial({ color: cfg.color, roughness: 0.5, metalness: 0.05, emissive: cfg.color, emissiveIntensity: 0.2 });
+    const sensorMat = new THREE.MeshStandardMaterial({ color: 0xffff88, emissive: 0xffaa00, emissiveIntensity: 0, roughness: 0.3 });
+
+    for (let i = 0; i < NUM_WORMS; i++) {
       const wormGroup = new THREE.Group();
-      const numSegments = 8;
-      const segmentRadius = 0.025;
-      const segmentSpacing = 0.045;
-
-      for (let s = 0; s < numSegments; s++) {
-        const segGeo = new THREE.SphereGeometry(segmentRadius * (1 - s * 0.05), 8, 6);
-        const segment = new THREE.Mesh(segGeo, nematodeMat.clone());
-        segment.position.x = s * segmentSpacing;
-        segment.castShadow = true;
-        wormGroup.add(segment);
+      for (let s = 0; s < NUM_SEGMENTS; s++) {
+        const seg = new THREE.Mesh(new THREE.SphereGeometry(SEG_RADIUS * (1 - s * 0.04), 8, 6), nematodeMat.clone());
+        seg.position.x = -s * SEG_SPACING;
+        seg.castShadow = true;
+        wormGroup.add(seg);
       }
+      // Sensor dots
+      const sL = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), sensorMat.clone());
+      sL.position.set(0.04, 0.02, -0.03);
+      sL.userData.isSensor = 'left';
+      wormGroup.add(sL);
+      const sR = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), sensorMat.clone());
+      sR.position.set(0.04, 0.02, 0.03);
+      sR.userData.isSensor = 'right';
+      wormGroup.add(sR);
 
-      wormGroup.position.set((Math.random() - 0.5) * 4.5, 2.45 + 0.35 + Math.random() * 0.9, (Math.random() - 0.5) * 3);
-      const vx = (Math.random() - 0.5) * 0.025;
-      const vz = (Math.random() - 0.5) * 0.025;
-      wormGroup.userData.velocity = new THREE.Vector3(vx, (Math.random() - 0.5) * 0.008, vz);
-      wormGroup.userData.phase = Math.random() * Math.PI * 2;
-      wormGroup.rotation.y = Math.atan2(vx, vz);
+      const heading = Math.random() * Math.PI * 2;
+      wormGroup.position.set((Math.random() - 0.5) * (TANK_HALF_X * 2 - 0.4), TANK_Y_MIN + Math.random() * (TANK_Y_MAX - TANK_Y_MIN), (Math.random() - 0.5) * (TANK_HALF_Z * 2 - 0.4));
+      wormGroup.userData = { heading, sensorLeft: 0, sensorRight: 0, motorLeft: 0, motorRight: 0, phase: Math.random() * Math.PI * 2 };
+      wormGroup.rotation.y = heading;
       scene.add(wormGroup);
       nematodesRef.current.push(wormGroup);
     }
 
-    // Larger, more visible lamps
+    // Lamps
     lamps.forEach((lamp, idx) => {
       const lampGroup = new THREE.Group();
       lampGroup.position.set(lamp.position[0], lamp.position[1], lamp.position[2]);
-
-      // Larger lamp base
-      const baseGeo = new THREE.CylinderGeometry(0.5, 0.55, 0.15, 20);
-      const baseMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3, metalness: 0.7 });
-      const base = new THREE.Mesh(baseGeo, baseMat);
-      base.position.y = 0.075;
-      base.castShadow = true;
-      lampGroup.add(base);
-
-      // Thicker lamp pole
-      const poleGeo = new THREE.CylinderGeometry(0.06, 0.06, 1.3, 12);
-      const poleMat = new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.4, metalness: 0.6 });
-      const pole = new THREE.Mesh(poleGeo, poleMat);
-      pole.position.y = 0.8;
-      pole.castShadow = true;
-      lampGroup.add(pole);
-
-      // Larger lamp shade
-      const shadeGeo = new THREE.ConeGeometry(0.4, 0.22, 16, 1, true);
-      const shadeMat = new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.5, metalness: 0.5, side: THREE.DoubleSide });
-      const shade = new THREE.Mesh(shadeGeo, shadeMat);
-      shade.position.y = 1.4;
-      shade.rotation.x = Math.PI;
-      lampGroup.add(shade);
-
-      // Much larger bulb for visibility
-      const bulbGeo = new THREE.SphereGeometry(0.22, 20, 20);
-      const bulbMat = new THREE.MeshStandardMaterial({
-        color: lamp.isOn ? 0xffffcc : 0x444444,
-        emissive: lamp.isOn ? 0xffaa44 : 0x000000,
-        emissiveIntensity: lamp.isOn ? 1.0 : 0,
-        roughness: 0.15
-      });
-      const bulb = new THREE.Mesh(bulbGeo, bulbMat);
-      bulb.position.y = 1.52;
-      bulb.userData.lampIndex = idx;
-      lampGroup.add(bulb);
-
-      // Stronger light source
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.15, 20), new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3, metalness: 0.7 }));
+      base.position.y = 0.075; base.castShadow = true; lampGroup.add(base);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.3, 12), new THREE.MeshStandardMaterial({ color: 0x3a3a3a, roughness: 0.4, metalness: 0.6 }));
+      pole.position.y = 0.8; pole.castShadow = true; lampGroup.add(pole);
+      const shade = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.22, 16, 1, true), new THREE.MeshStandardMaterial({ color: 0x4a4a4a, roughness: 0.5, metalness: 0.5, side: THREE.DoubleSide }));
+      shade.position.y = 1.4; shade.rotation.x = Math.PI; lampGroup.add(shade);
+      const bulbMat = new THREE.MeshStandardMaterial({ color: lamp.isOn ? 0xffffcc : 0x444444, emissive: lamp.isOn ? 0xffaa44 : 0x000000, emissiveIntensity: lamp.isOn ? 1.0 : 0, roughness: 0.15 });
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20, 20), bulbMat);
+      bulb.position.y = 1.52; bulb.userData.lampIndex = idx; lampGroup.add(bulb);
       if (lamp.isOn) {
         const light = new THREE.PointLight(0xffdd88, 4, 12);
-        light.position.y = 1.52;
-        light.castShadow = true;
-        lampGroup.add(light);
+        light.position.y = 1.52; light.castShadow = true; lampGroup.add(light);
         lampLightsRef.current[idx] = light;
       }
-
       scene.add(lampGroup);
       lampMeshesRef.current[idx] = { group: lampGroup, bulb, mat: bulbMat };
     });
 
+    // Compute lamp world positions for sensors
+    function getLampWorldPositions() {
+      const positions = [];
+      lampsRef.current.forEach((lamp, idx) => {
+        if (!lamp.isOn) return;
+        const meshData = lampMeshesRef.current[idx];
+        if (!meshData) return;
+        const bulbWorld = new THREE.Vector3();
+        meshData.bulb.getWorldPosition(bulbWorld);
+        positions.push(bulbWorld);
+      });
+      return positions;
+    }
+
+    // Sensor reading: sum of lampIntensity / (dist^2 + epsilon) for all active lamps
+    function computeSensor(sensorWorldPos, lampPositions) {
+      let total = 0;
+      for (const lp of lampPositions) {
+        const distSq = sensorWorldPos.distanceToSquared(lp);
+        total += 1.0 / (distSq + EPSILON);
+      }
+      return total;
+    }
+
+    // Update heatmap
+    function updateHeatmap() {
+      const hm = heatmapRef.current;
+      if (!hm) return;
+      const ctx = hm.ctx;
+      const w = hm.canvas.width, h = hm.canvas.height;
+      const imgData = ctx.createImageData(w, h);
+      const lampPositions = getLampWorldPositions();
+      for (let py = 0; py < h; py++) {
+        for (let px = 0; px < w; px++) {
+          const wx = (px / w - 0.5) * 5.3;
+          const wz = (py / h - 0.5) * 3.5;
+          const worldPos = new THREE.Vector3(wx, TANK_BASE_Y + 1.0, wz);
+          let intensity = 0;
+          for (const lp of lampPositions) {
+            const distSq = worldPos.distanceToSquared(lp);
+            intensity += 1.0 / (distSq + EPSILON);
+          }
+          const v = Math.min(intensity * 0.5, 1.0);
+          const idx = (py * w + px) * 4;
+          imgData.data[idx] = Math.floor(v * 255);
+          imgData.data[idx + 1] = Math.floor(v * 140);
+          imgData.data[idx + 2] = 0;
+          imgData.data[idx + 3] = Math.floor(v * 180);
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+      hm.texture.needsUpdate = true;
+    }
+
     // Animation loop
     function animate() {
       animationRef.current = requestAnimationFrame(animate);
-      const delta = clockRef.current.getDelta();
+      const delta = Math.min(clockRef.current.getDelta(), 0.05);
       const elapsed = clockRef.current.getElapsedTime();
+      frameCountRef.current++;
 
-      if (!isPaused) {
-        nematodesRef.current.forEach(worm => {
+      if (frameCountRef.current % 5 === 0) updateHeatmap();
+
+      if (!isPausedRef.current) {
+        const lampPositions = getLampWorldPositions();
+        const vehicleCfg = VEHICLE_CONFIG[behaviorType];
+
+        nematodesRef.current.forEach((worm, wormIdx) => {
+          const ud = worm.userData;
           const pos = worm.position;
-          const vel = worm.userData.velocity;
-          const phase = worm.userData.phase || 0;
 
-          // Different movement behaviors
-          if (behaviorType === 1) {
-            // Vehicle 1: Smooth sinusoidal - coordinated, wave-like swimming
-            vel.x += Math.sin(elapsed * 2 + pos.z + phase) * 0.0015;
-            vel.z += Math.cos(elapsed * 1.5 + pos.x + phase) * 0.0015;
+          // Compute sensor positions in world space
+          const headDir = new THREE.Vector3(Math.sin(ud.heading), 0, Math.cos(ud.heading));
+          const leftAngle = ud.heading - SENSOR_OFFSET_ANGLE;
+          const rightAngle = ud.heading + SENSOR_OFFSET_ANGLE;
+          const sensorDist = SEG_SPACING * 0.8;
+          const sLPos = new THREE.Vector3(pos.x + Math.sin(leftAngle) * sensorDist, pos.y, pos.z + Math.cos(leftAngle) * sensorDist);
+          const sRPos = new THREE.Vector3(pos.x + Math.sin(rightAngle) * sensorDist, pos.y, pos.z + Math.cos(rightAngle) * sensorDist);
+
+          // Sensor readings
+          const sL = computeSensor(sLPos, lampPositions);
+          const sR = computeSensor(sRPos, lampPositions);
+          ud.sensorLeft = sL;
+          ud.sensorRight = sR;
+
+          // Wiring: determine which sensor drives which motor
+          let inputL, inputR;
+          if (vehicleCfg.cross) { inputL = sR; inputR = sL; } // contralateral
+          else { inputL = sL; inputR = sR; } // ipsilateral
+
+          // Motor output
+          let mL, mR;
+          if (vehicleCfg.inhibit) {
+            mL = Math.max(0.05, BASE_SPEED - SENSOR_GAIN * inputL);
+            mR = Math.max(0.05, BASE_SPEED - SENSOR_GAIN * inputR);
           } else {
-            // Vehicle 2: Erratic - sudden direction changes, unpredictable
-            if (Math.random() < 0.05) {
-              vel.x += (Math.random() - 0.5) * 0.008;
-              vel.z += (Math.random() - 0.5) * 0.008;
-            }
-            vel.x += (Math.random() - 0.5) * 0.002;
-            vel.z += (Math.random() - 0.5) * 0.002;
+            mL = BASE_SPEED + SENSOR_GAIN * inputL;
+            mR = BASE_SPEED + SENSOR_GAIN * inputR;
           }
-          vel.clampLength(0, 0.04);
+          ud.motorLeft = mL;
+          ud.motorRight = mR;
 
-          pos.x += vel.x * delta * 60;
-          pos.y += vel.y * delta * 60;
-          pos.z += vel.z * delta * 60;
+          // Differential drive
+          const forwardSpeed = (mL + mR) / 2;
+          const angularVel = (mR - mL) / WHEEL_BASE;
 
-          // Tank bounds
-          if (pos.x > 2.3) { pos.x = 2.3; vel.x *= -1; }
-          if (pos.x < -2.3) { pos.x = -2.3; vel.x *= -1; }
-          if (pos.z > 1.5) { pos.z = 1.5; vel.z *= -1; }
-          if (pos.z < -1.5) { pos.z = -1.5; vel.z *= -1; }
-          if (pos.y > 3.7) { pos.y = 3.7; vel.y *= -1; }
-          if (pos.y < 2.65) { pos.y = 2.65; vel.y *= -1; }
+          ud.heading += angularVel * delta;
 
-          // Face movement direction
-          worm.rotation.y = Math.atan2(vel.x, vel.z);
+          // Soft wall avoidance
+          const wallForce = 8.0;
+          const margin = WALL_MARGIN;
+          if (pos.x > TANK_HALF_X - margin) ud.heading += wallForce * (pos.x - (TANK_HALF_X - margin)) * delta;
+          if (pos.x < -TANK_HALF_X + margin) ud.heading -= wallForce * ((-TANK_HALF_X + margin) - pos.x) * delta;
+          if (pos.z > TANK_HALF_Z - margin) ud.heading += wallForce * (pos.z - (TANK_HALF_Z - margin)) * delta;
+          if (pos.z < -TANK_HALF_Z + margin) ud.heading -= wallForce * ((-TANK_HALF_Z + margin) - pos.z) * delta;
 
-          // Wriggling animation - segments undulate
-          const segments = worm.children;
-          segments.forEach((seg, i) => {
-            const wave = Math.sin(elapsed * 6 + phase + i * 0.8) * 0.015;
+          // Update position
+          const dx = Math.sin(ud.heading) * forwardSpeed * delta;
+          const dz = Math.cos(ud.heading) * forwardSpeed * delta;
+          pos.x = Math.max(-TANK_HALF_X + 0.05, Math.min(TANK_HALF_X - 0.05, pos.x + dx));
+          pos.z = Math.max(-TANK_HALF_Z + 0.05, Math.min(TANK_HALF_Z - 0.05, pos.z + dz));
+
+          // Gentle vertical bobbing
+          pos.y = TANK_Y_MIN + 0.4 + Math.sin(elapsed * 0.8 + ud.phase) * 0.15;
+
+          // Hard clamp
+          pos.y = Math.max(TANK_Y_MIN, Math.min(TANK_Y_MAX, pos.y));
+
+          // Set rotation
+          worm.rotation.y = ud.heading;
+
+          // Body flex: segments undulate + lateral offset proportional to angular velocity
+          const lateralFlex = Math.min(Math.max(angularVel * 0.01, -0.02), 0.02);
+          worm.children.forEach((seg, i) => {
+            if (seg.userData.isSensor) return;
+            seg.position.x = -i * SEG_SPACING;
+            const wave = Math.sin(elapsed * 6 + ud.phase + i * 0.8) * 0.02;
             seg.position.y = wave;
-            seg.position.z = Math.sin(elapsed * 5 + phase + i * 0.6) * 0.01;
+            seg.position.z = Math.sin(elapsed * 5 + ud.phase + i * 0.6) * 0.015 + lateralFlex * i;
           });
+
+          // Update sensor dot emissive intensity
+          worm.children.forEach(child => {
+            if (child.userData.isSensor === 'left') {
+              child.material.emissiveIntensity = Math.min(sL * 0.8, 2.0);
+            } else if (child.userData.isSensor === 'right') {
+              child.material.emissiveIntensity = Math.min(sR * 0.8, 2.0);
+            }
+          });
+
+          // Update focus data for HUD (first worm)
+          if (wormIdx === 0 && focusDataRef) {
+            focusDataRef.current = { sL: ud.sensorLeft, sR: ud.sensorRight, mL: ud.motorLeft, mR: ud.motorRight };
+          }
         });
       }
 
@@ -380,14 +509,8 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
     animate();
 
     // Event handlers
-    function handleResize() {
-      const w = container.clientWidth, h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    }
+    function handleResize() { const w = container.clientWidth, h = container.clientHeight; camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h); }
     window.addEventListener('resize', handleResize);
-
     function handleMouseDown(e) { isDraggingRef.current = true; lastMouseRef.current = { x: e.clientX, y: e.clientY }; }
     function handleMouseMove(e) {
       if (!isDraggingRef.current) return;
@@ -405,12 +528,8 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
       raycaster.setFromCamera(mouse, camera);
       const bulbs = lampMeshesRef.current.map(l => l.bulb);
       const intersects = raycaster.intersectObjects(bulbs);
-      if (intersects.length > 0) {
-        const idx = intersects[0].object.userData.lampIndex;
-        if (idx !== undefined) onLampToggle(idx);
-      }
+      if (intersects.length > 0) { const idx = intersects[0].object.userData.lampIndex; if (idx !== undefined) onLampToggle(idx); }
     }
-
     renderer.domElement.addEventListener('mousedown', handleMouseDown);
     renderer.domElement.addEventListener('mousemove', handleMouseMove);
     renderer.domElement.addEventListener('mouseup', handleMouseUp);
@@ -424,7 +543,7 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
       cameraRef.current.position.x = radius * Math.sin(phi) * Math.cos(theta);
       cameraRef.current.position.y = radius * Math.cos(phi);
       cameraRef.current.position.z = radius * Math.sin(phi) * Math.sin(theta);
-      cameraRef.current.lookAt(0, 2.2, 0);
+      cameraRef.current.lookAt(0, 2.5, 0);
     }
 
     return () => {
@@ -439,6 +558,7 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
       renderer.dispose();
       if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [behaviorType]);
 
   useEffect(() => {
@@ -448,18 +568,13 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
       meshData.mat.color.setHex(lamp.isOn ? 0xffffcc : 0x444444);
       meshData.mat.emissive.setHex(lamp.isOn ? 0xffaa44 : 0x000000);
       meshData.mat.emissiveIntensity = lamp.isOn ? 1.0 : 0;
-
       const existingLight = lampLightsRef.current[idx];
       if (lamp.isOn && !existingLight) {
         const light = new THREE.PointLight(0xffdd88, 4, 12);
-        light.position.y = 1.52;
-        light.castShadow = true;
-        meshData.group.add(light);
+        light.position.y = 1.52; light.castShadow = true; meshData.group.add(light);
         lampLightsRef.current[idx] = light;
       } else if (!lamp.isOn && existingLight) {
-        meshData.group.remove(existingLight);
-        existingLight.dispose();
-        lampLightsRef.current[idx] = null;
+        meshData.group.remove(existingLight); existingLight.dispose(); lampLightsRef.current[idx] = null;
       }
     });
   }, [lamps]);
@@ -467,27 +582,37 @@ function ThreeScene({ behaviorType, isPaused, lamps, onLampToggle }) {
   return <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#080810' }} />;
 }
 
+/* ── VehicleTab ── */
 function VehicleTab({ behaviorType, tabState, setTabState }) {
   const [isPaused, setIsPaused] = useState(tabState?.isPaused || false);
-  const [lamps, setLamps] = useState(tabState?.lamps || [{ position: [-3.5, 0, -2], isOn: false }, { position: [3.5, 0, 2], isOn: true }]);
+  const [lamps, setLamps] = useState(tabState?.lamps || [{ position: [-3.5, 0, -2], isOn: true }, { position: [3.5, 0, 2], isOn: true }]);
   const [key, setKey] = useState(0);
+  const [focusData, setFocusData] = useState(null);
+  const focusDataRef = useRef(null);
 
   useEffect(() => { setTabState({ isPaused, lamps }); }, [isPaused, lamps]);
 
-  const handleReset = () => { setIsPaused(false); setLamps([{ position: [-3.5, 0, -2], isOn: false }, { position: [3.5, 0, 2], isOn: true }]); setKey(k => k + 1); };
+  // Sync ref data to state at low frequency
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (focusDataRef.current) setFocusData({ ...focusDataRef.current });
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleReset = () => { setIsPaused(false); setLamps([{ position: [-3.5, 0, -2], isOn: true }, { position: [3.5, 0, 2], isOn: true }]); setKey(k => k + 1); focusDataRef.current = null; setFocusData(null); };
   const handleLampToggle = useCallback((i) => { setLamps(prev => prev.map((l, idx) => idx === i ? { ...l, isOn: !l.isOn } : l)); }, []);
 
-  const color = behaviorType === 1 ? '#ff7777' : '#77ff77';
-  const behaviorName = behaviorType === 1 ? 'Sinusoidal' : 'Erratic';
+  const cfg = VEHICLE_CONFIG[behaviorType];
+  const colorHex = '#' + cfg.color.toString(16).padStart(6, '0');
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ height: 56, background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderBottom: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', padding: '0 1.25rem', gap: '0.75rem' }}>
         <button onClick={() => setIsPaused(!isPaused)} style={isPaused ? styles.btnSuccess : styles.btnDanger}>
-          {isPaused ? '▶ Resume' : '⏸ Pause'}
+          {isPaused ? 'Resume' : 'Pause'}
         </button>
-        <button onClick={handleReset} style={styles.btnSecondary}>↺ Reset</button>
-
+        <button onClick={handleReset} style={styles.btnSecondary}>Reset</button>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '0.8rem', color: '#666' }}>Lamps:</span>
@@ -499,22 +624,25 @@ function VehicleTab({ behaviorType, tabState, setTabState }) {
               }} title={\`Lamp \${i + 1}: \${l.isOn ? 'ON' : 'OFF'}\`} />
             ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '6px 14px', background: 'rgba(0,0,0,0.3)', borderRadius: 20, border: \`1px solid \${color}40\` }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, boxShadow: \`0 0 8px \${color}\` }} />
-            <span style={{ color, fontWeight: 600, fontSize: '0.85rem' }}>Vehicle {behaviorType}: {behaviorName}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '6px 14px', background: 'rgba(0,0,0,0.3)', borderRadius: 20, border: \`1px solid \${colorHex}40\` }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: colorHex, boxShadow: \`0 0 8px \${colorHex}\` }} />
+            <span style={{ color: colorHex, fontWeight: 600, fontSize: '0.85rem' }}>{cfg.label}</span>
           </div>
         </div>
       </div>
       <div style={{ flex: 1, position: 'relative' }}>
-        <ThreeScene key={key} behaviorType={behaviorType} isPaused={isPaused} lamps={lamps} onLampToggle={handleLampToggle} />
+        <ThreeScene key={key} behaviorType={behaviorType} isPaused={isPaused} lamps={lamps} onLampToggle={handleLampToggle} focusDataRef={focusDataRef} />
+        <WiringDiagram behaviorType={behaviorType} />
+        <SensorHUD data={focusData} />
         <div style={{ position: 'absolute', bottom: 16, left: 16, padding: '8px 14px', background: 'rgba(0,0,0,0.7)', borderRadius: 8, fontSize: '0.75rem', color: '#888' }}>
-          🖱️ Drag to orbit • Scroll to zoom • Double-click lamp to toggle
+          Drag to orbit | Scroll to zoom | Double-click lamp to toggle
         </div>
       </div>
     </div>
   );
 }
 
+/* ── AppShell ── */
 function AppShell({ tabs, leftMenuButtons }) {
   const [activeTab, setActiveTab] = useState(0);
   const [tabStates, setTabStates] = useState({});
@@ -529,11 +657,11 @@ function AppShell({ tabs, leftMenuButtons }) {
         ))}
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', background: 'rgba(15, 15, 26, 0.8)', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', padding: '0 1rem' }}>
+        <div style={{ display: 'flex', background: 'rgba(15, 15, 26, 0.8)', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', padding: '0 0.5rem', overflowX: 'auto' }}>
           {tabs.map((tab, i) => (
             <button key={tab.id} onClick={() => setActiveTab(i)}
-              style={{ padding: '14px 24px', background: 'transparent', color: activeTab === i ? '#fff' : '#666', border: 'none',
-                borderBottom: activeTab === i ? '2px solid #6366f1' : '2px solid transparent', cursor: 'pointer', fontWeight: activeTab === i ? 600 : 400, transition: 'all 0.2s' }}>
+              style={{ padding: '14px 16px', background: 'transparent', color: activeTab === i ? '#fff' : '#666', border: 'none',
+                borderBottom: activeTab === i ? '2px solid #6366f1' : '2px solid transparent', cursor: 'pointer', fontWeight: activeTab === i ? 600 : 400, transition: 'all 0.2s', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
               {tab.label}
             </button>
           ))}
@@ -544,50 +672,49 @@ function AppShell({ tabs, leftMenuButtons }) {
   );
 }
 
+/* ── InfoModal ── */
 function InfoModal({ isOpen, onClose }) {
   useEffect(() => {
     const handleEsc = (e) => e.key === 'Escape' && onClose();
     if (isOpen) window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: 16, border: '1px solid rgba(99, 102, 241, 0.3)', maxWidth: 500, width: '100%', maxHeight: '80vh', overflow: 'auto', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)', borderRadius: 16, border: '1px solid rgba(99, 102, 241, 0.3)', maxWidth: 550, width: '100%', maxHeight: '85vh', overflow: 'auto', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
         <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.5rem' }}>🧬</span> Braitenberg Vehicles 3D Lab
-          </h2>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.1)', color: '#888', cursor: 'pointer', fontSize: '1.2rem' }}>×</button>
+          <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#fff' }}>Braitenberg Vehicles 3D Lab</h2>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(255,255,255,0.1)', color: '#888', cursor: 'pointer', fontSize: '1.2rem' }}>x</button>
         </div>
         <div style={{ padding: '1.5rem' }}>
           <p style={{ color: '#a5b4fc', marginTop: 0, marginBottom: '1.5rem', lineHeight: 1.6 }}>
-            Explore emergent behavior from simple sensor-motor connections. Watch how different wiring patterns produce distinct movement behaviors.
+            Valentino Braitenberg (1984) demonstrated that simple sensor-motor wiring creates creatures that appear to have complex personalities. This simulation lets you observe four wiring configurations and how they produce fear, aggression, love, and exploration from nothing but simple circuits.
           </p>
-
           <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: '1rem', marginBottom: '1rem' }}>
             <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Controls</h3>
             <div style={{ display: 'grid', gap: '0.5rem', color: '#ccc', fontSize: '0.9rem' }}>
-              <div>🖱️ <strong>Drag</strong> - Orbit camera around the scene</div>
-              <div>🔍 <strong>Scroll</strong> - Zoom in/out</div>
-              <div>💡 <strong>Double-click lamp</strong> - Toggle light on/off</div>
-              <div>⏸️ <strong>Pause/Resume</strong> - Control simulation</div>
+              <div><strong>Drag</strong> - Orbit camera</div>
+              <div><strong>Scroll</strong> - Zoom in/out</div>
+              <div><strong>Double-click lamp</strong> - Toggle light on/off</div>
+              <div><strong>Lamp buttons</strong> - Toggle from toolbar</div>
             </div>
           </div>
-
           <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 12, padding: '1rem' }}>
             <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vehicle Types</h3>
             <div style={{ display: 'grid', gap: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff7777', boxShadow: '0 0 8px #ff7777' }} />
-                <div><strong style={{ color: '#ff9999' }}>Vehicle 1</strong><span style={{ color: '#888' }}> - Sinusoidal, smooth wave-like swimming</span></div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#77ff77', boxShadow: '0 0 8px #77ff77' }} />
-                <div><strong style={{ color: '#99ff99' }}>Vehicle 2</strong><span style={{ color: '#888' }}> - Erratic, unpredictable movements</span></div>
-              </div>
+              {[
+                { color: '#ff7777', label: '2a: Fear', desc: 'Same-side excitatory -- flees light' },
+                { color: '#77ff77', label: '2b: Aggression', desc: 'Crossed excitatory -- charges at light' },
+                { color: '#77ddff', label: '3a: Love', desc: 'Crossed inhibitory -- approaches gently' },
+                { color: '#ffcc77', label: '3b: Explorer', desc: 'Same-side inhibitory -- avoids, explores dark' },
+              ].map(v => (
+                <div key={v.label} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: v.color, boxShadow: '0 0 8px ' + v.color, flexShrink: 0 }} />
+                  <div><strong style={{ color: v.color }}>{v.label}</strong><span style={{ color: '#888' }}> -- {v.desc}</span></div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -596,6 +723,7 @@ function InfoModal({ isOpen, onClose }) {
   );
 }
 
+/* ── App ── */
 export default function App() {
   const [showMobile, setShowMobile] = useState(false);
   const [bypass, setBypass] = useState(false);
@@ -604,12 +732,14 @@ export default function App() {
   if (showMobile && !bypass) return <MobileWarning onContinue={() => setBypass(true)} />;
   const tabs = [
     { id: 'desc', label: 'Lab Description', render: () => <LabDescription /> },
-    { id: 'v1', label: 'Vehicle 1', render: (s, set) => <VehicleTab behaviorType={1} tabState={s} setTabState={set} /> },
-    { id: 'v2', label: 'Vehicle 2', render: (s, set) => <VehicleTab behaviorType={2} tabState={s} setTabState={set} /> },
+    { id: 'fear', label: '2a: Fear', render: (s, set) => <VehicleTab behaviorType="fear" tabState={s} setTabState={set} /> },
+    { id: 'aggression', label: '2b: Aggression', render: (s, set) => <VehicleTab behaviorType="aggression" tabState={s} setTabState={set} /> },
+    { id: 'love', label: '3a: Love', render: (s, set) => <VehicleTab behaviorType="love" tabState={s} setTabState={set} /> },
+    { id: 'explorer', label: '3b: Explorer', render: (s, set) => <VehicleTab behaviorType="explorer" tabState={s} setTabState={set} /> },
   ];
   const leftMenuButtons = [
-    { id: 'info', icon: 'ℹ️', title: 'About', onClick: () => setShowInfo(true) },
-    { id: 'reset', icon: '↺', title: 'Reset', onClick: () => window.confirm('Reset the simulation?') && window.location.reload() },
+    { id: 'info', icon: 'i', title: 'About', onClick: () => setShowInfo(true) },
+    { id: 'reset', icon: 'R', title: 'Reset', onClick: () => window.confirm('Reset the simulation?') && window.location.reload() },
   ];
   return (
     <>
@@ -831,28 +961,38 @@ export default function App() {
 ];
 
 async function seedPlaygrounds() {
+  const forceUpdate = process.argv.includes('--force');
+
   try {
-    console.log('🌱 Starting playground template seeding...');
+    console.log('Starting playground template seeding...');
+    if (forceUpdate) console.log('   --force flag detected: will update existing templates');
 
     let created = 0;
+    let updated = 0;
     let skipped = 0;
 
     for (const template of PLAYGROUND_TEMPLATES) {
-      // Check if template already exists - if so, skip (don't overwrite user edits)
       const existing = await prisma.playgrounds.findUnique({
         where: { id: template.id },
         select: { id: true },
       });
 
-      if (existing) {
-        console.log(`   ⏭️  Skipping "${template.name}" (already exists)`);
+      if (existing && !forceUpdate) {
+        console.log(`   Skipping "${template.name}" (already exists)`);
         skipped++;
         continue;
       }
 
-      // Create new template
-      await prisma.playgrounds.create({
-        data: {
+      await prisma.playgrounds.upsert({
+        where: { id: template.id },
+        update: {
+          title: template.name,
+          description: template.description || '',
+          category: template.category,
+          source_code: template.sourceCode,
+          requirements: template.dependencies || [],
+        },
+        create: {
           id: template.id,
           title: template.name,
           description: template.description || '',
@@ -863,21 +1003,27 @@ async function seedPlaygrounds() {
           is_featured: true,
           is_protected: true,
           app_type: 'sandpack',
-          // Note: created_by is nullable for system-seeded templates
         },
       });
-      console.log(`   ✅ Created "${template.name}"`);
-      created++;
+
+      if (existing) {
+        console.log(`   Updated "${template.name}"`);
+        updated++;
+      } else {
+        console.log(`   Created "${template.name}"`);
+        created++;
+      }
     }
 
-    console.log(`\n✅ Playground template seeding complete!`);
+    console.log(`\nPlayground template seeding complete!`);
     console.log(`   - Created: ${created} new templates`);
+    console.log(`   - Updated: ${updated} existing templates`);
     console.log(`   - Skipped: ${skipped} existing templates`);
 
     await prisma.$disconnect();
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error seeding playground templates:', error);
+    console.error('Error seeding playground templates:', error);
     await prisma.$disconnect();
     process.exit(1);
   }
