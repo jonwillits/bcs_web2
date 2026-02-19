@@ -56,6 +56,7 @@ export interface FeatureFlags {
   sinX2: boolean;
 }
 
+/** Default feature toggle state. Only X₁ and X₂ are enabled initially. */
 export const DEFAULT_FEATURES: FeatureFlags = {
   x1: true,
   x2: true,
@@ -193,20 +194,28 @@ export type PlaygroundAction =
 // Preset Values
 // ============================================================================
 
+/** Available learning rate options for the dropdown. Default selection is 0.03. */
 export const LEARNING_RATES = [
   0.00001, 0.0001, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10
 ];
 
+/** Available regularization rate options for the dropdown. Default selection is 0 (no regularization). */
 export const REGULARIZATION_RATES = [
   0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10
 ];
 
+/** Available batch size options for the dropdown. Default selection is 10. */
 export const BATCH_SIZES = [1, 10, 20, 30];
 
 // ============================================================================
 // Initial State
 // ============================================================================
 
+/**
+ * Initial playground state used when the page first loads.
+ * Defines defaults for network architecture, training parameters, dataset, and features.
+ * Modify these values to change what users see when they first visit the playground.
+ */
 export const INITIAL_STATE: PlaygroundState = {
   hiddenLayers: [4, 2],
   activation: 'tanh',

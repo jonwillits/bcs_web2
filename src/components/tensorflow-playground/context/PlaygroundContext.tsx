@@ -26,7 +26,12 @@ import { Trainer } from '@/lib/tensorflow-playground/training/trainer';
 import { generateFullDataset } from '@/lib/tensorflow-playground/data/datasets';
 import { countEnabledFeatures, computeFeatures } from '@/lib/tensorflow-playground/data/features';
 
-// Reducer
+/**
+ * State reducer for the playground.
+ * Handles all state transitions including configuration changes, training metrics updates,
+ * network architecture modifications (add/remove layers and neurons with limits),
+ * and data management. Network limits: max 6 hidden layers, 1-8 neurons per layer.
+ */
 function playgroundReducer(
   state: PlaygroundState,
   action: PlaygroundAction
@@ -170,7 +175,14 @@ interface PlaygroundContextType {
 
 const PlaygroundContext = createContext<PlaygroundContextType | null>(null);
 
-// Provider component
+/**
+ * PlaygroundProvider component
+ * Central state manager for the TensorFlow Playground. Initializes and manages the neural network,
+ * trainer, dataset generation, and training animation loop. Provides control functions
+ * (play, pause, step, reset, regenerateData) and computation functions (computeOutput,
+ * computeIntermediateOutput) to all child components via React Context.
+ * Generates 200 data points by default, records loss history every 10 epochs.
+ */
 export function PlaygroundProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(playgroundReducer, INITIAL_STATE);
 
@@ -402,7 +414,12 @@ export function PlaygroundProvider({ children }: { children: React.ReactNode }) 
   );
 }
 
-// Hook to use context
+/**
+ * Hook to access the PlaygroundContext.
+ * Must be used within a PlaygroundProvider. Returns the full playground state,
+ * dispatch function, network/trainer refs, and all control/computation functions.
+ * @throws Error if used outside of PlaygroundProvider
+ */
 export function usePlayground() {
   const context = useContext(PlaygroundContext);
   if (!context) {

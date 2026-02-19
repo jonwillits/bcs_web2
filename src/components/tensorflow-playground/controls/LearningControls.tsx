@@ -18,12 +18,19 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+/** Available regularization type options displayed in the dropdown. */
 const REGULARIZATION_TYPES: { type: RegularizationType; label: string }[] = [
   { type: 'none', label: 'None' },
   { type: 'l1', label: 'L1' },
   { type: 'l2', label: 'L2' },
 ];
 
+/**
+ * LearningControls component
+ * Renders dropdowns for learning rate, regularization type (None/L1/L2),
+ * and regularization rate. The regularization rate dropdown only appears
+ * when a regularization type other than "None" is selected.
+ */
 export function LearningControls() {
   const { state, dispatch } = usePlayground();
 

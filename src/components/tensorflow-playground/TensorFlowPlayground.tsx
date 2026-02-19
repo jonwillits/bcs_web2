@@ -17,6 +17,13 @@ import {
 import { DecisionBoundary, NetworkDiagram, LossChart } from './visualization';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
+/**
+ * PlaygroundContent component
+ * Renders the main playground layout with three columns:
+ * - Left: Playback, Data, and Feature controls
+ * - Center: Network Architecture diagram and Loss Over Time chart
+ * - Right: Decision Boundary output, Network controls, and Learning controls
+ */
 function PlaygroundContent() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -126,6 +133,11 @@ function PlaygroundContent() {
   );
 }
 
+/**
+ * TensorFlowPlayground component
+ * Top-level wrapper that provides the TooltipProvider and PlaygroundProvider context,
+ * then renders PlaygroundContent. This is the component imported by the page.
+ */
 export function TensorFlowPlayground() {
   return (
     <TooltipProvider delayDuration={300}>

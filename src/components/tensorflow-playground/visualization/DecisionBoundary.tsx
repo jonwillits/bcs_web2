@@ -10,9 +10,11 @@ import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { usePlayground } from '../context/PlaygroundContext';
 import { DataPoint } from '@/lib/tensorflow-playground/types';
 
-// Coordinate space: -6 to 6 for both axes
+/** Minimum coordinate value for both X and Y axes. */
 const COORD_MIN = -6;
+/** Maximum coordinate value for both X and Y axes. */
 const COORD_MAX = 6;
+/** Total range of the coordinate space (COORD_MAX - COORD_MIN). */
 const COORD_RANGE = COORD_MAX - COORD_MIN;
 
 /**
@@ -55,6 +57,14 @@ interface DecisionBoundaryProps {
   height?: number;
 }
 
+/**
+ * DecisionBoundary component
+ * Renders a canvas-based heatmap showing the network's classification regions.
+ * Orange (#FF6B35) represents negative class, blue (#4A90D9) represents positive class,
+ * white represents the decision boundary (output near 0).
+ * Training data points are drawn as filled circles, test points as hollow circles.
+ * When a hidden neuron is hovered, shows that neuron's individual output instead.
+ */
 export function DecisionBoundary({
   width = 250,
   height = 250,

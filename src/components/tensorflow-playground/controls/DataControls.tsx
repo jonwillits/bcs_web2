@@ -22,6 +22,7 @@ interface DatasetOption {
   icon: React.ReactNode;
 }
 
+/** Available dataset options displayed in the UI. Each entry defines the dataset type, display label, tooltip, and icon. */
 const DATASETS: DatasetOption[] = [
   {
     type: 'circle',
@@ -81,6 +82,11 @@ const DATASETS: DatasetOption[] = [
   },
 ];
 
+/**
+ * DataControls component
+ * Renders dataset selection buttons, noise slider (0-50), train/test ratio slider (10-90%),
+ * batch size dropdown, and a regenerate button. Changing the dataset resets the network.
+ */
 export function DataControls() {
   const { state, dispatch, regenerateData, reset } = usePlayground();
 

@@ -13,10 +13,13 @@ import { HoveredNode } from '@/lib/tensorflow-playground/types';
 import { NeuronHeatmap } from './NeuronHeatmap';
 import { OutputHeatmap } from './OutputHeatmap';
 
-// Layout constants
+/** Radius of each neuron circle in the SVG diagram (pixels). */
 const NEURON_RADIUS = 18;
+/** Horizontal distance between adjacent layers (pixels). */
 const LAYER_SPACING = 120;
+/** Vertical distance between adjacent neurons within a layer (pixels). */
 const NEURON_SPACING = 50;
+/** Padding around the entire diagram (pixels). */
 const PADDING = 40;
 
 /**
@@ -50,6 +53,13 @@ interface NeuronPosition {
   neuronIndex: number;
 }
 
+/**
+ * NetworkDiagram component
+ * Renders an interactive SVG visualization of the neural network architecture.
+ * Shows input neurons, hidden layer neurons (with mini heatmaps), output neuron,
+ * and weighted connections between them. Connection color/width reflects weight magnitude.
+ * Supports hover interaction on hidden neurons to preview individual neuron outputs.
+ */
 export function NetworkDiagram() {
   const { state, setHoveredNode } = usePlayground();
   const { features, hiddenLayers, networkState, isRunning, epoch, hoveredNode } = state;

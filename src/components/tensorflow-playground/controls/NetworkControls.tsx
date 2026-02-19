@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+/** Available activation function options displayed in the dropdown. */
 const ACTIVATIONS: { type: ActivationType; label: string }[] = [
   { type: 'relu', label: 'ReLU' },
   { type: 'tanh', label: 'Tanh' },
@@ -22,6 +23,12 @@ const ACTIVATIONS: { type: ActivationType; label: string }[] = [
   { type: 'linear', label: 'Linear' },
 ];
 
+/**
+ * NetworkControls component
+ * Provides controls for the network architecture: activation function dropdown,
+ * add/remove hidden layers (min 1, max 6), and add/remove neurons per layer (min 1, max 8).
+ * All architecture changes trigger a network reset.
+ */
 export function NetworkControls() {
   const { state, dispatch, reset } = usePlayground();
 

@@ -9,9 +9,11 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { usePlayground } from '../context/PlaygroundContext';
 
-// Coordinate space: -6 to 6 for both axes
+/** Minimum coordinate value for both X and Y axes. */
 const COORD_MIN = -6;
+/** Maximum coordinate value for both X and Y axes. */
 const COORD_MAX = 6;
+/** Total range of the coordinate space (COORD_MAX - COORD_MIN). */
 const COORD_RANGE = COORD_MAX - COORD_MIN;
 
 /**
@@ -43,6 +45,12 @@ interface OutputHeatmapProps {
   size?: number;  // Size of the heatmap canvas
 }
 
+/**
+ * OutputHeatmap component
+ * Renders a small circular canvas (default 30x30px) inside the output neuron
+ * showing the final network output across the 2D coordinate space as a color heatmap.
+ * Uses the same color scheme as DecisionBoundary (orange to white to blue).
+ */
 export function OutputHeatmap({ size = 30 }: OutputHeatmapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { computeOutput, state } = usePlayground();

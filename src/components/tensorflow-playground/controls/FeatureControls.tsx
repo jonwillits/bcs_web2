@@ -15,6 +15,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+/**
+ * FeatureControls component
+ * Renders a toggle grid for enabling/disabling input features (X₁, X₂, X₁², X₂², X₁X₂, sin(X₁), sin(X₂)).
+ * At least one feature must remain enabled at all times.
+ */
 export function FeatureControls() {
   const { state, dispatch, reset } = usePlayground();
 

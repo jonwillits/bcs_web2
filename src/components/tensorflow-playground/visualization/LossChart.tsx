@@ -23,6 +23,12 @@ interface LossChartProps {
   height?: number;
 }
 
+/**
+ * LossChart component
+ * Renders a Recharts line chart showing train loss (blue, #4A90D9) and test loss (orange, #FF6B35)
+ * over training epochs. Shows a placeholder message when no training data is available.
+ * Loss history is recorded every 10 epochs by the PlaygroundContext.
+ */
 export function LossChart({ height = 150 }: LossChartProps) {
   const { state } = usePlayground();
   const { lossHistory } = state;

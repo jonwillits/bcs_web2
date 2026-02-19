@@ -14,6 +14,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+/**
+ * PlaybackControls component
+ * Renders play/pause, step, and reset buttons along with epoch counter and loss display.
+ * Controls the training loop via the PlaygroundContext.
+ */
 export function PlaybackControls() {
   const { state, play, pause, step, reset } = usePlayground();
   const { isRunning, epoch, trainLoss, testLoss } = state;

@@ -9,9 +9,11 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { usePlayground } from '../context/PlaygroundContext';
 
-// Coordinate space: -6 to 6 for both axes
+/** Minimum coordinate value for both X and Y axes. */
 const COORD_MIN = -6;
+/** Maximum coordinate value for both X and Y axes. */
 const COORD_MAX = 6;
+/** Total range of the coordinate space (COORD_MAX - COORD_MIN). */
 const COORD_RANGE = COORD_MAX - COORD_MIN;
 
 /**
@@ -48,6 +50,13 @@ interface NeuronHeatmapProps {
   onMouseLeave?: () => void;
 }
 
+/**
+ * NeuronHeatmap component
+ * Renders a small circular canvas (default 30x30px) inside each hidden layer neuron
+ * showing that neuron's output across the 2D coordinate space as a color heatmap.
+ * Uses a 10x10 low-resolution grid scaled up with nearest-neighbor interpolation for performance.
+ * Supports hover interaction (yellow ring highlight + scale effect).
+ */
 export function NeuronHeatmap({
   layerIndex,
   neuronIndex,

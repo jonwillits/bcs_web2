@@ -370,7 +370,9 @@ Keyboard shortcut: **Cmd/Ctrl+S** to save.
 
 ### TensorFlow Neural Network Playground
 
-A standalone tool at `/playgrounds/tensorflow` provides a dedicated neural network playground experience, separate from the React-based playgrounds.
+A standalone tool at `/playgrounds/tensorflow` provides a dedicated neural network playground experience, separate from the React-based playgrounds. It lets you experiment with neural network architectures, datasets, and training parameters in real time — adjust the number of layers and neurons, pick a dataset, tune the learning rate, and watch the network learn to classify data points.
+
+If you want to modify the playground itself (change defaults, add datasets, adjust colors, etc.), see the [Customizing the TensorFlow Playground](#customizing-the-tensorflow-playground) section under Faculty Features.
 
 ---
 
@@ -572,6 +574,415 @@ See [Interactive Playgrounds > Creating a Playground](#creating-a-playground-fac
 ### Forking Playgrounds
 
 When viewing a playground created by another user, click the **Fork** button to create your own copy. The forked version opens in the builder for you to modify.
+
+### Customizing the TensorFlow Playground
+
+The TensorFlow Neural Network Playground at `/playgrounds/tensorflow` is built directly into the codebase (unlike the React/Sandpack playgrounds, which are stored in the database). This means that customizing it requires editing source code files and deploying the changes. This section provides a complete guide for making common modifications, even if you are not deeply familiar with the tech stack.
+
+#### Prerequisites
+
+Before making changes, you will need:
+
+1. **A code editor** — [Visual Studio Code](https://code.visualstudio.com/) (free) is recommended. Download and install it.
+2. **Git** — Version control software. Check if it is installed by opening a terminal and typing `git --version`. If not installed, download from [git-scm.com](https://git-scm.com/).
+3. **Node.js** — The JavaScript runtime. Check with `node --version`. If not installed, download from [nodejs.org](https://nodejs.org/) (use the LTS version).
+4. **Access to the GitHub repository** — You need to be able to clone and push to the project repository.
+
+**The workflow for any change is:**
+1. Open the project folder in VS Code
+2. Edit the relevant file(s)
+3. Save your changes
+4. Open a terminal (in VS Code: `Terminal > New Terminal`)
+5. Run `git add .` then `git commit -m "Describe your change"` then `git push`
+6. Vercel automatically deploys from the main branch — your changes will be live within a few minutes
+
+#### How the Playground is Organized
+
+The playground is split across two directories. Here is a plain-English map of what each file does:
+
+**Page file** — Controls the browser tab title and SEO description:
+- `src/app/playgrounds/tensorflow/page.tsx`
+
+**Main component** — Assembles all the panels, sets section headers like "Network Architecture", "Output", and "Loss Over Time":
+- `src/components/tensorflow-playground/TensorFlowPlayground.tsx`
+
+**Controls** (6 panels in the left and right columns):
+| Panel | File | What it configures |
+|-------|------|--------------------|
+| Playback (play/pause/step/reset) | `controls/PlaybackControls.tsx` | Training controls and epoch/loss display |
+| Data (dataset selector, noise, ratio, batch size) | `controls/DataControls.tsx` | Which dataset to use, noise level, train/test split |
+| Features (X₁, X₂, X₁², etc.) | `controls/FeatureControls.tsx` | Which input features are enabled |
+| Network (activation function, layers, neurons) | `controls/NetworkControls.tsx` | Network architecture controls |
+| Learning (learning rate, regularization) | `controls/LearningControls.tsx` | Training hyperparameters |
+| Output legend (Negative/Positive labels) | Inline in `TensorFlowPlayground.tsx` | Color legend below the decision boundary |
+
+All control files are in `src/components/tensorflow-playground/controls/`.
+
+**Visualizations** (3 visual components):
+| Visualization | File | What it shows |
+|---------------|------|---------------|
+| Network Diagram | `visualization/NetworkDiagram.tsx` | Interactive diagram of layers, neurons, and weight connections |
+| Decision Boundary | `visualization/DecisionBoundary.tsx` | Heatmap showing how the network classifies the 2D space |
+| Loss Chart | `visualization/LossChart.tsx` | Line chart of training and test loss over time |
+
+All visualization files are in `src/components/tensorflow-playground/visualization/`.
+
+**Engine** (the neural network math — you generally do not need to touch these):
+| File | Purpose |
+|------|---------|
+| `data/datasets.ts` | Dataset generator functions (circle, XOR, Gaussian, spiral) |
+| `data/features.ts` | Feature definitions and transformations |
+| `nn/network.ts` | Neural network forward/backward pass |
+| `nn/neuron.ts` | Individual neuron weights and biases |
+| `nn/activations.ts` | Activation functions (ReLU, Tanh, Sigmoid, Linear) |
+| `nn/regularization.ts` | L1 and L2 regularization |
+| `training/trainer.ts` | Training loop (batch processing, shuffling) |
+| `training/loss.ts` | Loss calculation (Mean Squared Error) |
+
+All engine files are in `src/lib/tensorflow-playground/`.
+
+**State management** — Holds all default values, preset option lists, and network limits:
+- `src/lib/tensorflow-playground/types.ts` — Default values and preset arrays
+- `src/components/tensorflow-playground/context/PlaygroundContext.tsx` — Network limits (max layers, max neurons)
+
+#### Common Modifications — Step by Step
+
+Each modification below tells you exactly which file to open, what to look for, and what to change.
+
+##### a. Change the page title or description
+
+**File:** `src/app/playgrounds/tensorflow/page.tsx`
+
+Find these lines near the top:
+
+```typescript
+title: 'Neural Network Playground | BCS E-Textbook',
+description:
+  'Interactive neural network visualization. Explore how neural networks learn by adjusting architecture, datasets, and training parameters.',
+```
+
+Change the text inside the quotes to whatever you want. The `title` appears in the browser tab. The `description` appears in search engine results and social media previews.
+
+##### b. Change the main heading and subtitle
+
+**File:** `src/components/tensorflow-playground/TensorFlowPlayground.tsx`
+
+Find these lines:
+
+```typescript
+Neural Network Playground
+```
+
+and:
+
+```typescript
+Explore neural networks interactively. Adjust the architecture, pick a dataset, and watch the network learn.
+```
+
+Change the text to whatever you want. These appear at the top of the playground page.
+
+##### c. Change the default starting configuration
+
+**File:** `src/lib/tensorflow-playground/types.ts`
+
+Find the `INITIAL_STATE` object near the bottom of the file. These are the values the playground starts with when a user first loads the page:
+
+```typescript
+export const INITIAL_STATE: PlaygroundState = {
+  hiddenLayers: [4, 2],        // Start with 2 hidden layers: 4 neurons, then 2 neurons
+  activation: 'tanh',          // Starting activation function
+  learningRate: 0.03,          // Starting learning rate
+  regularization: 'none',      // No regularization by default
+  regularizationRate: 0,       // Regularization strength
+  batchSize: 10,               // Samples per training step
+  dataset: 'circle',           // Starting dataset
+  noise: 0,                    // No noise by default
+  trainRatio: 50,              // 50% train, 50% test
+  features: { ...DEFAULT_FEATURES },  // Which features are on/off
+  ...
+};
+```
+
+For example:
+- To start with 3 hidden layers of 4, 3, and 2 neurons: change `hiddenLayers: [4, 2]` to `hiddenLayers: [4, 3, 2]`
+- To start with the XOR dataset: change `dataset: 'circle'` to `dataset: 'xor'`
+- To start with a learning rate of 0.01: change `learningRate: 0.03` to `learningRate: 0.01`
+
+To change which features are enabled by default, find the `DEFAULT_FEATURES` object above `INITIAL_STATE`:
+
+```typescript
+export const DEFAULT_FEATURES: FeatureFlags = {
+  x1: true,     // enabled by default
+  x2: true,     // enabled by default
+  x1Sq: false,  // disabled by default
+  x2Sq: false,
+  x1x2: false,
+  sinX1: false,
+  sinX2: false,
+};
+```
+
+Change `false` to `true` (or vice versa) for any feature you want to toggle.
+
+##### d. Change available preset values
+
+**File:** `src/lib/tensorflow-playground/types.ts`
+
+The dropdown menus for learning rate, regularization rate, and batch size are populated from these arrays:
+
+```typescript
+export const LEARNING_RATES = [
+  0.00001, 0.0001, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10
+];
+
+export const REGULARIZATION_RATES = [
+  0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10
+];
+
+export const BATCH_SIZES = [1, 10, 20, 30];
+```
+
+Add or remove values from these arrays. For example, to add a batch size of 50, change the line to:
+
+```typescript
+export const BATCH_SIZES = [1, 10, 20, 30, 50];
+```
+
+##### e. Change network limits (max layers, max neurons)
+
+**File:** `src/components/tensorflow-playground/context/PlaygroundContext.tsx`
+
+Find these lines in the reducer function:
+
+```typescript
+case 'ADD_LAYER':
+  if (state.hiddenLayers.length >= 6) return state;
+```
+
+Change `6` to your desired maximum number of hidden layers.
+
+```typescript
+case 'REMOVE_LAYER':
+  if (state.hiddenLayers.length <= 1) return state;
+```
+
+Change `1` to your desired minimum (though 1 is usually sensible).
+
+```typescript
+case 'ADD_NEURON': {
+  const newLayers = [...state.hiddenLayers];
+  if (newLayers[action.layerIndex] < 8) {
+```
+
+Change `8` to your desired maximum neurons per layer.
+
+```typescript
+case 'REMOVE_NEURON': {
+  const newLayers = [...state.hiddenLayers];
+  if (newLayers[action.layerIndex] > 1) {
+```
+
+Change `1` to your desired minimum neurons per layer.
+
+**Also update the tooltip text** in `src/components/tensorflow-playground/controls/NetworkControls.tsx` to match your new limits. Search for strings like `"max 6"` and `"max 8"` and update them.
+
+##### f. Change dataset labels or tooltips
+
+**File:** `src/components/tensorflow-playground/controls/DataControls.tsx`
+
+Find the `DATASETS` array near the top of the file:
+
+```typescript
+const DATASETS: DatasetOption[] = [
+  {
+    type: 'circle',
+    label: 'Circle',
+    tooltip: 'Circular boundary - simple classification',
+    icon: ( ... ),
+  },
+  {
+    type: 'xor',
+    label: 'XOR',
+    tooltip: 'XOR problem - requires non-linear boundary',
+    icon: ( ... ),
+  },
+  ...
+];
+```
+
+Change the `label` string to change what users see, and the `tooltip` string to change the hover description.
+
+##### g. Change visualization colors
+
+The playground uses a consistent color scheme: **orange (#FF6B35)** for the negative class and **blue (#4A90D9)** for the positive class.
+
+**Decision Boundary colors** — `src/components/tensorflow-playground/visualization/DecisionBoundary.tsx`
+
+Find the `valueToColor` function. The key color values are:
+- Orange (negative): `r=255, g=107, b=53` (hex #FF6B35)
+- Blue (positive): `r=74, g=144, b=217` (hex #4A90D9)
+
+Also find the data point colors further down:
+```typescript
+const fillColor = isPositive ? '#4A90D9' : '#FF6B35';
+```
+
+**Network Diagram colors** — `src/components/tensorflow-playground/visualization/NetworkDiagram.tsx`
+
+Search for the same hex values (`#4A90D9`, `#FF6B35`) to change connection weight colors.
+
+**Loss Chart colors** — `src/components/tensorflow-playground/visualization/LossChart.tsx`
+
+Find the line colors for train loss and test loss:
+```
+stroke="#4A90D9"   (train loss — blue)
+stroke="#FF6B35"   (test loss — orange)
+```
+
+**Color legend** — `src/components/tensorflow-playground/TensorFlowPlayground.tsx`
+
+Find the legend dots:
+```typescript
+<div className="w-3 h-3 rounded-full bg-[#FF6B35]" />
+<span>Negative</span>
+...
+<div className="w-3 h-3 rounded-full bg-[#4A90D9]" />
+<span>Positive</span>
+```
+
+If you change the colors, update them consistently across all four files.
+
+##### h. Change visualization sizes
+
+**Decision Boundary canvas size** — In `TensorFlowPlayground.tsx`, find:
+```typescript
+<DecisionBoundary width={220} height={220} />
+```
+Change `220` to make it larger or smaller.
+
+**Loss Chart height** — In the same file, find:
+```typescript
+<LossChart height={180} />
+```
+
+**Neuron radius in the network diagram** — In `visualization/NetworkDiagram.tsx`, find:
+```typescript
+const NEURON_RADIUS = 18;
+const LAYER_SPACING = 120;
+const NEURON_SPACING = 50;
+```
+Adjust these values to change the network diagram layout.
+
+##### i. Change section labels in the UI
+
+**File:** `src/components/tensorflow-playground/TensorFlowPlayground.tsx`
+
+The section headers are plain text strings. Search for:
+- `Network Architecture` — the header above the network diagram
+- `Loss Over Time` — the header above the loss chart
+- `Output` — the header above the decision boundary
+- `Negative` / `Positive` — the legend labels
+
+Change these strings to whatever you prefer.
+
+##### j. Add a new dataset
+
+This is a multi-step modification:
+
+**Step 1** — Add the generator function in `src/lib/tensorflow-playground/data/datasets.ts`. Copy an existing generator (e.g., `generateCircle`) and modify the math. Your function should accept `(n: number, noise: number)` and return `DataPoint[]`.
+
+**Step 2** — Add the dataset type. In `src/lib/tensorflow-playground/types.ts`, find:
+```typescript
+export type DatasetType = 'circle' | 'xor' | 'gaussian' | 'spiral' | 'plane' | 'gaussianReg';
+```
+Add your new type name, e.g.: `| 'myDataset'`
+
+**Step 3** — Wire it into the generator switch. In `datasets.ts`, find the `generateDataset` function and add a case:
+```typescript
+case 'myDataset':
+  return generateMyDataset(n, noise);
+```
+
+**Step 4** — Add a display name. In the `getDatasetName` function in the same file, add:
+```typescript
+case 'myDataset':
+  return 'My Dataset';
+```
+
+**Step 5** — Add it to the UI dropdown. In `src/components/tensorflow-playground/controls/DataControls.tsx`, add a new entry to the `DATASETS` array with a `type`, `label`, `tooltip`, and `icon` (SVG).
+
+#### File Quick-Reference Table
+
+| What you want to change | File to edit | What to look for |
+|--------------------------|-------------|------------------|
+| Browser tab title | `src/app/playgrounds/tensorflow/page.tsx` | `title:` string |
+| SEO description | `src/app/playgrounds/tensorflow/page.tsx` | `description:` string |
+| Main heading / subtitle | `src/components/tensorflow-playground/TensorFlowPlayground.tsx` | `Neural Network Playground` and paragraph text |
+| Section labels (Output, Loss Over Time, etc.) | `src/components/tensorflow-playground/TensorFlowPlayground.tsx` | Uppercase text strings |
+| Default dataset, learning rate, layers, etc. | `src/lib/tensorflow-playground/types.ts` | `INITIAL_STATE` object |
+| Default enabled features | `src/lib/tensorflow-playground/types.ts` | `DEFAULT_FEATURES` object |
+| Learning rate options | `src/lib/tensorflow-playground/types.ts` | `LEARNING_RATES` array |
+| Batch size options | `src/lib/tensorflow-playground/types.ts` | `BATCH_SIZES` array |
+| Regularization rate options | `src/lib/tensorflow-playground/types.ts` | `REGULARIZATION_RATES` array |
+| Max hidden layers (6) | `src/components/tensorflow-playground/context/PlaygroundContext.tsx` | `>= 6` in ADD_LAYER case |
+| Max neurons per layer (8) | `src/components/tensorflow-playground/context/PlaygroundContext.tsx` | `< 8` in ADD_NEURON case |
+| Dataset labels / tooltips | `src/components/tensorflow-playground/controls/DataControls.tsx` | `DATASETS` array |
+| Activation function list | `src/components/tensorflow-playground/controls/NetworkControls.tsx` | `ACTIVATIONS` array |
+| Decision boundary colors | `src/components/tensorflow-playground/visualization/DecisionBoundary.tsx` | `#FF6B35` and `#4A90D9` |
+| Loss chart line colors | `src/components/tensorflow-playground/visualization/LossChart.tsx` | `stroke=` values |
+| Network diagram neuron size | `src/components/tensorflow-playground/visualization/NetworkDiagram.tsx` | `NEURON_RADIUS` |
+| Decision boundary canvas size | `src/components/tensorflow-playground/TensorFlowPlayground.tsx` | `width={220} height={220}` |
+| Loss chart height | `src/components/tensorflow-playground/TensorFlowPlayground.tsx` | `height={180}` |
+| Dataset generator math | `src/lib/tensorflow-playground/data/datasets.ts` | `generate...` functions |
+| Color legend labels | `src/components/tensorflow-playground/TensorFlowPlayground.tsx` | `Negative` / `Positive` |
+| Page background color | `src/app/playgrounds/tensorflow/page.tsx` | `bg-[#0a0a0f]` |
+
+#### Deploying Your Changes
+
+After editing files:
+
+1. **Save all files** in VS Code (`Cmd+S` on Mac, `Ctrl+S` on Windows)
+2. **Open a terminal** in VS Code (`Terminal > New Terminal`)
+3. **(Optional but recommended)** Run `npm run build` to check for errors before pushing. If the build succeeds, your changes are safe to deploy. If it fails, see Troubleshooting below.
+4. **Stage your changes:**
+   ```
+   git add .
+   ```
+5. **Commit with a description:**
+   ```
+   git commit -m "Change default dataset to XOR"
+   ```
+6. **Push to GitHub:**
+   ```
+   git push
+   ```
+7. **Vercel auto-deploys** from the main branch. Your changes will be live at the production URL within a few minutes. You can check the deployment status in the Vercel dashboard.
+
+#### Troubleshooting
+
+**Syntax errors** — If you see a red squiggly underline in VS Code, hover over it to see the error. Common causes:
+- Missing comma between array items or object properties
+- Missing closing quote (`'` or `"`)
+- Missing closing bracket (`}`, `]`, or `)`)
+- Mismatched quotes (opened with `'` but closed with `"`)
+
+**TypeScript errors** — If `npm run build` fails with a TypeScript error, the error message will tell you the file and line number. For example:
+```
+src/lib/tensorflow-playground/types.ts(204,5): error TS...
+```
+This means the error is in `types.ts` at line 204. Look at that line for the issue.
+
+**Undoing changes** — If something goes wrong and you want to revert a file to its last committed state:
+```
+git checkout -- path/to/file.tsx
+```
+For example:
+```
+git checkout -- src/lib/tensorflow-playground/types.ts
+```
+This discards your local changes to that file and restores the last committed version.
+
+**Build check before pushing** — You can always run `npm run build` locally to verify everything compiles correctly before pushing. This catches most errors before they reach production.
 
 ### Course Map Editor
 
