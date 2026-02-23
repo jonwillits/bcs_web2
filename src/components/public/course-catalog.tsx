@@ -225,7 +225,7 @@ export function CourseCatalog({ initialSearch = '' }: CourseCatalogProps) {
               </span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Explore cutting-edge educational content created by faculty experts.
+              Explore cutting-edge educational content from our instructors.
               Dive deep into neuroscience, psychology, and cognitive science through
               interactive modules and comprehensive courses.
             </p>

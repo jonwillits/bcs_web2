@@ -139,7 +139,7 @@ export function RegisterForm() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-bold text-neural-primary">
-            Faculty Registration
+            Create Account
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Create your BCS e-textbook platform account
@@ -150,7 +150,7 @@ export function RegisterForm() {
           <CardHeader>
             <CardTitle>Create Account</CardTitle>
             <CardDescription>
-              Enter your information to create a faculty account
+              Enter your information to create your account
             </CardDescription>
           </CardHeader>
           <CardContent>

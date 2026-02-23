@@ -114,7 +114,7 @@ export function CoursesSection() {
               No Featured Courses Yet
             </h3>
             <p className="text-muted-foreground mb-6">
-              Check back soon for new courses from our faculty.
+              Check back soon for new courses from our instructors.
             </p>
             <Link href="/courses">
               <NeuralButton variant="neural">

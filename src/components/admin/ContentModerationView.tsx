@@ -332,7 +332,7 @@ export function ContentModerationView() {
           <CardHeader>
             <CardTitle>Courses</CardTitle>
             <CardDescription>
-              All courses created by faculty members
+              All courses on the platform
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -454,7 +454,7 @@ export function ContentModerationView() {
           <CardHeader>
             <CardTitle>Modules</CardTitle>
             <CardDescription>
-              All modules created by faculty members
+              All modules on the platform
             </CardDescription>
           </CardHeader>
           <CardContent>

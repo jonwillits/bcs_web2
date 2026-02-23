@@ -285,7 +285,7 @@ export function ModuleCatalog({ initialSearch = '', session }: ModuleCatalogProp
               </span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Explore individual learning modules created by faculty experts. 
+              Explore individual learning modules from our instructors. 
               Each module focuses on specific topics with interactive content, 
               assessments, and comprehensive materials.
             </p>

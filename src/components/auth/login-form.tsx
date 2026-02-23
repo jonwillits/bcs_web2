@@ -24,7 +24,7 @@ export function LoginForm() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/faculty/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const message = searchParams.get("message");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,7 +98,7 @@ export function LoginForm() {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-bold text-neural-primary">
-            Faculty Sign In
+            Sign In
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Access your BCS e-textbook platform
@@ -109,7 +109,7 @@ export function LoginForm() {
           <CardHeader>
             <CardTitle>Welcome Back</CardTitle>
             <CardDescription>
-              Enter your credentials to access your faculty dashboard
+              Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
           <CardContent>
