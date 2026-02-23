@@ -47,7 +47,7 @@ const facultySchema = baseSchema.extend({
   department: z.string().min(1, 'Department is required for faculty registration'),
   title: z.string().min(1, 'Title/Position is required for faculty registration'),
   research_area: z.string().min(1, 'Research area is required for faculty registration'),
-  personal_website_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  personal_website_url: z.union([z.string().url('Must be a valid URL'), z.literal(''), z.null()]).optional(),
   request_statement: z.string()
     .min(50, 'Statement must be at least 50 characters')
     .max(2000, 'Statement must be less than 2000 characters'),
