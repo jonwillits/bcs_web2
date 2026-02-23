@@ -52,33 +52,3 @@ export async function GET() {
   }
 }
 
-/**
- * POST /api/achievements
- * Seed achievements (admin only - for initial setup)
- */
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-
-    // Simple auth check - in production you'd want proper admin auth
-    if (body.secret !== process.env.ADMIN_SECRET) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    await seedAchievements();
-
-    return NextResponse.json({
-      success: true,
-      message: 'Achievements seeded successfully'
-    });
-  } catch (error) {
-    console.error('Error seeding achievements:', error);
-    return NextResponse.json(
-      { error: 'Failed to seed achievements' },
-      { status: 500 }
-    );
-  }
-}

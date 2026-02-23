@@ -39,7 +39,7 @@ export function isAdmin(session: Session | null): boolean {
 export function isSuperAdmin(session: Session | null): boolean {
   return (
     session?.user?.role === USER_ROLES.ADMIN &&
-    (session?.user as any)?.is_super_admin === true
+    session?.user?.is_super_admin === true
   )
 }
 

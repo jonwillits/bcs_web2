@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/config';
 import { prisma } from '@/lib/db';
 import { withDatabaseRetry } from '@/lib/retry';
+import { isSuperAdmin } from '@/lib/auth/utils';
 
 /**
  * GET /api/admin/users/[userId]
@@ -130,6 +131,22 @@ export async function PUT(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Only super admin can modify other admins
+    if (existingUser.role === 'admin' && !isSuperAdmin(session)) {
+      return NextResponse.json(
+        { error: 'Only super admin can modify other admin accounts' },
+        { status: 403 }
+      );
+    }
+
+    // Only super admin can promote users to admin
+    if (role === 'admin' && !isSuperAdmin(session)) {
+      return NextResponse.json(
+        { error: 'Only super admin can promote users to admin' },
+        { status: 403 }
+      );
+    }
+
     // Build update data
     const updateData: any = {};
     if (role !== undefined) updateData.role = role;
@@ -237,6 +254,14 @@ export async function DELETE(
 
     if (!userToDelete) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Only super admin can delete other admins
+    if (userToDelete.role === 'admin' && !isSuperAdmin(session)) {
+      return NextResponse.json(
+        { error: 'Only super admin can delete admin accounts' },
+        { status: 403 }
+      );
     }
 
     // Delete user (cascade will handle related data)

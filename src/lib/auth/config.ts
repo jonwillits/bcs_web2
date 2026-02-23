@@ -47,6 +47,7 @@ export const authConfig = {
           name: user.name,
           role: user.role,
           emailVerified: user.email_verified,
+          is_super_admin: user.is_super_admin,
         }
       }
     })
@@ -62,6 +63,7 @@ export const authConfig = {
       if (user) {
         token.role = user.role
         token.emailVerified = user.emailVerified
+        token.is_super_admin = user.is_super_admin
       }
       return token
     },
@@ -70,6 +72,7 @@ export const authConfig = {
         session.user.id = token.sub!
         session.user.role = token.role as string
         session.user.emailVerified = token.emailVerified as boolean
+        session.user.is_super_admin = (token.is_super_admin as boolean) || false
       }
       return session
     },
