@@ -134,7 +134,7 @@ export default function AdminAnalyticsDashboard() {
     { name: 'Faculty', value: analytics.users.byRole.faculty },
     { name: 'Pending Faculty', value: analytics.users.byRole.pending_faculty },
     { name: 'Admins', value: analytics.users.byRole.admin },
-  ];
+  ].filter(d => d.value > 0);
 
   return (
     <div className="space-y-8">
@@ -243,7 +243,7 @@ export default function AdminAnalyticsDashboard() {
                   tick={{ fontSize: 12 }}
                   tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 />
-                <YAxis />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Line
                   type="monotone"
@@ -338,17 +338,21 @@ export default function AdminAnalyticsDashboard() {
             <CardTitle className="text-lg">Recent Users</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {analytics.recentActivity.users.slice(0, 5).map((user) => (
-              <div key={user.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{user.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+            {analytics.recentActivity.users.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No recent users</p>
+            ) : (
+              analytics.recentActivity.users.slice(0, 5).map((user) => (
+                <div key={user.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{user.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">{user.email}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground ml-2">
+                    {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground ml-2">
-                  {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -357,17 +361,21 @@ export default function AdminAnalyticsDashboard() {
             <CardTitle className="text-lg">Recent Courses</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {analytics.recentActivity.courses.slice(0, 5).map((course) => (
-              <div key={course.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{course.title}</div>
-                  <div className="text-xs text-muted-foreground">by {course.users.name}</div>
+            {analytics.recentActivity.courses.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No courses yet</p>
+            ) : (
+              analytics.recentActivity.courses.slice(0, 5).map((course) => (
+                <div key={course.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{course.title}</div>
+                    <div className="text-xs text-muted-foreground">by {course.users.name}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground ml-2">
+                    {new Date(course.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground ml-2">
-                  {new Date(course.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -376,17 +384,21 @@ export default function AdminAnalyticsDashboard() {
             <CardTitle className="text-lg">Recent Enrollments</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {analytics.recentActivity.enrollments.slice(0, 5).map((enrollment) => (
-              <div key={enrollment.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{enrollment.user.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{enrollment.course.title}</div>
+            {analytics.recentActivity.enrollments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No enrollments yet</p>
+            ) : (
+              analytics.recentActivity.enrollments.slice(0, 5).map((enrollment) => (
+                <div key={enrollment.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{enrollment.user.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">{enrollment.course.title}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground ml-2">
+                    {new Date(enrollment.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground ml-2">
-                  {new Date(enrollment.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
