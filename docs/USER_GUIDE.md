@@ -471,7 +471,7 @@ Navigate to your profile edit page to update your information. The fields availa
 
 ### Achievements
 
-Visit `/profile/achievements` to view your earned milestones and learning achievements.
+Visit `/profile/achievements` to view your earned milestones and learning achievements. The page shows all available achievements organized by category, with earned badges highlighted and locked ones grayed out. Your current level, total XP, and streak are displayed at the top. See the [Achievements & Gamification](#achievements--gamification) section under Student Features for a complete breakdown of how XP, levels, and achievements work.
 
 ---
 
@@ -497,9 +497,62 @@ Navigate to `/learning` to see your personalized learning dashboard. It shows:
 - **Enrolled Courses** — All courses you've started, sorted by most recently accessed. Each course shows the title, description, instructor info (name, avatar, university), module count, a progress bar with completion percentage, modules completed vs total, start date, and last accessed date. Click **Continue Learning** to jump back into a course.
 - **Recent Activity** — Your last 10 completed modules with the module title, course title, and completion date
 
-### Achievements
+### Achievements & Gamification
 
 Visit `/profile/achievements` to see milestones you've earned through learning activity on the platform.
+
+#### How XP and Levels Work
+
+Every module has an **XP reward** (set by the course creator). When you mark a module complete, that XP is added to your total. Your **level** is calculated from your total XP using the formula:
+
+> Level = floor(sqrt(total_xp / 100))
+
+This means early levels come quickly, but higher levels require progressively more XP:
+
+| Level | Total XP Required |
+|-------|-------------------|
+| 1 | 100 |
+| 2 | 400 |
+| 3 | 900 |
+| 5 | 2,500 |
+| 10 | 10,000 |
+| 25 | 62,500 |
+
+#### Achievement Categories
+
+Achievements are earned automatically when you meet their criteria. They are grouped into categories:
+
+**Completion** — Based on how many modules or courses you've completed:
+- First Steps (1 module, 50 XP, bronze)
+- On a Roll (5 modules, 100 XP, bronze)
+- Double Digits (10 modules, 200 XP, silver)
+- Quarter Century (25 modules, 500 XP, gold)
+- Half Century (50 modules, 1,000 XP, gold)
+- Course Champion (1 course, 250 XP, silver)
+- Triple Threat (3 courses, 500 XP, gold)
+- Academic Achiever (5 courses, 1,000 XP, gold)
+
+**Consistency** — Based on learning streaks (consecutive days with activity):
+- Getting Consistent (3-day streak, 100 XP, bronze)
+- Week Warrior (7-day streak, 250 XP, silver)
+- Fortnight Focus (14-day streak, 500 XP, gold)
+- Monthly Dedication (30-day streak, 1,000 XP, gold)
+
+**Mastery** — Based on difficulty and special accomplishments:
+- Perfectionist (complete a course at 100%, 300 XP, silver)
+- Boss Slayer (complete a boss-level module, 200 XP, silver)
+- Challenge Accepted (complete 5 challenge modules, 300 XP, gold)
+- Chain Breaker (complete a course with prerequisites, 200 XP, silver)
+- Foundation Scholar (complete all foundation courses, 500 XP, gold)
+
+**Speed** — Based on completing modules quickly:
+- Quick Learner (3 modules in one day, 150 XP, bronze)
+- Speed Demon (5 modules in one day, 300 XP, silver)
+
+**Level Milestones** — Earned when you reach certain levels:
+- Level 5 (100 XP, bronze), Level 10 (250 XP, silver), Level 25 (500 XP, gold), Level 50 (1,000 XP, gold)
+
+Achievement badges come in four tiers: **gray** (locked), **bronze**, **silver**, and **gold**.
 
 ---
 
@@ -559,8 +612,42 @@ Toggle the Status from "Draft" to "Published" and save. Published courses appear
    - **Parent Module** — Optionally nest under another module
    - **Difficulty Level** — Beginner, Intermediate, Advanced, or Boss
    - **Quest Type** — Standard, Challenge, Boss, or Bonus
-   - **XP Reward** — Experience points awarded on completion
+   - **XP Reward** — Experience points awarded on completion (default: 100)
 3. Save the module
+
+#### Choosing Difficulty Level, Quest Type, and XP
+
+These three fields work together to create the gamified learning experience students see on the course map.
+
+**Difficulty Level** determines the color of the module node on the course map and signals to students how challenging the content is:
+
+| Difficulty | Color | When to use |
+|-----------|-------|-------------|
+| Beginner | Green | Introductory content, no prior knowledge needed |
+| Intermediate | Blue | Builds on foundational concepts |
+| Advanced | Orange | Requires solid understanding of prerequisites |
+| Boss | Red/Purple | Most challenging content, typically end-of-section assessments or capstone modules |
+
+**Quest Type** determines the icon shown on the course map and how the module counts toward achievements:
+
+| Quest Type | Icon | When to use |
+|-----------|------|-------------|
+| Standard | 📚 | Regular learning content (most modules) |
+| Challenge | ⚡ | Modules that test understanding — problem sets, case studies, critical thinking exercises. Completing 5 earns the "Challenge Accepted" achievement. |
+| Boss | 👑 | Major milestone modules — final exams, capstone projects, comprehensive assessments. Completing one earns the "Boss Slayer" achievement. |
+| Bonus | ⭐ | Optional enrichment content — supplementary readings, advanced topics, fun explorations |
+
+**XP Reward** is the experience points students earn when they mark the module complete. Suggested values:
+
+| XP | Use for |
+|----|---------|
+| 50 | Short, simple modules (quick reads, single-concept introductions) |
+| 100 | Standard modules (default — typical lesson content) |
+| 150–200 | Longer or more complex modules (multi-topic lessons, exercises) |
+| 250–300 | Challenge or advanced modules |
+| 500+ | Boss modules, capstone projects, major assessments |
+
+These are guidelines, not rules. The key is internal consistency within a course — if a standard module is 100 XP, a module that takes twice the effort should be roughly 200 XP.
 
 #### Editing a Module
 
@@ -1011,9 +1098,25 @@ Quest type indicators:
 - 👑 Boss
 - ⭐ Bonus
 
+#### How Positioning Works
+
+Module positions on the course map use a **percentage-based coordinate system** (0–100 for both X and Y). This means positions are relative to the canvas size and will scale correctly on any screen:
+
+- **X** = 0 is the left edge, X = 100 is the right edge
+- **Y** = 0 is the top, Y = 100 is the bottom
+- The default position for new modules is (50, 50) — center of the canvas
+
+You can position modules by **dragging them** on the visual editor. The auto-layout algorithm will automatically arrange modules if it detects that multiple modules are stacked at the default position or overlapping (within 10% distance). It arranges modules in rows based on their prerequisite depth — modules with no prerequisites go at the top, their dependents go below them, and so on.
+
+**Tips for good layouts:**
+- Place introductory/prerequisite modules near the top-left
+- Arrange modules left-to-right or top-to-bottom in learning order
+- Keep related modules close together, with prerequisite arrows flowing downward
+- Leave space between nodes so labels don't overlap — a spacing of 15–20 units works well
+
 ### Program Map Editor
 
-Navigate to `/faculty/program/edit` to arrange courses on the program map. Drag course nodes to position them, define prerequisites between courses, and save the layout.
+Navigate to `/faculty/program/edit` to arrange courses on the program map. Drag course nodes to position them, define prerequisites between courses, and save the layout. The program map uses the same percentage-based coordinate system (0–100) as the course map.
 
 ### Managing Learning Paths
 
