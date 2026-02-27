@@ -119,6 +119,11 @@ export async function PUT(
     const body = await request.json()
     const validatedData = updateCourseSchema.parse(body)
 
+    // Only admins can change the featured flag
+    if (validatedData.featured !== undefined && session.user.role !== 'admin') {
+      delete (validatedData as any).featured
+    }
+
     // If slug is being updated, check uniqueness for the course author
     if (validatedData.slug && validatedData.slug !== existingCourse.slug) {
       const slugExists = await prisma.courses.findFirst({

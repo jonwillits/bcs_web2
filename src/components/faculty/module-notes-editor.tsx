@@ -90,7 +90,7 @@ export function ModuleNotesEditor({
                 Course-Specific Module Notes
               </CardTitle>
               <CardDescription className="mt-1">
-                Add context and notes for &quot;{moduleTitle}&quot; in this course
+                Add context and notes for &ldquo;{moduleTitle}&rdquo; in this course
               </CardDescription>
             </div>
             <NeuralButton variant="ghost" size="sm" onClick={onClose}>

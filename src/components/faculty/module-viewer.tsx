@@ -458,7 +458,7 @@ export function ModuleViewer({ moduleId }: ModuleViewerProps) {
                   placeholder="Enter a title for the cloned module"
                 />
                 <p className="text-xs text-muted-foreground">
-                  A unique slug will be generated automatically (e.g., &quot;{module.slug}-copy&quot;)
+                  A unique slug will be generated automatically (e.g., {'"'}{module.slug}-copy{'"'})
                 </p>
               </div>
 

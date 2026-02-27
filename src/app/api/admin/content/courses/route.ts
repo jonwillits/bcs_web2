@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
           title: true,
           slug: true,
           status: true,
+          featured: true,
           updated_at: true,
           users: {
             select: {
@@ -59,6 +60,7 @@ export async function GET(request: NextRequest) {
         email: course.users.email || '',
       },
       status: course.status,
+      featured: course.featured,
       moduleCount: course.course_modules.length,
       enrolledCount: course.course_tracking.length,
       updatedAt: course.updated_at.toISOString(),

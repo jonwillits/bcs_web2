@@ -740,7 +740,7 @@ export function ModuleCatalog({ initialSearch = '', session }: ModuleCatalogProp
                   placeholder="Enter a title for the cloned module"
                 />
                 <p className="text-xs text-muted-foreground">
-                  A unique slug will be generated automatically (e.g., &quot;{moduleToClone.slug}-copy&quot;)
+                  A unique slug will be generated automatically (e.g., {'"'}{moduleToClone.slug}-copy{'"'})
                 </p>
               </div>
 

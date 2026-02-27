@@ -661,7 +661,7 @@ export function ModuleLibrary() {
                     <div className="flex flex-wrap gap-2">
                       {searchTerm.trim() && (
                         <Badge variant="outline" className="text-neural-primary border-neural-primary/30">
-                          Search: &quot;{searchTerm}&quot;
+                          Search: &ldquo;{searchTerm}&rdquo;
                         </Badge>
                       )}
                       {statusFilter !== 'all' && (
@@ -986,7 +986,7 @@ export function ModuleLibrary() {
                   placeholder="Enter a title for the cloned module"
                 />
                 <p className="text-xs text-muted-foreground">
-                  A unique slug will be generated automatically (e.g., &quot;{moduleToClone.slug}-copy&quot;)
+                  A unique slug will be generated automatically (e.g., {'"'}{moduleToClone.slug}-copy{'"'})
                 </p>
               </div>
 

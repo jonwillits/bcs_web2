@@ -147,6 +147,34 @@ export function ProgramMapPublic({ pathTitle, pathSlug }: ProgramMapPublicProps)
     );
   }
 
+  if (data.courses.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full bg-slate-950 text-white">
+        <div className="text-center max-w-md mx-auto px-4">
+          <MapIcon className="h-16 w-16 mx-auto mb-6 text-slate-600" />
+          <h2 className="text-2xl font-bold mb-3 text-slate-200">No Courses Yet</h2>
+          <p className="text-slate-400 mb-6">
+            {pathSlug
+              ? 'This learning path doesn\'t have any courses yet. Check back later!'
+              : 'The program map is empty. Courses will appear here once they are created and positioned.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/auth/login">
+              <NeuralButton variant="neural">
+                Sign In
+              </NeuralButton>
+            </Link>
+            <Link href="/courses">
+              <NeuralButton variant="outline">
+                Browse Courses
+              </NeuralButton>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Breadcrumb items
   const breadcrumbItems = pathSlug
     ? [

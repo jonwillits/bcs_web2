@@ -798,7 +798,9 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
               )}
             />
             <p className="text-xs text-muted-foreground">
-              Public modules can be added to any course. Private modules are only accessible to you.
+              {watchedVisibility === 'public'
+                ? 'Other faculty can discover and add this module to their courses. Students see it in the module catalog.'
+                : 'Only you can see and use this module. It won\u2019t appear in the module catalog or be available to other faculty.'}
             </p>
           </div>
         </CardContent>

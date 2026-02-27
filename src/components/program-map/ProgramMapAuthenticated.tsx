@@ -212,6 +212,22 @@ export function ProgramMapAuthenticated({
     );
   }
 
+  if (data.courses.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full bg-slate-950 text-white">
+        <div className="text-center max-w-md mx-auto px-4">
+          <MapIcon className="h-16 w-16 mx-auto mb-6 text-slate-600" />
+          <h2 className="text-2xl font-bold mb-3 text-slate-200">No Courses Yet</h2>
+          <p className="text-slate-400 mb-6">
+            {pathSlug
+              ? 'This learning path doesn\'t have any courses yet. Check back later!'
+              : 'The program map is empty. Courses will appear here once they are created and positioned.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Breadcrumb items
   const breadcrumbItems = pathSlug
     ? [
@@ -257,7 +273,7 @@ export function ProgramMapAuthenticated({
             <div className="w-24 sm:w-32 h-2 bg-slate-800 rounded-full mt-1 overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-1000 ease-out"
-                style={{ width: `${(data.userProgress.coursesCompleted / data.totalCourses) * 100}%` }}
+                style={{ width: `${data.totalCourses > 0 ? (data.userProgress.coursesCompleted / data.totalCourses) * 100 : 0}%` }}
               />
             </div>
           </div>

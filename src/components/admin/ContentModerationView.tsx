@@ -31,6 +31,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Users,
+  Star,
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -45,6 +46,7 @@ interface Course {
     email: string;
   };
   status: string;
+  featured: boolean;
   moduleCount: number;
   enrolledCount?: number;
   updatedAt: string;
@@ -215,6 +217,42 @@ export function ContentModerationView() {
     }
   };
 
+  // Toggle featured status on a course
+  const handleToggleFeatured = async (courseId: string, currentFeatured: boolean) => {
+    const actionId = `course-${courseId}-featured`;
+    try {
+      setActionInProgress(actionId);
+      const response = await fetch(`/api/courses/${courseId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured: !currentFeatured }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update featured status');
+      }
+
+      // Optimistic update
+      setCourses(courses.map(c =>
+        c.id === courseId ? { ...c, featured: !currentFeatured } : c
+      ));
+
+      toast.success(
+        !currentFeatured
+          ? 'Course is now featured on the homepage'
+          : 'Course removed from featured',
+      );
+    } catch (error) {
+      console.error('Error toggling featured:', error);
+      toast.error('Failed to update featured status', {
+        description: error instanceof Error ? error.message : 'Please try again',
+      });
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
   // Filter data based on search
   const filteredCourses = courses.filter(c =>
     c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -360,6 +398,12 @@ export function ContentModerationView() {
                             <Badge variant={course.status === 'published' ? 'default' : 'outline'} className="flex-shrink-0">
                               {course.status}
                             </Badge>
+                            {course.featured && (
+                              <Badge className="bg-amber-100 text-amber-800 border-amber-200 flex-shrink-0">
+                                <Star className="h-3 w-3 mr-1 fill-amber-500" />
+                                Featured
+                              </Badge>
+                            )}
                           </div>
                           <div className="text-xs sm:text-sm text-muted-foreground space-y-0.5">
                             <p className="truncate">Author: {course.author.name}</p>
@@ -367,6 +411,23 @@ export function ContentModerationView() {
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <NeuralButton
+                                size="sm"
+                                variant={course.featured ? 'neural' : 'outline'}
+                                onClick={() => handleToggleFeatured(course.id, course.featured)}
+                                disabled={isDisabled || actionInProgress === `course-${course.id}-featured`}
+                              >
+                                {actionInProgress === `course-${course.id}-featured` ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Star className={`h-4 w-4 ${course.featured ? 'fill-current' : ''}`} />
+                                )}
+                              </NeuralButton>
+                            </TooltipTrigger>
+                            <TooltipContent>{course.featured ? 'Remove from featured' : 'Feature on homepage'}</TooltipContent>
+                          </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Link href={`/courses/${course.slug}`} target="_blank">

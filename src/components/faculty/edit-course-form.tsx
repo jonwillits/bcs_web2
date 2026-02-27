@@ -39,9 +39,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group-custom'
-import { Checkbox } from '@/components/ui/checkbox-custom'
 import { toast } from 'sonner'
 import {
   Save,
@@ -836,24 +834,6 @@ export function EditCourseForm({ courseId }: { courseId: string }) {
             />
           </div>
 
-          <Separator />
-
-          <div className="flex items-center space-x-2">
-            <Controller
-              name="featured"
-              control={control}
-              render={({ field }) => (
-                <Checkbox
-                  id="featured"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-            <Label htmlFor="featured" className="cursor-pointer font-normal">
-              Feature this course on the homepage
-            </Label>
-          </div>
         </CardContent>
       </Card>
 
