@@ -27,12 +27,12 @@ export async function generateMetadata({ params }: PageProps) {
 
   if (!path) {
     return {
-      title: 'Learning Path Not Found | BCS E-Textbook'
+      title: 'Learning Path Not Found | BCS E-Learning'
     };
   }
 
   return {
-    title: `${path.title} | Learning Paths | BCS E-Textbook`,
+    title: `${path.title} | Learning Paths | BCS E-Learning`,
     description: path.description || `Explore the ${path.title} learning path`
   };
 }

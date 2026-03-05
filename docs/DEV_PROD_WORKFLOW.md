@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide documents the complete development and production workflow for the BCS E-Textbook Platform using a **fork-based GitHub workflow** with separate personal (development) and university (production) accounts across all services.
+This guide documents the complete development and production workflow for the BCS E-Learning Platform using a **fork-based GitHub workflow** with separate personal (development) and university (production) accounts across all services.
 
 **Last Updated:** January 2025
 **Status:** Active
@@ -166,7 +166,7 @@ NEXTAUTH_SECRET="[your-dev-secret-32-chars]"
 EMAIL_PROVIDER="resend"
 RESEND_API_KEY="re_[your_personal_dev_api_key]"
 EMAIL_FROM="noreply@[your-dev-domain].com"
-EMAIL_FROM_NAME="BCS E-Textbook (DEV)"
+EMAIL_FROM_NAME="BCS E-Learning (DEV)"
 
 # Environment
 NODE_ENV="development"
@@ -193,7 +193,7 @@ NEXTAUTH_SECRET="[university-prod-secret-32-chars]"
 EMAIL_PROVIDER="resend"
 RESEND_API_KEY="re_[university_production_api_key]"
 EMAIL_FROM="noreply@brainandcognitivescience.org"
-EMAIL_FROM_NAME="BCS E-Textbook"
+EMAIL_FROM_NAME="BCS E-Learning"
 
 # Environment
 NODE_ENV="production"
@@ -218,7 +218,7 @@ NEXTAUTH_SECRET="local-dev-secret-key"
 
 # Email (Console mode - logs to terminal, no real emails)
 EMAIL_PROVIDER="console"
-EMAIL_FROM_NAME="BCS E-Textbook (LOCAL)"
+EMAIL_FROM_NAME="BCS E-Learning (LOCAL)"
 
 # Environment
 NODE_ENV="development"
@@ -849,7 +849,6 @@ npx prisma studio
 
 - **This Guide**: Dev/prod workflow
 - **CLAUDE.md**: Project overview and commands
-- **TECHNICAL_DOCUMENTATION.md**: Architecture details
 - **EMAIL_SETUP_GUIDE.md**: Email configuration
 - **TESTING_CHECKLIST.md**: Testing procedures
 

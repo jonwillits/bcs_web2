@@ -5,9 +5,9 @@ import { PublicLayout } from "@/components/layouts/app-layout"
 import { UserGuide } from "@/components/public/user-guide"
 
 export const metadata: Metadata = {
-  title: "User Guide | BCS E-Textbook",
+  title: "User Guide | BCS E-Learning",
   description:
-    "Complete guide to using the Brain & Cognitive Sciences E-Textbook Platform — browse courses, manage content, track progress, and more.",
+    "Complete guide to using the Brain & Cognitive Sciences E-Learning Platform — browse courses, manage content, track progress, and more.",
 }
 
 export default function GuidePage() {

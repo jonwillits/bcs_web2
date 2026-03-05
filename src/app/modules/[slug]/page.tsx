@@ -79,7 +79,7 @@ export async function generateMetadata({ params }: ModulePageProps): Promise<Met
   }
 
   return {
-    title: `${foundModule.title} | BCS E-Textbook`,
+    title: `${foundModule.title} | BCS E-Learning`,
     description: foundModule.description || `Learn about ${foundModule.title} in this educational module.`,
     openGraph: {
       title: foundModule.title,

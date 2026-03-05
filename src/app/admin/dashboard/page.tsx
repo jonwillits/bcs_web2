@@ -115,7 +115,7 @@ export default async function AdminDashboardPage() {
             Platform Overview
           </h2>
           <p className="text-muted-foreground">
-            Monitor and manage the BCS E-Textbook Platform
+            Monitor and manage the BCS E-Learning Platform
           </p>
         </div>
 

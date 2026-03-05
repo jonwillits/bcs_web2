@@ -27,11 +27,11 @@ export async function generateMetadata({
   const doc = GUIDE_DOCS[slug]
 
   if (!doc) {
-    return { title: "Not Found | BCS E-Textbook" }
+    return { title: "Not Found | BCS E-Learning" }
   }
 
   return {
-    title: `${doc.title} | BCS E-Textbook`,
+    title: `${doc.title} | BCS E-Learning`,
     description: doc.title,
   }
 }

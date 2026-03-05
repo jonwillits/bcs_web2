@@ -279,7 +279,7 @@ export function UnifiedRegistrationForm() {
             Create Your Account
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Join the BCS E-Textbook Platform
+            Join the BCS E-Learning Platform
           </p>
         </div>
 

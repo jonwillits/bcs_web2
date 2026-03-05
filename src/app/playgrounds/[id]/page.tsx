@@ -153,7 +153,7 @@ export async function generateMetadata({ params }: PageProps) {
   }
 
   return {
-    title: 'Playground - BCS E-Textbook',
+    title: 'Playground - BCS E-Learning',
     description: 'Interactive educational playground',
   };
 }

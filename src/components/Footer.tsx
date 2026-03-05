@@ -112,7 +112,7 @@ export function Footer() {
 
         <div className="border-t border-border/40 mt-8 pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 Brain & Cognitive Sciences E-Textbook Platform. All rights reserved.
+            © 2025 Brain & Cognitive Sciences E-Learning Platform. All rights reserved.
           </p>
         </div>
       </div>

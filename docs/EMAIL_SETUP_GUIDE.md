@@ -19,7 +19,7 @@ This guide will help you set up Resend for sending verification and password res
 
 1. Once logged in, go to **"API Keys"** in the sidebar
 2. Click **"Create API Key"**
-3. Give it a name: `BCS E-Textbook Development`
+3. Give it a name: `BCS E-Learning Development`
 4. Select permission: **"Full Access"** or **"Sending Access"**
 5. Click **"Create"**
 6. **Copy the API key** (it will look like: `re_123abc456def...`)
@@ -50,7 +50,7 @@ Add these to your `.env` file:
 EMAIL_PROVIDER="resend"
 RESEND_API_KEY="re_your_api_key_here"
 EMAIL_FROM="onboarding@resend.dev"  # Use this for development
-EMAIL_FROM_NAME="BCS E-Textbook"
+EMAIL_FROM_NAME="BCS E-Learning"
 ```
 
 **For Production** (add to Vercel Environment Variables):
@@ -58,7 +58,7 @@ EMAIL_FROM_NAME="BCS E-Textbook"
 EMAIL_PROVIDER="resend"
 RESEND_API_KEY="re_your_production_api_key"
 EMAIL_FROM="noreply@your-domain.com"  # Use your verified domain
-EMAIL_FROM_NAME="BCS E-Textbook"
+EMAIL_FROM_NAME="BCS E-Learning"
 ```
 
 ---
@@ -170,7 +170,7 @@ Click on any email to see:
 EMAIL_PROVIDER = resend
 RESEND_API_KEY = re_your_production_api_key
 EMAIL_FROM = noreply@your-domain.com
-EMAIL_FROM_NAME = BCS E-Textbook
+EMAIL_FROM_NAME = BCS E-Learning
 ```
 
 4. Click **"Save"**
@@ -218,7 +218,7 @@ Templates are located in: `/src/lib/email.ts`
 | `EMAIL_PROVIDER` | Email service to use | `resend` |
 | `RESEND_API_KEY` | Resend API key | `re_abc123...` |
 | `EMAIL_FROM` | Sender email address | `noreply@yourdomain.com` |
-| `EMAIL_FROM_NAME` | Sender display name | `BCS E-Textbook` |
+| `EMAIL_FROM_NAME` | Sender display name | `BCS E-Learning` |
 
 ---
 

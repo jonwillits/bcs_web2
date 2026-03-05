@@ -56,7 +56,7 @@ export function Hero() {
 
         <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground sm:text-xl leading-relaxed">
           Explore the fascinating world of brain and cognitive sciences through our 
-          revolutionary e-textbook platform. Where academic excellence meets 
+          revolutionary e-learning platform. Where academic excellence meets
           innovative neural-inspired learning experiences.
         </p>
 

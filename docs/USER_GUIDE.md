@@ -1,6 +1,6 @@
-# BCS E-Textbook Platform User Guide
+# BCS E-Learning Platform User Guide
 
-Welcome to the **Brain & Cognitive Sciences (BCS) E-Textbook Platform** — an interactive learning platform built for students, faculty, and researchers in the brain and cognitive sciences. This guide walks you through every part of the platform, from browsing courses as a visitor to managing content as faculty or administering the platform as an admin.
+Welcome to the **Brain & Cognitive Sciences (BCS) E-Learning Platform** — an interactive learning platform built for students, faculty, and researchers in the brain and cognitive sciences. This guide walks you through every part of the platform, from browsing courses as a visitor to managing content as faculty or administering the platform as an admin.
 
 ---
 
@@ -26,7 +26,7 @@ Welcome to the **Brain & Cognitive Sciences (BCS) E-Textbook Platform** — an i
 
 ## 1. Platform Overview
 
-The BCS E-Textbook Platform is a web-based learning environment designed specifically for brain and cognitive sciences education. It provides:
+The BCS E-Learning Platform is a web-based learning environment designed specifically for brain and cognitive sciences education. It provides:
 
 - **Interactive courses** with hierarchical module structures and rich media content
 - **Standalone modules** that can be shared across multiple courses
@@ -748,7 +748,7 @@ Each modification below tells you exactly which file to open, what to look for, 
 Find these lines near the top:
 
 ```typescript
-title: 'Neural Network Playground | BCS E-Textbook',
+title: 'Neural Network Playground | BCS E-Learning',
 description:
   'Interactive neural network visualization. Explore how neural networks learn by adjusting architecture, datasets, and training parameters.',
 ```

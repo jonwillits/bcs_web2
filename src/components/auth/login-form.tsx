@@ -101,7 +101,7 @@ export function LoginForm() {
             Sign In
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Access your BCS e-textbook platform
+            Access your BCS e-learning platform
           </p>
         </div>
 

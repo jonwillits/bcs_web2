@@ -142,7 +142,7 @@ export function RegisterForm() {
             Create Account
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Create your BCS e-textbook platform account
+            Create your BCS e-learning platform account
           </p>
         </div>
 

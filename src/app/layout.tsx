@@ -21,18 +21,18 @@ const sourceSans3 = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
-  title: "University of Illinois - Brain & Cognitive Sciences E-Textbook Platform",
-  description: "Official University of Illinois e-textbook platform for Brain and Cognitive Sciences. Explore neuroscience, cognitive psychology, and brain research through interactive educational modules.",
-  keywords: ["University of Illinois", "neuroscience", "cognitive science", "brain research", "e-textbook", "educational platform", "UIUC"],
+  title: "University of Illinois - Brain & Cognitive Sciences E-Learning Platform",
+  description: "Official University of Illinois e-learning platform for Brain and Cognitive Sciences. Explore neuroscience, cognitive psychology, and brain research through interactive educational modules.",
+  keywords: ["University of Illinois", "neuroscience", "cognitive science", "brain research", "e-learning", "educational platform", "UIUC"],
   authors: [{ name: "University of Illinois BCS Department" }],
   openGraph: {
-    title: "University of Illinois - BCS E-Textbook Platform",
+    title: "University of Illinois - BCS E-Learning Platform",
     description: "Official educational platform for Brain and Cognitive Sciences at the University of Illinois.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "University of Illinois - BCS E-Textbook Platform",
+    title: "University of Illinois - BCS E-Learning Platform",
     description: "Official educational platform for Brain and Cognitive Sciences at the University of Illinois.",
   },
   robots: "index, follow",
@@ -56,7 +56,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="UI BCS E-Textbook" />
+        <meta name="apple-mobile-web-app-title" content="UI BCS E-Learning" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>

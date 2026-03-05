@@ -6,7 +6,7 @@ import { Header } from '@/components/Header';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Program Map | BCS E-Textbook',
+  title: 'Program Map | BCS E-Learning',
   description: 'Explore the complete program and course relationships'
 };
 

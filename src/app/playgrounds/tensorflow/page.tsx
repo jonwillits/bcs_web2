@@ -8,7 +8,7 @@ import { TensorFlowPlayground } from '@/components/tensorflow-playground';
 import { Header } from '@/components/Header';
 
 export const metadata: Metadata = {
-  title: 'Neural Network Playground | BCS E-Textbook',
+  title: 'Neural Network Playground | BCS E-Learning',
   description:
     'Interactive neural network visualization. Explore how neural networks learn by adjusting architecture, datasets, and training parameters.',
   openGraph: {

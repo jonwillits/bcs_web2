@@ -6,7 +6,7 @@ import { Map, BookOpen, Users, ArrowRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 
 export const metadata = {
-  title: 'Learning Paths | BCS E-Textbook',
+  title: 'Learning Paths | BCS E-Learning',
   description: 'Explore curated learning paths designed to guide your educational journey'
 };
 

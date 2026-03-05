@@ -18,7 +18,7 @@ interface EmailData {
 const getEmailConfig = (): EmailConfig => {
   const provider = process.env.EMAIL_PROVIDER || 'console';
   const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-  const fromName = process.env.EMAIL_FROM_NAME || 'BCS E-Textbook';
+  const fromName = process.env.EMAIL_FROM_NAME || 'BCS E-Learning';
 
   return {
     provider: provider as EmailConfig['provider'],
@@ -50,7 +50,7 @@ const generateEmailTemplate = (title: string, content: string, actionUrl?: strin
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎓 BCS E-Textbook</h1>
+          <h1>🎓 BCS E-Learning</h1>
         </div>
         <div class="content">
           <h2>${title}</h2>
@@ -58,7 +58,7 @@ const generateEmailTemplate = (title: string, content: string, actionUrl?: strin
           ${actionUrl && actionText ? `<div style="text-align: center; margin: 30px 0;"><a href="${actionUrl}" class="button">${actionText}</a></div>` : ''}
         </div>
         <div class="footer">
-          <p>BCS E-Textbook Platform</p>
+          <p>BCS E-Learning Platform</p>
           <p>This is an automated message. Please do not reply to this email.</p>
         </div>
       </div>
@@ -92,7 +92,7 @@ const sendResendEmail = async (emailData: EmailData, config: EmailConfig): Promi
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     await resend.emails.send({
-      from: `${config.fromName || 'BCS E-Textbook'} <${config.from}>`,
+      from: `${config.fromName || 'BCS E-Learning'} <${config.from}>`,
       to: emailData.to,
       subject: emailData.subject,
       text: emailData.text,
@@ -128,7 +128,7 @@ export const sendVerificationEmail = async (email: string, name: string, token: 
     'Verify Your Email Address',
     `
       <p>Hi ${name},</p>
-      <p>Thank you for registering with the BCS E-Textbook platform! To complete your account setup, please verify your email address by clicking the button below.</p>
+      <p>Thank you for registering with the BCS E-Learning platform! To complete your account setup, please verify your email address by clicking the button below.</p>
       <p>This verification link will expire in 24 hours for security purposes.</p>
       <p>If you didn't create an account, you can safely ignore this email.</p>
     `,
@@ -138,7 +138,7 @@ export const sendVerificationEmail = async (email: string, name: string, token: 
 
   await sendEmail({
     to: email,
-    subject: 'Verify Your BCS E-Textbook Account',
+    subject: 'Verify Your BCS E-Learning Account',
     html,
     text: `Hi ${name}, please verify your email by visiting: ${verificationUrl}`
   });
@@ -152,7 +152,7 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
     'Reset Your Password',
     `
       <p>Hi ${name},</p>
-      <p>You requested to reset your password for your BCS E-Textbook account. Click the button below to create a new password.</p>
+      <p>You requested to reset your password for your BCS E-Learning account. Click the button below to create a new password.</p>
       <p><strong>This reset link will expire in 1 hour</strong> for security purposes.</p>
       <p>If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
     `,
@@ -162,7 +162,7 @@ export const sendPasswordResetEmail = async (email: string, name: string, token:
 
   await sendEmail({
     to: email,
-    subject: 'Reset Your BCS E-Textbook Password',
+    subject: 'Reset Your BCS E-Learning Password',
     html,
     text: `Hi ${name}, reset your password by visiting: ${resetUrl}`
   });

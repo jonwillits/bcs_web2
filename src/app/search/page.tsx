@@ -5,7 +5,7 @@ import { UniversalSearchResults } from '@/components/search/UniversalSearchResul
 import { performUniversalSearch } from '@/lib/search'
 
 export const metadata: Metadata = {
-  title: 'Search - BCS E-Textbook Platform',
+  title: 'Search - BCS E-Learning Platform',
   description: 'Search courses, modules, instructors, and students across the Brain & Cognitive Sciences platform',
 }
 

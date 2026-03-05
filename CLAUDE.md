@@ -363,7 +363,7 @@ The platform uses **Resend** for email verification and password reset:
 EMAIL_PROVIDER="resend"              # Use "console" for dev, "resend" for prod
 RESEND_API_KEY="re_your_api_key"    # Get from https://resend.com
 EMAIL_FROM="onboarding@resend.dev"   # Dev: onboarding@resend.dev, Prod: verified domain
-EMAIL_FROM_NAME="BCS E-Textbook"     # Display name (can be anything)
+EMAIL_FROM_NAME="BCS E-Learning"     # Display name (can be anything)
 ```
 
 **Email Functions** (in `/src/lib/email.ts`):
@@ -431,7 +431,7 @@ The project uses manual testing on the Vercel deployment. When adding features:
 - `EMAIL_PROVIDER` - Email service (`resend` for production)
 - `RESEND_API_KEY` - API key from Resend dashboard
 - `EMAIL_FROM` - Verified sender email (e.g., `noreply@yourdomain.com`)
-- `EMAIL_FROM_NAME` - Sender display name (e.g., `BCS E-Textbook`)
+- `EMAIL_FROM_NAME` - Sender display name (e.g., `BCS E-Learning`)
 
 **Build Process**:
 1. Vercel runs `npm run vercel:build`
@@ -456,7 +456,6 @@ The project uses manual testing on the Vercel deployment. When adding features:
 - `DATABASE_MIGRATION_GUIDE.md` - Database migration workflow
 - `DEV_PROD_WORKFLOW.md` - Development and production workflow
 - `EMAIL_SETUP_GUIDE.md` - Resend email configuration
-- `FEATURE_PROPOSALS.md` - Feature proposals and ideas
 - `MANUAL_TESTING_GUIDE.md` - Manual testing procedures
 - `TESTING_CHECKLIST.md` - Comprehensive testing checklist
 - `UNIVERSITY_OF_ILLINOIS_BRANDING.md` - Design guidelines

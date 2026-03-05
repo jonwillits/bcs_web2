@@ -4,7 +4,7 @@ import { PublicLayout } from '@/components/layouts/app-layout';
 import { AchievementsView } from '@/components/achievements/AchievementsView';
 
 export const metadata = {
-  title: 'My Achievements | BCS E-Textbook',
+  title: 'My Achievements | BCS E-Learning',
   description: 'View your earned achievements and track your learning progress'
 };
 

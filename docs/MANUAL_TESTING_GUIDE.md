@@ -460,8 +460,7 @@ SELECT * FROM collaborators WHERE module_id = 'module_id';
 If you encounter issues during manual testing:
 
 1. Check the main TESTING_CHECKLIST.md for test details
-2. Review TECHNICAL_DOCUMENTATION.md for architecture
-3. Check database schema in prisma/schema.prisma
+2. Check database schema in prisma/schema.prisma
 4. Review API routes in src/app/api/
 
 ---
@@ -486,4 +485,4 @@ Mark tests as BLOCKED when:
 
 ---
 
-**Note**: These manual tests complement the 146 automated tests already completed. Together they provide comprehensive test coverage of the BCS E-Textbook Platform.
+**Note**: These manual tests complement the 146 automated tests already completed. Together they provide comprehensive test coverage of the BCS E-Learning Platform.

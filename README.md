@@ -1,8 +1,8 @@
-# BCS E-Textbook Platform
+# BCS E-Learning Platform
 
 **Interactive Brain & Cognitive Sciences Learning Platform**
 
-A modern e-textbook platform for Brain and Cognitive Sciences education. Built with Next.js 15, React 19, and PostgreSQL.
+A modern e-learning platform for Brain and Cognitive Sciences education. Built with Next.js 15, React 19, and PostgreSQL.
 
 **Production**: [brainandcognitivescience.com](https://www.brainandcognitivescience.com/)
 **Development**: [bcs-web2.vercel.app](https://bcs-web2.vercel.app/)
@@ -95,7 +95,7 @@ NEXTAUTH_SECRET="your-secret"        # openssl rand -base64 32
 EMAIL_PROVIDER="console"             # "console" for dev, "resend" for prod
 RESEND_API_KEY="re_..."              # Required for email sending
 EMAIL_FROM="onboarding@resend.dev"
-EMAIL_FROM_NAME="BCS E-Textbook"
+EMAIL_FROM_NAME="BCS E-Learning"
 ```
 
 ### Database Setup
@@ -251,7 +251,6 @@ All documentation is in the [`/docs`](./docs/) directory:
 | [DATABASE_MIGRATION_GUIDE.md](./docs/DATABASE_MIGRATION_GUIDE.md) | Database migration workflow |
 | [DEV_PROD_WORKFLOW.md](./docs/DEV_PROD_WORKFLOW.md) | Development and production workflow |
 | [EMAIL_SETUP_GUIDE.md](./docs/EMAIL_SETUP_GUIDE.md) | Resend email configuration |
-| [FEATURE_PROPOSALS.md](./docs/FEATURE_PROPOSALS.md) | Feature ideas and proposals |
 | [MANUAL_TESTING_GUIDE.md](./docs/MANUAL_TESTING_GUIDE.md) | Manual testing procedures |
 | [TESTING_CHECKLIST.md](./docs/TESTING_CHECKLIST.md) | Comprehensive testing checklist |
 | [UNIVERSITY_OF_ILLINOIS_BRANDING.md](./docs/UNIVERSITY_OF_ILLINOIS_BRANDING.md) | Design guidelines |

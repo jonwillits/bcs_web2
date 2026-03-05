@@ -1,7 +1,7 @@
 {
-  "name": "University of Illinois - BCS E-Textbook Platform",
+  "name": "University of Illinois - BCS E-Learning Platform",
   "short_name": "UI BCS",
-  "description": "Official University of Illinois e-textbook platform for Brain and Cognitive Sciences",
+  "description": "Official University of Illinois e-learning platform for Brain and Cognitive Sciences",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
