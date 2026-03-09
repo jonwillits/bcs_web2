@@ -69,10 +69,10 @@ export function Hero() {
             </NeuralButton>
           </Link>
           
-          <Link href="/network">
+          <Link href="/program/map">
             <NeuralButton variant="cognitive" size="lg" className="min-w-[200px]">
               <Play className="mr-2 h-5 w-5" />
-              Explore Network
+              Program Map
             </NeuralButton>
           </Link>
         </div>

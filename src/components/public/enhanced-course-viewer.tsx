@@ -844,10 +844,10 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                             <ChevronRight className="ml-2 h-4 w-4" />
                           </NeuralButton>
                         ) : (
-                          <NeuralButton variant="synaptic" className="w-full sm:w-auto">
+                          <span className="inline-flex items-center px-4 py-2 rounded-lg bg-cognition-green/10 text-cognition-green border border-cognition-green/30 text-sm font-medium">
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Course Complete!
-                          </NeuralButton>
+                          </span>
                         )}
                       </div>
                     </div>
