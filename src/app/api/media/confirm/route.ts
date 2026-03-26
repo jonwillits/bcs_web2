@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         original_name: originalName,
         file_size: BigInt(fileSize),
         mime_type: mimeType,
-        storage_path: filePath,
+        storage_path: publicUrl,
         uploaded_by: session.user.id,
       },
     });

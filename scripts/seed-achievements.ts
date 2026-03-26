@@ -243,6 +243,88 @@ const ACHIEVEMENT_DEFINITIONS = [
     criteria: { type: 'foundation_courses_completed' }
   },
 
+  // ============ QUIZ ACHIEVEMENTS ============
+  {
+    id: 'first-quiz',
+    title: 'Quiz Taker',
+    description: 'Complete your first quiz',
+    icon: '📝',
+    category: 'completion',
+    xp_reward: 50,
+    badge_color: 'bronze',
+    criteria: { type: 'quizzes_completed', count: 1 }
+  },
+  {
+    id: 'ten-quizzes',
+    title: 'Quiz Master',
+    description: 'Complete 10 quizzes',
+    icon: '🧠',
+    category: 'completion',
+    xp_reward: 300,
+    badge_color: 'silver',
+    criteria: { type: 'quizzes_completed', count: 10 }
+  },
+  {
+    id: 'perfect-quiz',
+    title: 'Perfect Score',
+    description: 'Score 100% on any quiz',
+    icon: '💯',
+    category: 'mastery',
+    xp_reward: 200,
+    badge_color: 'gold',
+    criteria: { type: 'perfect_quiz_score' }
+  },
+  {
+    id: 'speed-quizzer',
+    title: 'Speed Quizzer',
+    description: 'Finish a timed quiz in under half the time limit',
+    icon: '⚡',
+    category: 'speed',
+    xp_reward: 150,
+    badge_color: 'silver',
+    criteria: { type: 'speed_quiz' }
+  },
+  {
+    id: 'quiz-streak-5',
+    title: 'Quiz Streak',
+    description: 'Pass 5 quizzes in a row',
+    icon: '🔥',
+    category: 'consistency',
+    xp_reward: 250,
+    badge_color: 'silver',
+    criteria: { type: 'quiz_pass_streak', count: 5 }
+  },
+  {
+    id: 'mastery-first-try',
+    title: 'Master Mind',
+    description: 'Master a mastery check on first attempt',
+    icon: '🎯',
+    category: 'mastery',
+    xp_reward: 100,
+    badge_color: 'bronze',
+    criteria: { type: 'mastery_first_try' }
+  },
+  {
+    id: 'ten-mastery',
+    title: 'Knowledge Master',
+    description: 'Master 10 mastery checks',
+    icon: '🧪',
+    category: 'mastery',
+    xp_reward: 300,
+    badge_color: 'silver',
+    criteria: { type: 'mastery_checks_completed', count: 10 }
+  },
+  {
+    id: 'assessment-ace',
+    title: 'Assessment Ace',
+    description: 'Score 90% or higher on an assessment',
+    icon: '🏅',
+    category: 'mastery',
+    xp_reward: 200,
+    badge_color: 'silver',
+    criteria: { type: 'assessment_ace', threshold: 90 }
+  },
+
   // ============ LEVEL MILESTONES ============
   {
     id: 'level-5',

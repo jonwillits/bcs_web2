@@ -26,6 +26,11 @@ export interface ResponsiveEditLayoutProps {
   settingsTabContent: ReactNode;
 
   /**
+   * Optional content for Quiz tab
+   */
+  quizTabContent?: ReactNode;
+
+  /**
    * Content for Team panel/sheet (collaborators + activity feed)
    */
   teamContent: ReactNode;
@@ -38,7 +43,7 @@ export interface ResponsiveEditLayoutProps {
   /**
    * Default active tab
    */
-  defaultTab?: 'edit' | 'settings';
+  defaultTab?: 'edit' | 'settings' | 'quiz';
 
   /**
    * Additional className for main container
@@ -64,6 +69,7 @@ export function ResponsiveEditLayout({
   header,
   editTabContent,
   settingsTabContent,
+  quizTabContent,
   teamContent,
   mediaContent,
   defaultTab = 'edit',
@@ -73,7 +79,7 @@ export function ResponsiveEditLayout({
   const teamPanel = useFloatingPanel({ lockScroll: isMobile || isTablet });
   const mediaSheet = useFloatingPanel({ lockScroll: isMobile || isTablet });
 
-  const [activeTab, setActiveTab] = useState<'edit' | 'settings'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'edit' | 'settings' | 'quiz'>(defaultTab);
 
   return (
     <div className={cn("min-h-screen bg-background", className)}>
@@ -108,6 +114,18 @@ export function ResponsiveEditLayout({
             >
               ⚙️ Settings
             </button>
+            {quizTabContent && (
+              <button
+                onClick={() => setActiveTab('quiz')}
+                className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-sm sm:text-base transition-colors ${
+                  activeTab === 'quiz'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                📝 Quiz
+              </button>
+            )}
           </nav>
         </div>
 
@@ -149,6 +167,13 @@ export function ResponsiveEditLayout({
         {activeTab === 'settings' && (
           <div className="max-w-4xl mx-auto">
             {settingsTabContent}
+          </div>
+        )}
+
+        {/* Quiz Tab Content */}
+        {activeTab === 'quiz' && quizTabContent && (
+          <div className="max-w-4xl mx-auto">
+            {quizTabContent}
           </div>
         )}
       </main>

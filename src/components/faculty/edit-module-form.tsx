@@ -13,6 +13,8 @@ import { MediaLibraryPanel } from '@/components/ui/media-library-panel'
 import { CollaboratorPanel } from '@/components/collaboration/CollaboratorPanel'
 import { ActivityFeed } from '@/components/collaboration/ActivityFeed'
 import { ResponsiveEditLayout } from '@/components/layout/ResponsiveEditLayout'
+import { QuestionBankEditor } from '@/components/quiz/QuestionBankEditor'
+import { QuizBuilderV2 } from '@/components/quiz/QuizBuilderV2'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -61,6 +63,7 @@ const editModuleSchema = z.object({
   difficultyLevel: z.enum(['beginner', 'intermediate', 'advanced', 'boss']).default('beginner'),
   estimatedMinutes: z.number().int().min(0).max(999).optional(),
   questType: z.enum(['standard', 'challenge', 'boss', 'bonus']).default('standard'),
+  unlockCondition: z.enum(['completion', 'mastery', 'assessment', 'both']).default('completion'),
 })
 
 type EditModuleFormData = z.infer<typeof editModuleSchema>
@@ -101,6 +104,7 @@ interface Module {
   difficulty_level: 'beginner' | 'intermediate' | 'advanced' | 'boss'
   estimated_minutes: number | null
   quest_type: 'standard' | 'challenge' | 'boss' | 'bonus'
+  unlock_condition: string
 }
 
 interface ParentModule {
@@ -149,6 +153,7 @@ async function updateModule(id: string, data: EditModuleFormData) {
     difficultyLevel,
     estimatedMinutes,
     questType,
+    unlockCondition,
     ...rest
   } = data;
 
@@ -162,6 +167,7 @@ async function updateModule(id: string, data: EditModuleFormData) {
     difficulty_level: difficultyLevel,
     estimated_minutes: estimatedMinutes,
     quest_type: questType,
+    unlock_condition: unlockCondition,
   }
 
   const response = await fetch(`/api/modules/${id}`, {
@@ -204,6 +210,7 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
   const [tags, setTags] = useState<string[]>([])
   const [availableTags, setAvailableTags] = useState<string[]>([])
   const [insertImageFn, setInsertImageFn] = useState<((url: string, alt?: string, caption?: string) => void) | null>(null)
+  const [quizSubTab, setQuizSubTab] = useState<'question_bank' | 'mastery_check' | 'module_assessment'>('question_bank')
 
   // Disable body scroll when modal is open
   useEffect(() => {
@@ -315,6 +322,7 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
       setValue('difficultyLevel', module.difficulty_level || 'beginner')
       setValue('estimatedMinutes', module.estimated_minutes ?? undefined)
       setValue('questType', module.quest_type || 'standard')
+      setValue('unlockCondition', (module.unlock_condition as any) || 'completion')
     }
   }, [module, setValue])
 
@@ -803,6 +811,30 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
                 : 'Only you can see and use this module. It won\u2019t appear in the module catalog or be available to other faculty.'}
             </p>
           </div>
+
+          <div className="space-y-3">
+            <Label>Module Completion Requirement</Label>
+            <Controller
+              name="unlockCondition"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="completion">Content Only</SelectItem>
+                    <SelectItem value="mastery">Mastery Check Required</SelectItem>
+                    <SelectItem value="assessment">Assessment Required</SelectItem>
+                    <SelectItem value="both">Both Mastery &amp; Assessment</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              Controls what students must complete before they can mark this module as done.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -917,10 +949,18 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
   const mediaContent = (
     <MediaLibraryPanel
       moduleId={moduleId}
+      editorContent={watch('content') || ''}
       onMediaSelect={(file, altText, caption) => {
         if (insertImageFn) {
           insertImageFn(file.url, altText || file.originalName, caption);
         }
+      }}
+      onMediaDelete={(file) => {
+        const content = watch('content') || '';
+        const div = document.createElement('div');
+        div.innerHTML = content;
+        div.querySelectorAll(`img[src="${file.url}"]`).forEach(img => img.remove());
+        setValue('content', div.innerHTML);
       }}
     />
   );
@@ -946,6 +986,36 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
         }}
         editTabContent={editTabContent}
         settingsTabContent={settingsTabContent}
+        quizTabContent={
+          <div>
+            {/* Sub-tab navigation */}
+            <div className="border-b border-gray-200 mb-6">
+              <nav className="flex gap-6 sm:gap-8">
+                {([
+                  { key: 'question_bank', label: 'Question Bank' },
+                  { key: 'mastery_check', label: 'Mastery Check' },
+                  { key: 'module_assessment', label: 'Assessment' },
+                ] as const).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setQuizSubTab(key)}
+                    className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                      quizSubTab === key
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {quizSubTab === 'question_bank' && <QuestionBankEditor moduleId={moduleId} />}
+            {quizSubTab === 'mastery_check' && <QuizBuilderV2 moduleId={moduleId} quizType="mastery_check" />}
+            {quizSubTab === 'module_assessment' && <QuizBuilderV2 moduleId={moduleId} quizType="module_assessment" />}
+          </div>
+        }
         teamContent={teamContent}
         mediaContent={mediaContent}
       />

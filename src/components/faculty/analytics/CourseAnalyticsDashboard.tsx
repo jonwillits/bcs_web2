@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { ArrowLeft, Users, TrendingUp, Award, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { QuizExportButton } from '@/components/quiz/QuizExportButton';
 
 interface AnalyticsData {
   courseTitle: string;
@@ -79,7 +80,7 @@ export default function CourseAnalyticsDashboard({ courseId }: CourseAnalyticsDa
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 flex items-center justify-center min-h-[400px]">
         <div className="text-muted-foreground text-lg">Loading analytics...</div>
       </div>
     );
@@ -87,7 +88,7 @@ export default function CourseAnalyticsDashboard({ courseId }: CourseAnalyticsDa
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col items-center justify-center min-h-[400px]">
         <div className="text-red-500 text-lg mb-4">{error}</div>
         <Link
           href="/faculty/courses"
@@ -104,7 +105,7 @@ export default function CourseAnalyticsDashboard({ courseId }: CourseAnalyticsDa
   }
 
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -118,6 +119,7 @@ export default function CourseAnalyticsDashboard({ courseId }: CourseAnalyticsDa
           <h1 className="text-3xl font-bold text-neural-primary">{analytics.courseTitle}</h1>
           <p className="text-muted-foreground mt-2">Course Analytics Dashboard</p>
         </div>
+        <QuizExportButton courseId={courseId} />
       </div>
 
       {/* Stats Cards */}

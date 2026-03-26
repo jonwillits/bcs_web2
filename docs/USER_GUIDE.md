@@ -17,8 +17,8 @@ Welcome to the **Brain & Cognitive Sciences (BCS) E-Learning Platform** — an i
 9. [Network Visualization](#9-network-visualization)
 10. [Program Map](#10-program-map)
 11. [User Profiles](#11-user-profiles)
-12. [Student Features](#12-student-features)
-13. [Faculty Features](#13-faculty-features)
+12. [Student Features](#12-student-features) — Enrollment, Quizzes & Assessments, Progress, Achievements
+13. [Faculty Features](#13-faculty-features) — Courses, Modules, Question Banks, Quiz Builder, Analytics
 14. [Admin Features](#14-admin-features)
 15. [Quick Reference](#15-quick-reference)
 
@@ -30,10 +30,11 @@ The BCS E-Learning Platform is a web-based learning environment designed specifi
 
 - **Interactive courses** with hierarchical module structures and rich media content
 - **Standalone modules** that can be shared across multiple courses
+- **Quizzes & assessments** — mastery checks for practice with instant feedback, and module assessments for graded evaluation, both powered by randomized question banks
 - **Interactive playgrounds** — live-running React/JavaScript demos for simulations, visualizations, and neural network experiments
 - **Network visualization** — an interactive graph showing how courses and modules relate to each other
 - **Learning paths** — curated sequences of courses for guided progression
-- **Progress tracking** — enrollment, module completion, and achievement tracking for students
+- **Progress tracking** — enrollment, module completion, quiz performance, and achievement tracking for students
 
 ### User Roles
 
@@ -489,6 +490,43 @@ Once enrolled in a course:
 - Each module has a **Mark Complete** button that records your completion
 - The navigation footer shows a **dot progress indicator** reflecting how many modules you've completed
 
+### Quizzes & Assessments
+
+Modules may include quizzes that appear below the module content after you enroll. There are two types:
+
+#### Mastery Checks
+
+Mastery checks are **practice quizzes** designed for learning:
+
+- Questions are shown **one at a time**
+- After answering, click **Check Answer** to see immediate feedback — whether you were correct, the right answer, and explanations for each option
+- You have **unlimited attempts** to achieve mastery
+- Mastery is achieved when your score meets the threshold (typically 80%)
+- XP is awarded once, on the first attempt that achieves mastery
+
+#### Module Assessments
+
+Module assessments are **graded evaluations**:
+
+- All questions appear at once — answer in any order
+- A timer counts down if the quiz is timed
+- Your answers auto-save every 30 seconds
+- Click **Submit Quiz** when finished (confirm before submitting — you cannot change answers afterward)
+- The number of allowed attempts may be limited
+- XP is based on your score, with bonuses for first attempts and perfect scores
+
+#### Quiz Unlock Conditions
+
+Some modules require you to complete quizzes before you can mark the module as done. When this is the case, the **Mark Complete** button will show a message explaining what you need to do — for example, "Complete the mastery check to unlock this module." Possible requirements:
+
+- Pass the mastery check
+- Submit the assessment
+- Both of the above
+
+#### Reviewing Past Attempts
+
+Click **View History** on any quiz card to see all your past attempts, including scores, pass/fail status, and time spent. Click an attempt to review your answers and read the explanations (subject to the quiz's feedback settings).
+
 ### My Learning Dashboard
 
 Navigate to `/learning` to see your personalized learning dashboard. It shows:
@@ -544,6 +582,16 @@ Achievements are earned automatically when you meet their criteria. They are gro
 - Challenge Accepted (complete 5 challenge modules, 300 XP, gold)
 - Chain Breaker (complete a course with prerequisites, 200 XP, silver)
 - Foundation Scholar (complete all foundation courses, 500 XP, gold)
+
+**Quiz** — Based on quiz performance:
+- Quiz Taker (complete 1 quiz, 50 XP, bronze)
+- Quiz Master (complete 10 quizzes, 300 XP, silver)
+- Perfect Score (score 100% on any quiz, 200 XP, gold)
+- Speed Quizzer (complete a timed quiz in less than half the time limit, 150 XP, silver)
+- Quiz Streak (pass 5 quizzes in a row, 250 XP, silver)
+- Master Mind (pass a mastery check on the first attempt, 100 XP, bronze)
+- Knowledge Master (pass 10 mastery checks, 300 XP, silver)
+- Assessment Ace (score 90%+ on a module assessment, 200 XP, silver)
 
 **Speed** — Based on completing modules quickly:
 - Quick Learner (3 modules in one day, 150 XP, bronze)
@@ -652,6 +700,50 @@ These are guidelines, not rules. The key is internal consistency within a course
 #### Editing a Module
 
 Navigate to `/faculty/modules/edit/[id]` to update any module field, add media, or change the hierarchy.
+
+### Managing Quizzes
+
+The **Quiz** tab in the module editor is where you build question banks and configure quizzes. Each module supports one question bank and up to two quizzes: a **Mastery Check** (formative, unlimited attempts) and a **Module Assessment** (summative, configurable limits).
+
+> For the full technical reference — including block configuration, scoring procedures, XP calculations, item analysis, and import/export — see the [Quiz System Guide](/guide/quiz-system).
+
+#### Question Bank
+
+The question bank is a reusable pool of questions for the module. It is auto-created when you first open the Quiz tab.
+
+1. **Create questions** — Click **New Question** and choose from Multiple Choice, Multiple Select, or True/False. Write the question text, add answer options, and write an explanation for each option (explaining why it's correct or incorrect). Set the point value and optional tags.
+2. **Organize into sets** — Click **New Set** to group questions by topic or difficulty (e.g., "Chapter 3 Review"). A question can belong to multiple sets. Sets are what quiz blocks pull from.
+3. **Import/Export** — Click **Import/Export** to download the bank as JSON or upload a JSON file from another module.
+
+#### Building a Quiz
+
+1. Select the **Mastery Check** or **Assessment** tab
+2. Set the title, status (draft or published), and type-specific settings:
+   - **Mastery Check**: mastery threshold (default 80%), XP reward
+   - **Assessment**: time limit, max attempts, pass threshold, scoring procedure (best/last/average), feedback timing and depth, XP reward
+3. Click **Add Block** to create a quiz section. Each block links to a question set and specifies how many questions to randomly pull from it per attempt
+4. Configure block settings: randomize within, show title to students
+5. Click **Create Quiz** (or **Update Quiz** if editing)
+
+#### Quiz Analytics
+
+Below each quiz, a real-time analytics panel shows:
+
+- **Summary**: unique students, average score, pass rate, average completion time
+- **Score distribution**: histogram across score ranges
+- **Per-question analysis**: correct rate for each question
+- **Item Analysis**: click to see advanced statistics including option distribution and point-biserial correlation (available after 30+ responses)
+
+#### Module Unlock Conditions
+
+On the **Settings** tab, set the **Unlock Condition** to require students to complete quizzes before marking the module done:
+
+| Condition | Requirement |
+|-----------|-------------|
+| Completion | No quiz required (default) |
+| Mastery | Must pass the mastery check |
+| Assessment | Must submit the assessment |
+| Both | Must pass mastery AND submit assessment |
 
 ### Course Analytics
 

@@ -10,6 +10,10 @@ const GUIDE_DOCS: Record<string, { file: string; title: string }> = {
     file: "TF_PLAYGROUND_TECHNICAL_GUIDE.md",
     title: "TensorFlow Playground Technical Guide",
   },
+  "quiz-system": {
+    file: "QUIZ_SYSTEM_GUIDE.md",
+    title: "Quiz System Guide",
+  },
 }
 
 interface PageProps {

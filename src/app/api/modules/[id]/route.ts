@@ -42,6 +42,7 @@ const updateModuleSchema = z.object({
   difficulty_level: z.enum(['beginner', 'intermediate', 'advanced', 'boss']).optional(),
   estimated_minutes: z.number().int().min(0).max(999).optional(),
   quest_type: z.enum(['standard', 'challenge', 'boss', 'bonus']).optional(),
+  unlock_condition: z.enum(['completion', 'mastery', 'assessment', 'both']).optional(),
 })
 
 export async function GET(

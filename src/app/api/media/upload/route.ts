@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/config';
 import { uploadFile, validateFile } from '@/lib/storage-simple';
 import { prisma } from '@/lib/db';
 import { hasFacultyAccess } from '@/lib/auth/utils'
+import { supabase, MEDIA_BUCKET } from '@/lib/supabase'
 
 // Use Node.js runtime for file uploads (not Edge)
 export const runtime = 'nodejs';
@@ -146,7 +147,11 @@ export async function GET(request: NextRequest) {
         id: mm.media_files.id,
         url: mm.media_files.storage_path.startsWith('http')
           ? mm.media_files.storage_path
-          : `/uploads/${mm.media_files.filename}`,
+          : supabase.storage.from(MEDIA_BUCKET).getPublicUrl(
+              mm.media_files.storage_path.startsWith('uploads/')
+                ? mm.media_files.storage_path
+                : `uploads/${mm.media_files.filename}`
+            ).data.publicUrl,
         filename: mm.media_files.filename,
         originalName: mm.media_files.original_name,
         mimeType: mm.media_files.mime_type,
@@ -172,7 +177,11 @@ export async function GET(request: NextRequest) {
       id: file.id,
       url: file.storage_path.startsWith('http')
         ? file.storage_path
-        : `/uploads/${file.filename}`,
+        : supabase.storage.from(MEDIA_BUCKET).getPublicUrl(
+            file.storage_path.startsWith('uploads/')
+              ? file.storage_path
+              : `uploads/${file.filename}`
+          ).data.publicUrl,
       filename: file.filename,
       originalName: file.original_name,
       mimeType: file.mime_type,

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, Loader2, Lock } from 'lucide-react';
 import { NeuralButton } from '../ui/neural-button';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -25,6 +25,30 @@ export function MarkCompleteButton({
   const router = useRouter();
   const [isCompleted, setIsCompleted] = useState(initialStatus === 'completed');
   const [isLoading, setIsLoading] = useState(false);
+  const [quizGate, setQuizGate] = useState<{
+    canComplete: boolean;
+    unlockCondition: string;
+  } | null>(null);
+
+  // Check quiz gate status
+  useEffect(() => {
+    async function checkQuizGate() {
+      try {
+        const res = await fetch(`/api/progress/module/${moduleId}/quiz-status`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.unlockCondition && data.unlockCondition !== 'completion') {
+            setQuizGate({ canComplete: data.canComplete, unlockCondition: data.unlockCondition });
+          }
+        }
+      } catch {
+        // Ignore
+      }
+    }
+    checkQuizGate();
+  }, [moduleId]);
+
+  const isQuizBlocked = quizGate && !quizGate.canComplete && !isCompleted;
 
   const handleToggle = async () => {
     setIsLoading(true);
@@ -110,6 +134,25 @@ export function MarkCompleteButton({
 
   const buttonText = context === 'standalone' ? 'Mark as Read' : 'Mark as Complete';
   const completedText = context === 'standalone' ? 'Read' : 'Completed';
+
+  // Quiz-gated: show locked button
+  if (isQuizBlocked) {
+    return (
+      <NeuralButton
+        variant="outline"
+        disabled
+        className="gap-2 opacity-70 cursor-not-allowed"
+      >
+        <Lock className="h-4 w-4" />
+        <span>{
+          quizGate?.unlockCondition === 'mastery' ? 'Pass the mastery check to complete' :
+          quizGate?.unlockCondition === 'assessment' ? 'Pass the assessment to complete' :
+          quizGate?.unlockCondition === 'both' ? 'Pass mastery check and assessment to complete' :
+          'Complete quiz requirements to continue'
+        }</span>
+      </NeuralButton>
+    );
+  }
 
   if (isCompleted) {
     return (

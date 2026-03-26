@@ -289,6 +289,166 @@ export async function checkAchievementsAfterModuleCompletion(
 }
 
 /**
+ * Check for new achievements after a quiz is submitted
+ * V2: Supports both mastery_check and module_assessment quiz types
+ */
+export async function checkAchievementsAfterQuizSubmission(
+  userId: string,
+  quizId: string,
+  score: number,
+  passed: boolean,
+  timeSpentSeconds: number,
+  quizType?: string,
+  attemptNumber?: number
+): Promise<AchievementCheckResult> {
+  const newAchievements: AchievementCheckResult['newAchievements'] = [];
+  let totalXPAwarded = 0;
+
+  try {
+    const existingAchievements = await withDatabaseRetry(async () => {
+      return await prisma.user_achievements.findMany({
+        where: { user_id: userId },
+        select: { achievement_id: true }
+      });
+    });
+
+    const existingIds = new Set(existingAchievements.map(a => a.achievement_id));
+
+    // Get quiz data for time limit check
+    const [quizData, completedQuizCount, recentAttempts, masteryCount] = await withDatabaseRetry(async () => {
+      return await Promise.all([
+        prisma.quizzes.findUnique({
+          where: { id: quizId },
+          select: { time_limit_minutes: true, quiz_type: true }
+        }),
+        // Count distinct quizzes completed by this user
+        prisma.quiz_attempts.groupBy({
+          by: ['quiz_id'],
+          where: {
+            user_id: userId,
+            status: 'submitted'
+          }
+        }),
+        // Get recent attempts for streak check
+        prisma.quiz_attempts.findMany({
+          where: {
+            user_id: userId,
+            status: 'submitted'
+          },
+          orderBy: { submitted_at: 'desc' },
+          take: 10,
+          select: { passed: true, quiz_id: true }
+        }),
+        // Count mastery checks passed
+        prisma.quiz_attempts.groupBy({
+          by: ['quiz_id'],
+          where: {
+            user_id: userId,
+            status: 'submitted',
+            quiz_type: 'mastery_check',
+            passed: true
+          }
+        })
+      ]);
+    });
+
+    const quizzesCompleted = completedQuizCount.length;
+    const effectiveQuizType = quizType || quizData?.quiz_type;
+
+    for (const achievement of ACHIEVEMENT_DEFINITIONS) {
+      if (existingIds.has(achievement.id)) continue;
+
+      let earned = false;
+
+      switch (achievement.criteria.type) {
+        case 'quizzes_completed':
+          earned = quizzesCompleted >= achievement.criteria.count;
+          break;
+
+        case 'perfect_quiz_score':
+          earned = score === 100;
+          break;
+
+        case 'speed_quiz':
+          if (quizData?.time_limit_minutes && timeSpentSeconds > 0) {
+            const halfTimeLimitSeconds = (quizData.time_limit_minutes * 60) / 2;
+            earned = timeSpentSeconds < halfTimeLimitSeconds;
+          }
+          break;
+
+        case 'quiz_pass_streak': {
+          const streakTarget = achievement.criteria.count;
+          if (recentAttempts.length >= streakTarget) {
+            const seenQuizzes = new Set<string>();
+            let streak = 0;
+            for (const attempt of recentAttempts) {
+              if (seenQuizzes.has(attempt.quiz_id)) continue;
+              seenQuizzes.add(attempt.quiz_id);
+              if (attempt.passed) {
+                streak++;
+              } else {
+                break;
+              }
+            }
+            earned = streak >= streakTarget;
+          }
+          break;
+        }
+
+        case 'mastery_first_try':
+          earned = effectiveQuizType === 'mastery_check' && passed && (attemptNumber === 1);
+          break;
+
+        case 'mastery_checks_completed':
+          earned = masteryCount.length >= achievement.criteria.count;
+          break;
+
+        case 'assessment_ace':
+          earned = effectiveQuizType === 'module_assessment' && score >= achievement.criteria.threshold;
+          break;
+      }
+
+      if (earned) {
+        await withDatabaseRetry(async () => {
+          await prisma.user_achievements.create({
+            data: {
+              user_id: userId,
+              achievement_id: achievement.id,
+              progress: 100
+            }
+          });
+        });
+
+        await withDatabaseRetry(async () => {
+          await prisma.user_gamification_stats.update({
+            where: { user_id: userId },
+            data: {
+              total_xp: { increment: achievement.xp_reward }
+            }
+          });
+        });
+
+        newAchievements.push({
+          id: achievement.id,
+          title: achievement.title,
+          description: achievement.description,
+          icon: achievement.icon,
+          xp_reward: achievement.xp_reward,
+          badge_color: achievement.badge_color
+        });
+
+        totalXPAwarded += achievement.xp_reward;
+      }
+    }
+
+    return { newAchievements, totalXPAwarded };
+  } catch (error) {
+    console.error('Error checking quiz achievements:', error);
+    return { newAchievements: [], totalXPAwarded: 0 };
+  }
+}
+
+/**
  * Seed achievements into database
  * Call this once to populate the achievements table
  */

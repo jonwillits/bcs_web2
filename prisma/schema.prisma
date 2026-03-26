@@ -137,6 +137,13 @@ model modules {
   // Progress tracking (Week 4)
   progress_records module_progress[]      @relation("ModuleProgressRecords")
 
+  // Module unlock condition
+  unlock_condition  String         @default("completion") // completion | mastery | assessment | both
+
+  // Quiz V2 relations
+  quizzes          quizzes[]
+  question_bank    question_banks?
+
   @@unique([parent_module_id, sort_order])
   @@index([author_id])
   @@index([parent_module_id])
@@ -238,6 +245,9 @@ model users {
   achievements          user_achievements[]     @relation("UserAchievements")
   gamification_stats    user_gamification_stats? @relation("UserGamificationStats")
   learning_sessions     learning_sessions[]     @relation("LearningSession")
+
+  // Quiz relations
+  quiz_attempts         quiz_attempts[]         @relation("QuizAttempts")
 
   // Program Map & Learning Paths (Program Visualization Feature)
   created_learning_paths learning_paths[]       @relation("LearningPathCreator")
@@ -663,4 +673,248 @@ model learning_paths {
   @@index([created_by])
   @@index([is_featured])
   @@index([slug])
+}
+
+// ==================== QUIZ SYSTEM V2 ====================
+
+// Question Bank — One per module
+model question_banks {
+  id          String   @id @default(cuid())
+  module_id   String   @unique
+  title       String   @default("Question Bank")
+  description String?  @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  module    modules            @relation(fields: [module_id], references: [id], onDelete: Cascade)
+  sets      question_sets[]
+  questions bank_questions[]
+
+  @@index([module_id])
+}
+
+// Question Sets — Named groups within a bank
+model question_sets {
+  id          String   @id @default(cuid())
+  bank_id     String
+  title       String
+  description String?  @db.Text
+  sort_order  Int      @default(0)
+  tags        String[] @default([])
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  bank        question_banks             @relation(fields: [bank_id], references: [id], onDelete: Cascade)
+  memberships question_set_memberships[]
+  blocks      quiz_blocks[]
+
+  @@index([bank_id])
+}
+
+// Bank Questions — Questions in the bank
+model bank_questions {
+  id              String   @id @default(cuid())
+  bank_id         String
+  question_type   String   // multiple_choice | multiple_select | true_false
+  question_text   String   @db.Text
+  image_url       String?
+  sort_order      Int      @default(0)
+  points          Int      @default(1)
+  shuffle_answers Boolean  @default(false)
+  version         Int      @default(1)
+  cloned_from     String?
+  tags            String[] @default([])
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  bank        question_banks             @relation(fields: [bank_id], references: [id], onDelete: Cascade)
+  options     bank_question_options[]
+  memberships question_set_memberships[]
+
+  @@index([bank_id])
+}
+
+// Bank Question Options — Per-answer explanations
+model bank_question_options {
+  id          String  @id @default(cuid())
+  question_id String
+  option_text String  @db.Text
+  is_correct  Boolean @default(false)
+  explanation String? @db.Text
+  sort_order  Int
+
+  // Relations
+  question bank_questions @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@index([question_id])
+}
+
+// Question Set Memberships — Questions <-> Sets junction
+model question_set_memberships {
+  id          String @id @default(cuid())
+  set_id      String
+  question_id String
+  sort_order  Int    @default(0)
+
+  // Relations
+  set      question_sets  @relation(fields: [set_id], references: [id], onDelete: Cascade)
+  question bank_questions @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([set_id, question_id])
+  @@index([set_id])
+  @@index([question_id])
+}
+
+// Quizzes — Two types per module (mastery + assessment)
+model quizzes {
+  id                  String   @id @default(cuid())
+  module_id           String
+  title               String
+  description         String?  @db.Text
+  quiz_type           String   // mastery_check | module_assessment
+  status              String   @default("draft") // draft | published
+
+  // Shared settings
+  xp_reward           Int      @default(50)
+  randomize_blocks    Boolean  @default(false)
+
+  // Assessment-only settings
+  time_limit_minutes  Int?
+  max_attempts        Int      @default(0)      // 0 = unlimited (mastery always unlimited)
+  pass_threshold      Int      @default(70)
+  scoring_procedure   String   @default("best") // best | last | average_drop_n
+  scoring_drop_count  Int      @default(0)
+  feedback_timing     String   @default("after_quiz")   // per_question | after_quiz
+  feedback_depth      String   @default("full")         // score_only | which_wrong | full
+
+  // Mastery-only settings
+  mastery_threshold   Int      @default(80)     // Weighted % to count as mastered
+
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  // Relations
+  module   modules          @relation(fields: [module_id], references: [id], onDelete: Cascade)
+  blocks   quiz_blocks[]
+  attempts quiz_attempts[]
+
+  @@unique([module_id, quiz_type])
+  @@index([module_id])
+}
+
+// Quiz Blocks — Named sections pulling from question sets
+model quiz_blocks {
+  id               String  @id @default(cuid())
+  quiz_id          String
+  set_id           String
+  title            String
+  show_title       Boolean @default(false)
+  questions_to_pull Int
+  randomize_within Boolean @default(true)
+  sort_order       Int     @default(0)
+
+  // Relations
+  quiz quizzes       @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+  set  question_sets @relation(fields: [set_id], references: [id], onDelete: Cascade)
+
+  @@index([quiz_id])
+  @@index([set_id])
+}
+
+// Quiz Attempts — Per user per quiz
+model quiz_attempts {
+  id                 String    @id @default(cuid())
+  quiz_id            String
+  user_id            String
+  course_id          String?
+  quiz_type          String    // Snapshot of quiz type at time of attempt
+  attempt_number     Int
+  status             String    @default("in_progress") // in_progress | submitted
+  score              Float?    // Final percentage 0-100 (after scoring procedure applied)
+  raw_score          Float?    // Raw percentage before scoring procedure
+  points_earned      Int       @default(0)
+  points_possible    Int       @default(0)
+  passed             Boolean   @default(false)
+  started_at         DateTime  @default(now())
+  submitted_at       DateTime?
+  time_spent_seconds Int?
+  xp_awarded         Int       @default(0)
+
+  // Relations
+  quiz               quizzes                  @relation(fields: [quiz_id], references: [id], onDelete: Cascade)
+  user               users                    @relation("QuizAttempts", fields: [user_id], references: [id], onDelete: Cascade)
+  answers            quiz_attempt_answers[]
+  question_instances quiz_question_instances[]
+
+  @@unique([quiz_id, user_id, attempt_number])
+  @@index([quiz_id])
+  @@index([user_id])
+  @@index([user_id, quiz_id])
+}
+
+// Quiz Question Instances — Per-attempt snapshot of served questions
+model quiz_question_instances {
+  id                     String @id @default(cuid())
+  attempt_id             String
+  block_id               String
+  question_id            String
+  question_version       Int
+  weight                 Float  @default(1.0)
+  sort_order             Int
+  question_type          String @default("multiple_choice") // multiple_choice | multiple_select | true_false
+  question_text_snapshot String @db.Text
+  options_snapshot        Json  // [{id, text, is_correct, explanation}]
+
+  // Relations
+  attempt quiz_attempts @relation(fields: [attempt_id], references: [id], onDelete: Cascade)
+
+  @@unique([attempt_id, question_id])
+  @@index([attempt_id])
+}
+
+// Quiz Attempt Answers — Per question per attempt
+model quiz_attempt_answers {
+  id                   String   @id @default(cuid())
+  attempt_id           String
+  question_id          String
+  question_instance_id String
+  block_id             String?
+  selected_option_ids  String[] @default([])
+  is_correct           Boolean?
+  points_earned        Int      @default(0)
+  weight               Float    @default(1.0)
+  response_time_ms     Int?
+
+  // Relations
+  attempt quiz_attempts @relation(fields: [attempt_id], references: [id], onDelete: Cascade)
+
+  @@unique([attempt_id, question_id])
+  @@index([attempt_id])
+}
+
+// Quiz Response Events — Analytics tracking per response
+model quiz_response_events {
+  id               String   @id @default(cuid())
+  attempt_id       String
+  user_id          String
+  module_id        String
+  quiz_id          String
+  quiz_type        String
+  block_id         String?
+  question_id      String
+  question_version Int
+  attempt_number   Int
+  timestamp        DateTime @default(now())
+  response         Json     // { selected_option_ids: [...] }
+  is_correct       Boolean?
+  response_time_ms Int?
+  tags             String[] @default([])
+
+  @@index([quiz_id])
+  @@index([question_id])
+  @@index([user_id])
+  @@index([module_id])
 }

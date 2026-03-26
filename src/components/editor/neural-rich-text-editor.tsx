@@ -6,15 +6,16 @@ import Heading from '@tiptap/extension-heading'
 import ResizableImageExtension from 'tiptap-extension-resize-image'
 import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
+import { marked } from 'marked'
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { NeuralButton } from '@/components/ui/neural-button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { 
-  Bold, 
-  Italic, 
-  Underline, 
+import {
+  Bold,
+  Italic,
+  Underline,
   Strikethrough,
   Heading1,
   Heading2,
@@ -33,10 +34,19 @@ import {
   Save,
   Type,
   FileText,
+  FileUp,
   Upload,
   X
 } from 'lucide-react'
 import { MediaUpload } from '@/components/ui/media-upload'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 interface NeuralRichTextEditorProps {
   content?: string
@@ -67,7 +77,9 @@ export function NeuralRichTextEditor({
   const [isSaving, setIsSaving] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [showMediaUpload, setShowMediaUpload] = useState(false)
+  const [showImportConfirm, setShowImportConfirm] = useState(false)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Disable body scroll when modal is open
   useEffect(() => {
@@ -205,6 +217,32 @@ export function NeuralRichTextEditor({
     if (url && editor) {
       editor.chain().focus().setLink({ href: url }).run()
     }
+  }, [editor])
+
+  const handleImportMarkdown = useCallback(() => {
+    if (!editor) return
+    const hasContent = editor.getText().trim().length > 0
+    if (hasContent) {
+      setShowImportConfirm(true)
+    } else {
+      fileInputRef.current?.click()
+    }
+  }, [editor])
+
+  const handleFileSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !editor) return
+
+    try {
+      const text = await file.text()
+      const html = await marked.parse(text, { gfm: true, breaks: true })
+      editor.commands.setContent(html)
+      toast.success('Markdown imported successfully!')
+    } catch {
+      toast.error('Failed to import markdown file')
+    }
+
+    event.target.value = ''
   }, [editor])
 
   if (!isMounted || !editor) {
@@ -392,6 +430,15 @@ export function NeuralRichTextEditor({
             >
               <Upload className="h-4 w-4" />
             </NeuralButton>
+            <NeuralButton
+              variant="ghost"
+              size="sm"
+              onClick={handleImportMarkdown}
+              title="Import Markdown"
+              aria-label="Import markdown file"
+            >
+              <FileUp className="h-4 w-4" />
+            </NeuralButton>
           </div>
 
           <Separator orientation="vertical" className="h-6" />
@@ -482,6 +529,41 @@ export function NeuralRichTextEditor({
           </div>
         )}
       </div>
+
+      {/* Hidden file input for markdown import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".md,.markdown,text/markdown"
+        onChange={handleFileSelected}
+        className="hidden"
+      />
+
+      {/* Import Markdown Confirmation Dialog */}
+      <Dialog open={showImportConfirm} onOpenChange={setShowImportConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Replace existing content?</DialogTitle>
+            <DialogDescription>
+              Importing a markdown file will replace all current editor content. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <NeuralButton variant="ghost" onClick={() => setShowImportConfirm(false)}>
+              Cancel
+            </NeuralButton>
+            <NeuralButton
+              variant="neural"
+              onClick={() => {
+                setShowImportConfirm(false)
+                fileInputRef.current?.click()
+              }}
+            >
+              Replace Content
+            </NeuralButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Media Upload Dialog */}
       {showMediaUpload && (

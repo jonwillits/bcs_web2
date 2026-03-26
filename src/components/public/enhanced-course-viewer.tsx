@@ -19,6 +19,7 @@ import { InstructorsSection } from '@/components/public/instructors-section'
 import { ReadingProgressBar } from '@/components/public/reading-progress-bar'
 import { CourseNotesSection } from '@/components/public/course-notes-section'
 import { MarkCompleteButton } from '@/components/progress/MarkCompleteButton'
+import { QuizSection } from '@/components/quiz/QuizSection'
 import type { ModuleTreeNode } from '@/lib/modules/tree-utils'
 import {
   ArrowLeft,
@@ -659,6 +660,28 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                     />
                   </CardContent>
                 </Card>
+
+                {/* Quiz Section */}
+                {session?.user && isStarted && selectedModule && (
+                  <QuizSection
+                    moduleId={selectedModule.id}
+                    courseId={course.id}
+                    onQuizComplete={() => {
+                      fetch(`/api/progress/course/${course.id}`)
+                        .then(res => res.json())
+                        .then(data => {
+                          if (data.modules) {
+                            const progressMap: Record<string, 'not_started' | 'completed'> = {}
+                            data.modules.forEach((m: any) => {
+                              progressMap[m.id] = m.progress.status
+                            })
+                            setModuleProgress(progressMap)
+                          }
+                        })
+                        .catch(err => console.error('Error fetching progress:', err))
+                    }}
+                  />
+                )}
 
                 {/* Mark Complete Button (shown only if user is enrolled) */}
                 {session?.user && isStarted && selectedModule && (
