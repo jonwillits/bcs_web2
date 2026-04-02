@@ -406,7 +406,43 @@ Faculty can export a module's entire question bank to JSON and import it into an
 }
 ```
 
-The `question_indexes` in sets refer to the position of questions in the `questions` array (zero-based).
+#### Field Reference
+
+**Top-level fields:**
+
+| Field | Description |
+|-------|-------------|
+| `schema_version` | Always `1`. Used for forward compatibility. |
+| `exported_at` | ISO 8601 timestamp of when the export was created. Informational only — ignored on import. |
+| `bank` | Contains the full question bank data (questions and sets). |
+
+**Question fields** (each item in `bank.questions`):
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `type` | Yes | Question type: `multiple_choice`, `multiple_select`, or `true_false`. |
+| `text` | Yes | The question prompt shown to students. |
+| `image_url` | No | URL of an image to display with the question. Set to `null` if not used. |
+| `shuffle_answers` | No | If `true`, answer options are randomized for each student. Defaults to `false`. |
+| `points` | No | Point value for the question. Defaults to `1`. |
+| `tags` | No | Array of string tags for organizing and filtering questions. |
+| `options` | Yes | Array of answer options (see below). Must have at least 2 options. |
+
+**Option fields** (each item in `options`):
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `text` | Yes | The answer option text. |
+| `is_correct` | Yes | `true` if this is a correct answer, `false` otherwise. For `multiple_choice`, exactly one option must be correct. For `multiple_select`, one or more can be correct. For `true_false`, use two options ("True" and "False"). |
+| `explanation` | No | Explanation shown to students after answering. Helps reinforce learning. |
+
+**Set fields** (each item in `bank.sets`):
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `title` | Yes | Display name for the question set (e.g., "Chapter 3 Review"). |
+| `tags` | No | Array of string tags for the set. |
+| `question_indexes` | Yes | Zero-based indexes into the `bank.questions` array. For example, `[0, 1]` means the first and second questions belong to this set. |
 
 #### How to Export
 

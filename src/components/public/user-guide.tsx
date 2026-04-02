@@ -15,8 +15,7 @@ function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
+    .replace(/\s/g, "-")
     .trim()
 }
 
@@ -89,6 +88,23 @@ export function UserGuide({ content }: { content: string }) {
       activeBtn.scrollIntoView({ block: "nearest", behavior: "smooth" })
     }
   }, [activeId])
+
+  // Scroll to hash anchor on initial page load
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "")
+    if (!hash) return
+    // Wait for react-markdown to render headings with ids
+    const timer = setTimeout(() => {
+      const el = document.getElementById(hash)
+      if (el) {
+        const offset = 90
+        const top = el.getBoundingClientRect().top + window.scrollY - offset
+        window.scrollTo({ top, behavior: "smooth" })
+        setActiveId(hash)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [])
 
   function scrollTo(id: string) {
     const el = document.getElementById(id)
@@ -194,7 +210,9 @@ export function UserGuide({ content }: { content: string }) {
                 prose-th:bg-muted/50 prose-th:text-foreground prose-th:font-semibold prose-th:px-4 prose-th:py-2
                 prose-td:px-4 prose-td:py-2 prose-td:text-muted-foreground prose-td:border-border/40
                 prose-hr:border-border/40
-                prose-code:text-neural-primary prose-code:bg-muted/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none">
+                prose-code:text-neural-primary prose-code:bg-muted/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:p-4 prose-pre:border prose-pre:border-gray-700/50
+                [&_pre_code]:bg-transparent [&_pre_code]:text-gray-100 [&_pre_code]:p-0 [&_pre_code]:rounded-none">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { NeuralButton } from '@/components/ui/neural-button';
 import { Download, Upload, Loader2, FileJson } from 'lucide-react';
@@ -87,7 +88,14 @@ export function QuizImportExport({ moduleId, onImportComplete }: QuizImportExpor
         <div className="flex-1">
           <p className="text-sm font-medium">Import / Export Questions</p>
           <p className="text-xs text-muted-foreground">
-            JSON format with questions, options, explanations, and sets
+            JSON format with questions, options, explanations, and sets.{' '}
+            <Link
+              href="/guide/quiz-system#11-import--export"
+              target="_blank"
+              className="text-blue-600 hover:underline"
+            >
+              View format
+            </Link>
           </p>
         </div>
         <div className="flex items-center gap-2">

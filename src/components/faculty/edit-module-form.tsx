@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -42,7 +43,8 @@ import {
   Target,
   Clock,
   Shield,
-  Link2
+  Link2,
+  BookOpen
 } from 'lucide-react'
 
 const editModuleSchema = z.object({
@@ -990,25 +992,35 @@ export function EditModuleForm({ moduleId }: EditModuleFormProps) {
           <div>
             {/* Sub-tab navigation */}
             <div className="border-b border-gray-200 mb-6">
-              <nav className="flex gap-6 sm:gap-8">
-                {([
-                  { key: 'question_bank', label: 'Question Bank' },
-                  { key: 'mastery_check', label: 'Mastery Check' },
-                  { key: 'module_assessment', label: 'Assessment' },
-                ] as const).map(({ key, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => setQuizSubTab(key)}
-                    className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
-                      quizSubTab === key
-                        ? 'border-blue-600 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </nav>
+              <div className="flex items-center justify-between">
+                <nav className="flex gap-6 sm:gap-8">
+                  {([
+                    { key: 'question_bank', label: 'Question Bank' },
+                    { key: 'mastery_check', label: 'Mastery Check' },
+                    { key: 'module_assessment', label: 'Assessment' },
+                  ] as const).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setQuizSubTab(key)}
+                      className={`py-2.5 sm:py-3 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                        quizSubTab === key
+                          ? 'border-blue-600 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </nav>
+                <Link
+                  href="/guide/quiz-system"
+                  target="_blank"
+                  className="hidden sm:inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-blue-600 transition-colors whitespace-nowrap"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Quiz Guide
+                </Link>
+              </div>
             </div>
 
             {quizSubTab === 'question_bank' && <QuestionBankEditor moduleId={moduleId} />}
