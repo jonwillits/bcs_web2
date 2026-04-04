@@ -87,6 +87,7 @@ export function ModuleCatalog({ initialSearch = '', session }: ModuleCatalogProp
     newTitle: '',
     cloneMedia: true,
     cloneCollaborators: false,
+    cloneQuiz: true,
   })
 
   const isFaculty = session?.user?.role === 'faculty' || session?.user?.role === 'admin'
@@ -126,7 +127,7 @@ export function ModuleCatalog({ initialSearch = '', session }: ModuleCatalogProp
       queryClient.invalidateQueries({ queryKey: ['modules'] })
       setShowCloneDialog(false)
       setModuleToClone(null)
-      setCloneOptions({ newTitle: '', cloneMedia: true, cloneCollaborators: false })
+      setCloneOptions({ newTitle: '', cloneMedia: true, cloneCollaborators: false, cloneQuiz: true })
       // Navigate to the cloned module
       router.push(`/faculty/modules/${data.module.id}`)
     },
@@ -143,6 +144,7 @@ export function ModuleCatalog({ initialSearch = '', session }: ModuleCatalogProp
       newTitle: `${module.title} (Copy)`,
       cloneMedia: true,
       cloneCollaborators: false,
+      cloneQuiz: true,
     })
     setShowCloneDialog(true)
   }
@@ -789,6 +791,30 @@ export function ModuleCatalog({ initialSearch = '', session }: ModuleCatalogProp
                     </Label>
                     <p className="text-xs text-muted-foreground mt-1">
                       Add the same collaborators to the cloned module
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/40 bg-muted/30">
+                  <Checkbox
+                    id="clone-quiz"
+                    checked={cloneOptions.cloneQuiz}
+                    onCheckedChange={(checked) =>
+                      setCloneOptions({
+                        ...cloneOptions,
+                        cloneQuiz: checked === true,
+                      })
+                    }
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="clone-quiz"
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      Clone quiz data
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Include question bank, question sets, and quiz configurations
                     </p>
                   </div>
                 </div>
