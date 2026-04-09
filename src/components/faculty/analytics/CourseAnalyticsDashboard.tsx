@@ -17,6 +17,19 @@ import {
 import { ArrowLeft, Users, TrendingUp, Award, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QuizExportButton } from '@/components/quiz/QuizExportButton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+interface Group {
+  id: string;
+  name: string;
+  memberCount: number;
+}
 
 interface AnalyticsData {
   courseTitle: string;
@@ -54,12 +67,37 @@ export default function CourseAnalyticsDashboard({ courseId }: CourseAnalyticsDa
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('all');
 
+  // Fetch groups once on mount so the picker can be populated
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response = await fetch(`/api/faculty/courses/${courseId}/groups`);
+        if (!response.ok) return;
+        const data = await response.json();
+        setGroups(data.groups || []);
+      } catch {
+        // Non-fatal — picker just stays empty
+      }
+    };
+    fetchGroups();
+  }, [courseId]);
+
+  // Re-fetch analytics whenever the course or selected group changes
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/faculty/analytics/${courseId}`);
+        const params = new URLSearchParams();
+        if (selectedGroupId && selectedGroupId !== 'all') {
+          params.set('groupId', selectedGroupId);
+        }
+        const qs = params.toString();
+        const response = await fetch(
+          `/api/faculty/analytics/${courseId}${qs ? `?${qs}` : ''}`
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -76,9 +114,9 @@ export default function CourseAnalyticsDashboard({ courseId }: CourseAnalyticsDa
     };
 
     fetchAnalytics();
-  }, [courseId]);
+  }, [courseId, selectedGroupId]);
 
-  if (loading) {
+  if (loading && !analytics) {
     return (
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 flex items-center justify-center min-h-[400px]">
         <div className="text-muted-foreground text-lg">Loading analytics...</div>
@@ -119,7 +157,31 @@ export default function CourseAnalyticsDashboard({ courseId }: CourseAnalyticsDa
           <h1 className="text-3xl font-bold text-neural-primary">{analytics.courseTitle}</h1>
           <p className="text-muted-foreground mt-2">Course Analytics Dashboard</p>
         </div>
-        <QuizExportButton courseId={courseId} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link
+            href={`/faculty/courses/${courseId}/groups`}
+            className="inline-flex items-center gap-1 px-3 h-9 text-sm rounded-md border border-border/60 hover:bg-muted/50 transition-colors"
+          >
+            <Users className="w-4 h-4" />
+            Groups
+          </Link>
+          {groups.length > 0 && (
+            <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+              <SelectTrigger className="h-9 w-[200px] text-sm">
+                <SelectValue placeholder="Filter by group" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All enrolled students</SelectItem>
+                {groups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name} ({group.memberCount})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <QuizExportButton courseId={courseId} groupId={selectedGroupId} />
+        </div>
       </div>
 
       {/* Stats Cards */}

@@ -52,6 +52,7 @@ model courses {
   users           users                  @relation(fields: [author_id], references: [id], onDelete: Restrict)
   collaborators   course_collaborators[]
   course_tracking course_tracking[]
+  course_groups   course_groups[]
 
   // Progress tracking (Week 4)
   module_progress module_progress[]      @relation("CourseProgress")
@@ -251,6 +252,11 @@ model users {
 
   // Program Map & Learning Paths (Program Visualization Feature)
   created_learning_paths learning_paths[]       @relation("LearningPathCreator")
+
+  // Course groups (Canvas LMS mapping)
+  course_group_memberships  course_group_memberships[] @relation("CourseGroupMember")
+  added_group_members       course_group_memberships[] @relation("CourseGroupMemberAdder")
+  created_course_groups     course_groups[]            @relation("CourseGroupCreator")
 
   @@index([role])
   @@index([account_status])
@@ -917,4 +923,49 @@ model quiz_response_events {
   @@index([question_id])
   @@index([user_id])
   @@index([module_id])
+}
+
+// ==================== COURSE GROUPS (Canvas LMS Mapping) ====================
+
+// A faculty-defined subset of enrolled students within a course.
+// Since the platform is open (anyone can enroll), groups give faculty a way
+// to scope grade exports and (eventually) Canvas grade sync to just their
+// actual section roster.
+model course_groups {
+  id               String   @id @default(cuid())
+  course_id        String
+  name             String   // e.g. "Spring 2026 Section A"
+  description      String?
+  canvas_course_id String?  // Canvas course/section ID for downstream grade sync
+  created_by       String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  course      courses                    @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  creator     users                      @relation("CourseGroupCreator", fields: [created_by], references: [id], onDelete: Restrict)
+  memberships course_group_memberships[]
+
+  @@unique([course_id, name])
+  @@index([course_id])
+  @@index([canvas_course_id])
+}
+
+// Membership in a course group. Constraint: a user can be in at most one
+// group per course. This is enforced at the API layer (not via a DB unique
+// constraint on user_id + course_id, because course_id lives on the parent
+// course_groups row, not on membership).
+model course_group_memberships {
+  id        String   @id @default(cuid())
+  group_id  String
+  user_id   String
+  added_by  String
+  added_at  DateTime @default(now())
+
+  group  course_groups @relation(fields: [group_id], references: [id], onDelete: Cascade)
+  user   users         @relation("CourseGroupMember", fields: [user_id], references: [id], onDelete: Cascade)
+  adder  users         @relation("CourseGroupMemberAdder", fields: [added_by], references: [id], onDelete: Restrict)
+
+  @@unique([group_id, user_id])
+  @@index([user_id])
+  @@index([group_id])
 }

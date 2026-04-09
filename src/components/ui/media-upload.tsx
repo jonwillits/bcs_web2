@@ -51,11 +51,12 @@ export function MediaUpload({
 
     setIsUploading(true);
 
-    for (const file of acceptedFiles.slice(0, maxFiles)) {
-      const fileId = `${Date.now()}_${file.name}`;
+    // Upload a single file through the full signed-URL flow.
+    // Extracted so the batched Promise.all below stays readable.
+    const uploadOne = async (file: File) => {
+      const fileId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${file.name}`;
 
       try {
-        // Initialize progress
         setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
 
         // Step 1: Get signed upload URL from server
@@ -81,10 +82,9 @@ export function MediaUpload({
         // Step 2: Upload directly to Supabase Storage
         setUploadProgress(prev => ({ ...prev, [fileId]: 20 }));
 
-        // Create XMLHttpRequest for progress tracking
         const xhr = new XMLHttpRequest();
 
-        const uploadPromise = new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
               const percentComplete = 20 + (e.loaded / e.total) * 60; // 20-80%
@@ -108,8 +108,6 @@ export function MediaUpload({
           xhr.send(file);
         });
 
-        await uploadPromise;
-
         // Step 3: Confirm upload and save metadata
         setUploadProgress(prev => ({ ...prev, [fileId]: 85 }));
 
@@ -132,14 +130,11 @@ export function MediaUpload({
 
         const result = await confirmResponse.json();
 
-        // Complete progress
         setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
 
-        // Add to uploaded files
         const newFile: MediaFile = result.media;
         setUploadedFiles(prev => [...prev, newFile]);
 
-        // Notify parent component
         if (onFileSelect) {
           onFileSelect(newFile);
         }
@@ -154,18 +149,27 @@ export function MediaUpload({
             return updated;
           });
         }, 2000);
-
       } catch (error) {
         console.error('Upload error:', error);
         toast.error(`Failed to upload ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
 
-        // Clean up failed upload progress
         setUploadProgress(prev => {
           const updated = { ...prev };
           delete updated[fileId];
           return updated;
         });
       }
+    };
+
+    // Process uploads in parallel batches to avoid overwhelming the browser
+    // connection pool and Supabase. Batch size of 4 gives ~4x speedup over
+    // sequential uploads while staying well under typical HTTP/1.1 connection
+    // limits (6 per origin). Failures within a batch don't block other files.
+    const CONCURRENCY = 4;
+    const filesToUpload = acceptedFiles.slice(0, maxFiles);
+    for (let i = 0; i < filesToUpload.length; i += CONCURRENCY) {
+      const batch = filesToUpload.slice(i, i + CONCURRENCY);
+      await Promise.all(batch.map(uploadOne));
     }
 
     setIsUploading(false);

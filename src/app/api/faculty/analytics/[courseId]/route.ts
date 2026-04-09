@@ -23,6 +23,9 @@ export async function GET(
       );
     }
 
+    const { searchParams } = new URL(request.url);
+    const groupId = searchParams.get('groupId') || null;
+
     // Verify course exists
     const course = await withDatabaseRetry(async () => {
       return await prisma.courses.findUnique({
@@ -54,12 +57,33 @@ export async function GET(
       );
     }
 
-    // Fetch enrollment data
+    // If a groupId is provided, verify it belongs to this course and collect
+    // the member user IDs — every subsequent query is restricted to those users.
+    let groupMemberIds: string[] | null = null;
+    if (groupId) {
+      const group = await withDatabaseRetry(async () => {
+        return await prisma.course_groups.findUnique({
+          where: { id: groupId },
+          select: {
+            id: true,
+            course_id: true,
+            memberships: { select: { user_id: true } },
+          },
+        });
+      });
+      if (!group || group.course_id !== courseId) {
+        return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+      }
+      groupMemberIds = group.memberships.map((m) => m.user_id);
+    }
+
+    // Fetch enrollment data (optionally scoped to group members)
     const enrollments = await withDatabaseRetry(async () => {
       return await prisma.course_tracking.findMany({
         where: {
           course_id: courseId,
           status: 'active',
+          ...(groupMemberIds !== null && { user_id: { in: groupMemberIds } }),
         },
         select: {
           id: true,
@@ -92,11 +116,12 @@ export async function GET(
         )
       : 0;
 
-    // Fetch module-level analytics
+    // Fetch module-level analytics (optionally scoped to group members)
     const moduleProgress = await withDatabaseRetry(async () => {
       return await prisma.module_progress.findMany({
         where: {
           course_id: courseId,
+          ...(groupMemberIds !== null && { user_id: { in: groupMemberIds } }),
         },
         select: {
           module_id: true,
@@ -159,7 +184,7 @@ export async function GET(
     // Sort by completion count (most popular first)
     moduleAnalytics.sort((a, b) => b.completedCount - a.completedCount);
 
-    // Get recent activity (last 10 completions)
+    // Get recent activity (last 10 completions, optionally scoped to group members)
     const recentActivity = await withDatabaseRetry(async () => {
       return await prisma.module_progress.findMany({
         where: {
@@ -168,6 +193,7 @@ export async function GET(
           completed_at: {
             not: null,
           },
+          ...(groupMemberIds !== null && { user_id: { in: groupMemberIds } }),
         },
         select: {
           module: {
@@ -184,7 +210,7 @@ export async function GET(
       });
     });
 
-    // Get enrollment trend (last 30 days)
+    // Get enrollment trend (last 30 days, optionally scoped to group members)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -196,6 +222,7 @@ export async function GET(
           started_at: {
             gte: thirtyDaysAgo,
           },
+          ...(groupMemberIds !== null && { user_id: { in: groupMemberIds } }),
         },
         _count: {
           id: true,
