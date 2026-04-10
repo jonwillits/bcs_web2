@@ -6,6 +6,7 @@ import Heading from '@tiptap/extension-heading'
 import ResizableImageExtension from 'tiptap-extension-resize-image'
 import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
+import Youtube from '@tiptap/extension-youtube'
 import { marked } from 'marked'
 import { useCallback, useEffect, useState, useRef } from 'react'
 import { NeuralButton } from '@/components/ui/neural-button'
@@ -26,6 +27,7 @@ import {
   Code,
   Link as LinkIcon,
   Image as ImageIcon,
+  Video,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -78,6 +80,9 @@ export function NeuralRichTextEditor({
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [showMediaUpload, setShowMediaUpload] = useState(false)
   const [showImportConfirm, setShowImportConfirm] = useState(false)
+  const [showYoutubeDialog, setShowYoutubeDialog] = useState(false)
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [youtubeError, setYoutubeError] = useState<string | null>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -116,6 +121,16 @@ export function NeuralRichTextEditor({
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
+      }),
+      Youtube.configure({
+        nocookie: true,
+        controls: true,
+        modestBranding: true,
+        width: 640,
+        height: 360,
+        HTMLAttributes: {
+          class: 'neural-youtube-embed',
+        },
       }),
     ],
     content,
@@ -218,6 +233,30 @@ export function NeuralRichTextEditor({
       editor.chain().focus().setLink({ href: url }).run()
     }
   }, [editor])
+
+  const openYoutubeDialog = useCallback(() => {
+    setYoutubeUrl('')
+    setYoutubeError(null)
+    setShowYoutubeDialog(true)
+  }, [])
+
+  const handleYoutubeInsert = useCallback(() => {
+    if (!editor) return
+    const trimmed = youtubeUrl.trim()
+    if (!trimmed) {
+      setYoutubeError('Please enter a YouTube URL')
+      return
+    }
+    // setYoutubeVideo returns false if the URL doesn't match a known YouTube pattern
+    const ok = editor.chain().focus().setYoutubeVideo({ src: trimmed }).run()
+    if (ok) {
+      setShowYoutubeDialog(false)
+      setYoutubeUrl('')
+      setYoutubeError(null)
+    } else {
+      setYoutubeError('That does not look like a valid YouTube URL')
+    }
+  }, [editor, youtubeUrl])
 
   const handleImportMarkdown = useCallback(() => {
     if (!editor) return
@@ -433,6 +472,15 @@ export function NeuralRichTextEditor({
             <NeuralButton
               variant="ghost"
               size="sm"
+              onClick={openYoutubeDialog}
+              title="Embed YouTube video"
+              aria-label="Embed YouTube video"
+            >
+              <Video className="h-4 w-4" />
+            </NeuralButton>
+            <NeuralButton
+              variant="ghost"
+              size="sm"
               onClick={handleImportMarkdown}
               title="Import Markdown"
               aria-label="Import markdown file"
@@ -560,6 +608,64 @@ export function NeuralRichTextEditor({
               }}
             >
               Replace Content
+            </NeuralButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* YouTube Embed Dialog */}
+      <Dialog
+        open={showYoutubeDialog}
+        onOpenChange={(open) => {
+          setShowYoutubeDialog(open)
+          if (!open) {
+            setYoutubeUrl('')
+            setYoutubeError(null)
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Embed YouTube Video</DialogTitle>
+            <DialogDescription>
+              Paste a YouTube link (watch, share, embed, or shorts URL). The video will appear inline at 16:9.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <input
+              type="url"
+              value={youtubeUrl}
+              onChange={(e) => {
+                setYoutubeUrl(e.target.value)
+                if (youtubeError) setYoutubeError(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleYoutubeInsert()
+                }
+              }}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              autoFocus
+            />
+            {youtubeError && (
+              <p className="text-sm text-destructive">{youtubeError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <NeuralButton
+              variant="ghost"
+              onClick={() => {
+                setShowYoutubeDialog(false)
+                setYoutubeUrl('')
+                setYoutubeError(null)
+              }}
+            >
+              Cancel
+            </NeuralButton>
+            <NeuralButton variant="neural" onClick={handleYoutubeInsert}>
+              Embed
             </NeuralButton>
           </DialogFooter>
         </DialogContent>

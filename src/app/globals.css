@@ -840,6 +840,34 @@ Inspired by official UI brand colors: Illini Orange and Illini Blue
   border: 2px solid hsl(var(--neural-primary) / 0.2);
 }
 
+/* YouTube embeds — responsive 16:9, matches image styling */
+.neural-content .neural-youtube-embed,
+.neural-content iframe[src*="youtube.com"],
+.neural-content iframe[src*="youtube-nocookie.com"] {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  margin: 2rem 0;
+}
+
+/* Tiptap wraps the iframe in a div with data-youtube-video — make it block level */
+.neural-content div[data-youtube-video] {
+  margin: 2rem 0;
+}
+.neural-content div[data-youtube-video] > iframe {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
 /* Course Map Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;

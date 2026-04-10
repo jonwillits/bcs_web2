@@ -148,6 +148,8 @@ A **mastery check** is a low-stakes, formative assessment designed for practice 
 
 **Student experience**: Questions are presented one at a time. After answering each question, the student clicks "Check Answer" to see immediate feedback — whether they were correct, the right answer, and explanations for every option. They then proceed to the next question. After all questions, the quiz is submitted and scored.
 
+**Server-side validation**: Answer correctness is validated on the server, not in the browser. The client never receives the correct answer key before submission — it only learns the result after the server checks each answer. This prevents students from inspecting network responses to find correct answers.
+
 **When to use**: Use mastery checks for study and practice. Students can retake them unlimited times to improve their understanding. The threshold determines what counts as "mastered."
 
 ### Module Assessment
@@ -457,16 +459,17 @@ Faculty can export a module's entire question bank to JSON and import it into an
 3. Select your JSON file
 4. The system validates the format, creates all questions with options, and recreates sets with the correct memberships
 
-### CSV Grade Export
+### Gradebook Export
 
-Faculty can export quiz grades for an entire course as a CSV file. Navigate to the course analytics or use the export button. The CSV includes:
+Faculty can export quiz grades from the course analytics dashboard using the **Export Grades** button. Two formats are available:
 
-- Student name, email, and ID
-- Module title, quiz type, quiz title
-- Best score, points earned/possible, attempts used
-- Pass status and last attempt date
+**Excel (.xlsx)** — A workbook with two sheets:
+1. **Course Gradebook** — One row per student with overall grade (weighted by points: `sum(best points earned) / sum(points possible)`), totals, modules completed, and last activity
+2. **Quiz Breakdown** — One row per student per quiz with best score, points earned/possible, attempts used, pass status, and last attempt date
 
-One row is generated per student per quiz, including students with no attempts (shown as "N/A").
+**CSV** — Choose one sheet to download (CSV files can only contain a single sheet).
+
+If a **course group** is selected in the analytics picker, the export is scoped to that group's members. See the [User Guide](/guide) section on Course Groups and Gradebook Export for details.
 
 ---
 

@@ -18,7 +18,7 @@ Welcome to the **Brain & Cognitive Sciences (BCS) E-Learning Platform** — an i
 10. [Program Map](#10-program-map)
 11. [User Profiles](#11-user-profiles)
 12. [Student Features](#12-student-features) — Enrollment, Quizzes & Assessments, Progress, Achievements
-13. [Faculty Features](#13-faculty-features) — Courses, Modules, Question Banks, Quiz Builder, Analytics
+13. [Faculty Features](#13-faculty-features) — Courses, Modules, Content Editor, YouTube Embeds, Bulk Media, Quizzes, Analytics, Course Groups, Gradebook Export
 14. [Admin Features](#14-admin-features)
 15. [Quick Reference](#15-quick-reference)
 
@@ -310,6 +310,8 @@ Faculty members see a **Clone** button on module cards. Clicking it opens a dial
 - Enter a new title for the cloned module
 - Choose whether to clone media associations and collaborators
 - The clone starts as a private draft in your library
+
+Cloning also copies the module's **entire question bank** — all questions, answer options, explanations, question sets, and set memberships. Any quizzes (mastery checks and assessments) configured on the original module are cloned as well, including their blocks and settings. This means you can clone a fully quizzed module and immediately have a working copy without re-creating the quiz setup from scratch.
 
 ---
 
@@ -699,7 +701,34 @@ These are guidelines, not rules. The key is internal consistency within a course
 
 #### Editing a Module
 
-Navigate to `/faculty/modules/edit/[id]` to update any module field, add media, or change the hierarchy.
+Navigate to `/faculty/modules/edit/[id]` to update any module field, add media, or change the hierarchy. The editor has three tabs: **Edit** (content), **Settings** (metadata, difficulty, unlock conditions), and **Quiz** (question bank and assessments).
+
+#### Module Content Editor
+
+The rich text editor supports:
+
+- **Text formatting** — Bold, italic, strikethrough, inline code
+- **Headings** — H1, H2, H3
+- **Lists** — Bullet and numbered
+- **Block quotes**
+- **Text alignment** — Left, center, right
+- **Links** — Click the link icon and enter a URL
+- **Images** — Click the upload icon to upload from your computer or enter an image URL. Images are stored in Supabase and served from your media library.
+- **YouTube videos** — Click the video icon (next to the upload icon) and paste a YouTube link. Supports `youtube.com/watch?v=...`, `youtu.be/...`, and `youtube.com/shorts/...` URLs. You can also **paste a YouTube URL directly** into the editor text — it auto-converts to an embedded video. Videos render at 16:9 aspect ratio and are responsive on mobile. Privacy mode is on by default (uses `youtube-nocookie.com`).
+- **Markdown import** — Click the import icon to upload a `.md` file, which replaces the editor content
+- **Undo / Redo** — Standard keyboard shortcuts (`Ctrl+Z` / `Ctrl+Y`)
+- **Auto-save** — Content is automatically saved after 2 seconds of inactivity
+
+#### Bulk Media Upload
+
+The **Media** panel (right sidebar of the module editor) supports uploading multiple files at once:
+
+1. Click **Media** to expand the panel
+2. Drag and drop multiple files or click to browse
+3. Files upload in parallel — each shows its own progress indicator
+4. Uploaded files appear in the module's media library and can be inserted into content
+
+Supported file types include images (PNG, JPG, GIF, WebP, SVG) and documents. This is useful for uploading a full lecture's worth of figures and diagrams in one go.
 
 ### Managing Quizzes
 
@@ -747,7 +776,66 @@ On the **Settings** tab, set the **Unlock Condition** to require students to com
 
 ### Course Analytics
 
-Faculty can view student engagement metrics for their courses, including enrollment counts and completion rates.
+Navigate to the analytics dashboard for any course you own to see student engagement at a glance. The dashboard shows:
+
+- **Statistics cards** — Total Enrollments, Active Students (last 7 days), Completion Rate, and Average Progress
+- **Module Completion Rates chart** — Bar chart of completion percentages across your top modules
+- **Enrollment Trend chart** — Line chart of new enrollments over the last 30 days
+- **Module Performance table** — Per-module breakdown with Started, Completed, Completion Rate, and Dropoff Rate columns
+- **Recent Completions** — The latest 10 module completions with timestamps
+
+#### Filtering by Group
+
+If you have created course groups (see below), a **group picker** appears in the dashboard header. Selecting a group filters **all** dashboard data — cards, charts, table, and recent activity — to show only the students in that group. The "Export Grades" button respects the same filter.
+
+### Course Groups
+
+Course groups let you scope your analytics and grade exports to a specific set of students. This is particularly useful when your platform enrollment is open but you only want to track or export grades for the students in your actual class section.
+
+#### Creating a Group
+
+1. From the course analytics page, click **Groups** in the top-right corner (or navigate to `/faculty/courses/[id]/groups`)
+2. Click **Create Group**
+3. Enter a **name** (e.g., "Spring 2026 Section A"), optional **description**, and optional **Canvas Course ID** (for future grade sync — this field has no effect today but will be used when Canvas integration is enabled)
+4. Click **Create**
+
+#### Adding Members
+
+1. Open a group and click **Add Members**
+2. Search for enrolled students by name or email, or paste a list of emails
+3. Only students who are actively enrolled in the course can be added
+4. Each student can belong to **at most one group** per course. If you try to add a student who is already in another group, you'll see an error with the conflicting group name
+
+#### Managing Groups
+
+- **Rename or update** a group by clicking its edit button
+- **Remove members** individually from the group detail view
+- **Delete a group** — this removes the group and all its memberships (students are not unenrolled from the course)
+
+### Gradebook Export
+
+The **Export Grades** button on the analytics dashboard lets you download student grades in two formats:
+
+#### Excel (.xlsx)
+
+Downloads a workbook with **two sheets**:
+
+1. **Course Gradebook** — One row per student with columns: Student Name, Student Email, Student ID, Overall Grade %, Total Points Earned, Total Points Possible, Quizzes Attempted, Quizzes Passed, Modules Completed, Modules Total, Last Activity
+2. **Quiz Breakdown** — One row per student per quiz with columns: Student Name, Student Email, Student ID, Module Title, Quiz Type, Quiz Title, Best Score %, Points Earned, Points Possible, Attempts Used, Passed, Last Attempt Date
+
+#### CSV
+
+CSV files can only contain one sheet, so you choose which one to download:
+- **Course Gradebook** — Same columns as the Excel gradebook sheet
+- **Quiz Breakdown** — Same columns as the Excel quiz sheet
+
+#### Grade Calculation
+
+The overall grade is calculated as: `sum(best points earned across all quizzes) / sum(total points possible) * 100`, rounded to one decimal place. Students with zero quiz attempts show 0%.
+
+#### Group Filtering
+
+If you select a group from the picker before clicking Export, the download only includes students in that group. The filename also includes the group name for easy identification.
 
 ### Creating Playgrounds
 
