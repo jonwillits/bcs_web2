@@ -54,6 +54,10 @@ model courses {
   course_tracking course_tracking[]
   course_groups   course_groups[]
 
+  // Canvas LMS integration
+  canvas_assignment_mappings canvas_assignment_mappings[]
+  canvas_sync_logs           canvas_sync_logs[]
+
   // Progress tracking (Week 4)
   module_progress module_progress[]      @relation("CourseProgress")
 
@@ -257,6 +261,9 @@ model users {
   course_group_memberships  course_group_memberships[] @relation("CourseGroupMember")
   added_group_members       course_group_memberships[] @relation("CourseGroupMemberAdder")
   created_course_groups     course_groups[]            @relation("CourseGroupCreator")
+
+  // Canvas LMS integration
+  canvas_sync_logs          canvas_sync_logs[]         @relation("CanvasSyncUser")
 
   @@index([role])
   @@index([account_status])
@@ -968,4 +975,48 @@ model course_group_memberships {
   @@unique([group_id, user_id])
   @@index([user_id])
   @@index([group_id])
+}
+
+// ==================== CANVAS LMS INTEGRATION ====================
+
+// Maps a BCS quiz to a Canvas assignment within a specific Canvas course.
+// When a quiz is synced for the first time, we create the Canvas assignment
+// and store the mapping here so subsequent syncs reuse the same assignment.
+model canvas_assignment_mappings {
+  id                     String   @id @default(cuid())
+  course_id              String
+  quiz_id                String
+  canvas_course_id       String   // Canvas numeric course ID (e.g. "68879")
+  canvas_assignment_id   Int      // Canvas-returned assignment ID
+  canvas_assignment_name String   // Snapshot of assignment name at creation
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
+
+  course courses @relation(fields: [course_id], references: [id], onDelete: Cascade)
+
+  @@unique([quiz_id, canvas_course_id])
+  @@index([course_id])
+  @@index([canvas_course_id])
+}
+
+// Audit log for each Canvas grade sync operation.
+model canvas_sync_logs {
+  id               String    @id @default(cuid())
+  course_id        String
+  group_id         String
+  canvas_course_id String
+  synced_by        String
+  status           String    // "success" | "partial" | "failed"
+  quizzes_synced   Int       @default(0)
+  students_synced  Int       @default(0)
+  students_skipped Int       @default(0)
+  errors           String?   // JSON array of error messages
+  started_at       DateTime  @default(now())
+  completed_at     DateTime?
+
+  course courses @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  user   users   @relation("CanvasSyncUser", fields: [synced_by], references: [id])
+
+  @@index([course_id])
+  @@index([synced_by])
 }
