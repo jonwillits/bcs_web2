@@ -80,6 +80,19 @@ export async function POST(
     }
 
     const canvasCourseId = group.canvas_course_id;
+
+    // Guard: only allow syncing to explicitly approved Canvas courses
+    const allowedIds = (process.env.CANVAS_ALLOWED_COURSE_IDS || '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+    if (allowedIds.length > 0 && !allowedIds.includes(canvasCourseId)) {
+      return NextResponse.json(
+        { error: `Canvas course ${canvasCourseId} is not in the allowed list. Update CANVAS_ALLOWED_COURSE_IDS to permit it.` },
+        { status: 403 }
+      );
+    }
+
     const groupMemberIds = group.memberships.map((m) => m.user_id);
 
     // -----------------------------------------------------------------------
