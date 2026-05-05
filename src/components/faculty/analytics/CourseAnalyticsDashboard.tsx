@@ -17,6 +17,7 @@ import {
 import { ArrowLeft, Users, TrendingUp, Award, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QuizExportButton } from '@/components/quiz/QuizExportButton';
+import { CanvasSyncButton } from '@/components/faculty/analytics/CanvasSyncButton';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,7 @@ interface Group {
   id: string;
   name: string;
   memberCount: number;
+  canvasCourseId?: string | null;
 }
 
 interface AnalyticsData {
@@ -181,6 +183,12 @@ export default function CourseAnalyticsDashboard({ courseId }: CourseAnalyticsDa
             </Select>
           )}
           <QuizExportButton courseId={courseId} groupId={selectedGroupId} />
+          <CanvasSyncButton
+            courseId={courseId}
+            groupId={selectedGroupId}
+            canvasCourseId={groups.find(g => g.id === selectedGroupId)?.canvasCourseId}
+            groupName={groups.find(g => g.id === selectedGroupId)?.name}
+          />
         </div>
       </div>
 

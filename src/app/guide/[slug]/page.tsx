@@ -14,6 +14,10 @@ const GUIDE_DOCS: Record<string, { file: string; title: string }> = {
     file: "QUIZ_SYSTEM_GUIDE.md",
     title: "Quiz System Guide",
   },
+  "canvas-integration": {
+    file: "CANVAS_LMS_INTEGRATION_GUIDE.md",
+    title: "Canvas LMS Grade Sync Guide",
+  },
 }
 
 interface PageProps {

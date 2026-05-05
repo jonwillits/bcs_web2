@@ -171,6 +171,11 @@ EMAIL_FROM_NAME="BCS E-Learning (DEV)"
 # Environment
 NODE_ENV="development"
 
+# Canvas LMS Grade Sync (optional — only needed if testing Canvas integration)
+CANVAS_BASE_URL="https://canvas.illinois.edu"
+CANVAS_API_TOKEN="[your-canvas-personal-access-token]"
+CANVAS_ALLOWED_COURSE_IDS="68879"  # Comma-separated list of allowed Canvas course IDs
+
 # Feature Flags (Can test experimental features)
 NEXT_PUBLIC_ENABLE_RICH_TEXT_EDITOR=true
 NEXT_PUBLIC_ENABLE_GRAPH_VISUALIZATION=true
@@ -197,6 +202,11 @@ EMAIL_FROM_NAME="BCS E-Learning"
 
 # Environment
 NODE_ENV="production"
+
+# Canvas LMS Grade Sync (optional — only needed if using Canvas integration)
+CANVAS_BASE_URL="https://canvas.illinois.edu"
+CANVAS_API_TOKEN="[canvas-personal-access-token]"
+CANVAS_ALLOWED_COURSE_IDS="68879,73000"  # Comma-separated list of allowed Canvas course IDs
 
 # Feature Flags (Production-ready features only)
 NEXT_PUBLIC_ENABLE_RICH_TEXT_EDITOR=true
