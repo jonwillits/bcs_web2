@@ -796,7 +796,7 @@ Course groups let you scope your analytics and grade exports to a specific set o
 
 1. From the course analytics page, click **Groups** in the top-right corner (or navigate to `/faculty/courses/[id]/groups`)
 2. Click **Create Group**
-3. Enter a **name** (e.g., "Spring 2026 Section A"), optional **description**, and optional **Canvas Course ID** (for future grade sync — this field has no effect today but will be used when Canvas integration is enabled)
+3. Enter a **name** (e.g., "Spring 2026 Section A"), optional **description**, and optional **Canvas Course ID** (the numeric ID from your Canvas course URL — used for [Canvas grade sync](/guide/canvas-integration))
 4. Click **Create**
 
 #### Adding Members
@@ -836,6 +836,12 @@ The overall grade is calculated as: `sum(best points earned across all quizzes) 
 #### Group Filtering
 
 If you select a group from the picker before clicking Export, the download only includes students in that group. The filename also includes the group name for easy identification.
+
+### Canvas Grade Sync
+
+If your group has a Canvas Course ID configured, a **Sync to Canvas** button appears next to "Export Grades" when that group is selected. This pushes quiz grades directly to your Canvas gradebook — one Canvas assignment per quiz, matched by student email.
+
+For the complete setup walkthrough, see the dedicated [Canvas LMS Grade Sync Guide](/guide/canvas-integration).
 
 ### Creating Playgrounds
 
