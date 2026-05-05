@@ -432,6 +432,9 @@ The project uses manual testing on the Vercel deployment. When adding features:
 - `RESEND_API_KEY` - API key from Resend dashboard
 - `EMAIL_FROM` - Verified sender email (e.g., `noreply@yourdomain.com`)
 - `EMAIL_FROM_NAME` - Sender display name (e.g., `BCS E-Learning`)
+- `CANVAS_BASE_URL` - Canvas LMS base URL (e.g., `https://canvas.illinois.edu`) — optional, for grade sync
+- `CANVAS_API_TOKEN` - Canvas personal access token — optional, for grade sync
+- `CANVAS_ALLOWED_COURSE_IDS` - Comma-separated Canvas course IDs allowed for sync — optional safety guard
 
 **Build Process**:
 1. Vercel runs `npm run vercel:build`
