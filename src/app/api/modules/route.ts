@@ -33,9 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    console.log('Received in API:', body);
     const validatedData = createModuleSchema.parse(body)
-    console.log('Validated data:', validatedData);
 
     // Check if slug is unique for this author (with retry)
     const existingModule = await withDatabaseRetry(async () => {
@@ -248,17 +246,13 @@ export async function GET(request: NextRequest) {
       }))
 
       const availableTags = await withDatabaseRetry(async () => {
-        const modulesWithTags = await prisma.modules.findMany({
-          where: { author_id: session.user.id },
-          select: { tags: true }
-        })
-        const tagsSet = new Set<string>()
-        modulesWithTags.forEach(module => {
-          if (Array.isArray(module.tags)) {
-            module.tags.forEach(tag => tagsSet.add(tag))
-          }
-        })
-        return Array.from(tagsSet).sort()
+        const tags = await prisma.$queryRaw<{tag: string}[]>`
+          SELECT DISTINCT unnest(tags) as tag
+          FROM modules
+          WHERE author_id = ${session.user.id}
+          ORDER BY tag
+        `
+        return tags.map(t => t.tag)
       })
 
       return NextResponse.json({
@@ -363,19 +357,14 @@ export async function GET(request: NextRequest) {
       }))
 
       const availableTags = await withDatabaseRetry(async () => {
-        const modulesWithTags = await prisma.modules.findMany({
-          where: {
-            collaborators: { some: { user_id: session.user.id } }
-          },
-          select: { tags: true }
-        })
-        const tagsSet = new Set<string>()
-        modulesWithTags.forEach(module => {
-          if (Array.isArray(module.tags)) {
-            module.tags.forEach(tag => tagsSet.add(tag))
-          }
-        })
-        return Array.from(tagsSet).sort()
+        const tags = await prisma.$queryRaw<{tag: string}[]>`
+          SELECT DISTINCT unnest(m.tags) as tag
+          FROM modules m
+          INNER JOIN module_collaborators mc ON mc.module_id = m.id
+          WHERE mc.user_id = ${session.user.id}
+          ORDER BY tag
+        `
+        return tags.map(t => t.tag)
       })
 
       return NextResponse.json({
@@ -573,31 +562,26 @@ export async function GET(request: NextRequest) {
     let allUserTags: string[] = []
     try {
       allUserTags = await withDatabaseRetry(async () => {
-        let tagQuery = {}
-        
         // For faculty/admin, get their own module tags; for public, get all published module tags
-        if (session?.user?.role === 'faculty' || session?.user?.role === 'admin') {
-          tagQuery = { author_id: session.user.id }
-        } else {
-          tagQuery = { status: 'published' }
-        }
-        
-        const userModules = await prisma.modules.findMany({
-          where: tagQuery,
-          select: { tags: true }
-        })
-        
-        const tagSet = new Set<string>()
-        userModules.forEach(module => {
-          if (module.tags && Array.isArray(module.tags)) {
-            module.tags.forEach(tag => tagSet.add(tag))
-          }
-        })
-        
-        return Array.from(tagSet).sort()
+        const isFacultyOrAdmin = session?.user?.role === 'faculty' || session?.user?.role === 'admin'
+
+        const tags = isFacultyOrAdmin
+          ? await prisma.$queryRaw<{tag: string}[]>`
+              SELECT DISTINCT unnest(tags) as tag
+              FROM modules
+              WHERE author_id = ${session!.user.id}
+              ORDER BY tag
+            `
+          : await prisma.$queryRaw<{tag: string}[]>`
+              SELECT DISTINCT unnest(tags) as tag
+              FROM modules
+              WHERE status = 'published'
+              ORDER BY tag
+            `
+
+        return tags.map(t => t.tag)
       })
     } catch (tagsError) {
-      console.warn('Failed to fetch user tags, continuing without tags:', tagsError)
       allUserTags = []
     }
 

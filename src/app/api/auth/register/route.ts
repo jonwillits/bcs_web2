@@ -54,6 +54,14 @@ const facultySchema = baseSchema.extend({
 })
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 registrations per IP per 15 minutes
+  const { checkRateLimit, getClientIp, rateLimitResponse } = await import('@/lib/rate-limit')
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = checkRateLimit(ip, 'register', 5, 15 * 60 * 1000)
+  if (!allowed) {
+    return rateLimitResponse(retryAfterMs!)
+  }
+
   try {
     const body = await request.json()
 
@@ -171,7 +179,7 @@ export async function POST(request: NextRequest) {
     try {
       await sendVerificationEmail(result.email, result.name, verificationToken)
     } catch (emailError) {
-      console.error('Failed to send verification email to:', result.email, emailError)
+      console.error('Failed to send verification email:', emailError instanceof Error ? emailError.message : 'Unknown error')
       // Continue with registration but log the error
     }
 

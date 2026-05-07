@@ -11,8 +11,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('Dashboard stats request for user:', session.user.id)
-
     // Start with basic counts (most likely to succeed)
     let modulesCount = 0
     let coursesCount = 0
@@ -23,7 +21,6 @@ export async function GET(request: NextRequest) {
           where: { author_id: session.user.id }
         })
       )
-      console.log('Modules count:', modulesCount)
     } catch (error) {
       console.error('Error counting modules:', error)
     }
@@ -34,7 +31,6 @@ export async function GET(request: NextRequest) {
           where: { author_id: session.user.id }
         })
       )
-      console.log('Courses count:', coursesCount)
     } catch (error) {
       console.error('Error counting courses:', error)
     }
@@ -114,7 +110,6 @@ export async function GET(request: NextRequest) {
         .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
         .slice(0, 8)
         
-      console.log('Recent activity items:', recentActivity.length)
     } catch (error) {
       console.error('Error fetching recent activity:', error)
       recentActivity = []

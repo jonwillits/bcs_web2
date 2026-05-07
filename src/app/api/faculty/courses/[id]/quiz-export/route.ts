@@ -64,7 +64,7 @@ export async function GET(
     const sheet = (searchParams.get('sheet') || 'quiz').toLowerCase();
     const groupId = searchParams.get('groupId') || null;
 
-    if (format !== 'xlsx' && format !== 'csv') {
+    if (format !== 'xlsx' && format !== 'csv' && format !== 'canvas') {
       return NextResponse.json({ error: 'Invalid format' }, { status: 400 });
     }
     if (format === 'csv' && sheet !== 'quiz' && sheet !== 'gradebook') {
@@ -320,6 +320,69 @@ export async function GET(
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-|-$/g, '')}`
       : '';
+
+    // Canvas-compatible CSV: pivot table with one column per quiz, matched by email.
+    // Canvas CSV import format (matched from Canvas's own export):
+    // Header: Student, ID, SIS User ID, SIS Login ID, Integration ID, Section, <assignments...>
+    // Row 2:  "    Points Possible", empty x5, <point values...>
+    // Data:   "Last, First", canvas_id, sis_user_id, sis_login_id, integration_id, section, <scores...>
+    if (format === 'canvas') {
+      const canvasQuizzes: { name: string; pointsPossible: number; bestByUser: Map<string, number> }[] = [];
+      for (const cm of data.courseModules) {
+        const mod = cm.modules;
+        for (const quiz of mod.quizzes) {
+          if (quiz.attempts.length === 0) continue;
+          const name = `${mod.title} \u2014 ${quiz.title}`;
+          let pointsPossible = 0;
+          const bestByUser = new Map<string, number>();
+          for (const a of quiz.attempts) {
+            if (a.points_possible > pointsPossible) pointsPossible = a.points_possible;
+            const prev = bestByUser.get(a.user_id);
+            if (prev === undefined || a.points_earned > prev) {
+              bestByUser.set(a.user_id, a.points_earned);
+            }
+          }
+          if (pointsPossible > 0) {
+            canvasQuizzes.push({ name, pointsPossible, bestByUser });
+          }
+        }
+      }
+
+      // Canvas requires exactly these 6 columns before assignment columns
+      const canvasHeaders = ['Student', 'ID', 'SIS User ID', 'SIS Login ID', 'Integration ID', 'Section', ...canvasQuizzes.map(q => q.name)];
+      const pointsRow = ['    Points Possible', '', '', '', '', '', ...canvasQuizzes.map(q => q.pointsPossible.toString())];
+
+      const canvasRows: string[][] = [pointsRow];
+      for (const [userId, student] of studentMap) {
+        const row = [
+          student.name,
+          '',              // Canvas user ID — blank, Canvas matches by SIS Login ID
+          student.email,   // SIS User ID
+          student.email,   // SIS Login ID
+          '',              // Integration ID
+          '',              // Section
+          ...canvasQuizzes.map(q => {
+            const best = q.bestByUser.get(userId);
+            return best !== undefined ? best.toString() : '';
+          }),
+        ];
+        canvasRows.push(row);
+      }
+
+      const canvasCsvLines = [
+        canvasHeaders.map(escapeCSV).join(','),
+        ...canvasRows.map(row => row.map(escapeCSV).join(',')),
+      ];
+      // Prepend UTF-8 BOM so Canvas/Excel correctly detect encoding
+      const BOM = '\uFEFF';
+
+      return new NextResponse(BOM + canvasCsvLines.join('\n'), {
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="canvas-import-${courseSlug}${groupSlug}-${dateStr}.csv"`,
+        },
+      });
+    }
 
     if (format === 'xlsx') {
       const workbook = new ExcelJS.Workbook();

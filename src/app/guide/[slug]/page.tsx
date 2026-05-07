@@ -1,59 +1,53 @@
-import { Metadata } from "next"
-import fs from "fs"
-import path from "path"
-import { notFound } from "next/navigation"
-import { PublicLayout } from "@/components/layouts/app-layout"
-import { UserGuide } from "@/components/public/user-guide"
+import { Metadata } from 'next'
+import fs from 'fs'
+import path from 'path'
+import { notFound } from 'next/navigation'
+import { auth } from '@/lib/auth/config'
+import { hasFacultyAccess } from '@/lib/auth/utils'
+import { PublicLayout } from '@/components/layouts/app-layout'
+import { UserGuide } from '@/components/public/user-guide'
+import { GUIDES, getGuideBySlug } from '../_lib/guides'
 
-const GUIDE_DOCS: Record<string, { file: string; title: string }> = {
-  "tensorflow-technical": {
-    file: "TF_PLAYGROUND_TECHNICAL_GUIDE.md",
-    title: "TensorFlow Playground Technical Guide",
-  },
-  "quiz-system": {
-    file: "QUIZ_SYSTEM_GUIDE.md",
-    title: "Quiz System Guide",
-  },
-  "canvas-integration": {
-    file: "CANVAS_LMS_INTEGRATION_GUIDE.md",
-    title: "Canvas LMS Grade Sync Guide",
-  },
-}
+export const dynamic = 'force-dynamic'
 
 interface PageProps {
   params: Promise<{ slug: string }>
-}
-
-export async function generateStaticParams() {
-  return Object.keys(GUIDE_DOCS).map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const doc = GUIDE_DOCS[slug]
+  const guide = getGuideBySlug(slug)
 
-  if (!doc) {
-    return { title: "Not Found | BCS E-Learning" }
+  if (!guide) {
+    return { title: 'Not Found | BCS E-Learning' }
   }
 
   return {
-    title: `${doc.title} | BCS E-Learning`,
-    description: doc.title,
+    title: `${guide.title} | BCS E-Learning`,
+    description: guide.description,
   }
 }
 
 export default async function GuideDocPage({ params }: PageProps) {
   const { slug } = await params
-  const doc = GUIDE_DOCS[slug]
+  const guide = getGuideBySlug(slug)
 
-  if (!doc) {
+  if (!guide) {
     notFound()
   }
 
-  const filePath = path.join(process.cwd(), "docs", doc.file)
-  const content = fs.readFileSync(filePath, "utf-8")
+  // Faculty-only guides return 404 for non-faculty users
+  if (guide.role === 'faculty') {
+    const session = await auth()
+    if (!hasFacultyAccess(session)) {
+      notFound()
+    }
+  }
+
+  const filePath = path.join(process.cwd(), 'docs', guide.file)
+  const content = fs.readFileSync(filePath, 'utf-8')
 
   return (
     <PublicLayout>

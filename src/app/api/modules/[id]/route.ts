@@ -174,9 +174,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    console.log('Request body received:', JSON.stringify(body, null, 2))
     const validatedData = updateModuleSchema.parse(body)
-    console.log('Validated data:', JSON.stringify(validatedData, null, 2))
 
     // If slug is being updated, check uniqueness for the module author
     if (validatedData.slug && validatedData.slug !== existingModule.slug) {
@@ -196,40 +194,25 @@ export async function PUT(
       }
     }
 
-    // Simplified validation - just log what we receive
-    console.log('=== MODULE UPDATE DEBUG ===')
-    console.log('Module ID being updated:', id)
-    console.log('User ID:', session.user.id)
-    console.log('parent_module_id received:', validatedData.parent_module_id)
-    console.log('parent_module_id type:', typeof validatedData.parent_module_id)
-    console.log('================================')
-    
     // Basic validation
     if (validatedData.parent_module_id !== undefined) {
       if (validatedData.parent_module_id === '') {
         // Convert empty string to null
         validatedData.parent_module_id = null
-        console.log('Converted empty string to null')
       } else if (validatedData.parent_module_id !== null) {
-        // Only validate if it's not null
-        console.log('Checking if parent module exists...')
         const parentExists = await prisma.modules.findUnique({
           where: { id: validatedData.parent_module_id }
         })
         
         if (!parentExists) {
-          console.log('❌ Parent module does not exist!')
           return NextResponse.json(
             { error: `Parent module '${validatedData.parent_module_id}' does not exist` },
             { status: 400 }
           )
         }
         
-        console.log('✅ Parent module exists:', parentExists.title)
-        
         // Basic circular reference check
         if (validatedData.parent_module_id === id) {
-          console.log('❌ Circular reference detected!')
           return NextResponse.json(
             { error: 'A module cannot be its own parent' },
             { status: 400 }
@@ -238,8 +221,6 @@ export async function PUT(
       }
     }
     
-    console.log('Final parent_module_id for update:', validatedData.parent_module_id)
-
     // Validate prerequisite_module_ids
     if (validatedData.prerequisite_module_ids !== undefined) {
       // Check for self-reference

@@ -4,7 +4,7 @@
 
 This guide documents the complete development and production workflow for the BCS E-Learning Platform using a **fork-based GitHub workflow** with separate personal (development) and university (production) accounts across all services.
 
-**Last Updated:** January 2025
+**Last Updated:** May 2026
 **Status:** Active
 
 ---
@@ -153,97 +153,130 @@ git push origin main
 ### Development Variables (Your Personal Vercel)
 
 **Set in:** Vercel → Your Project → Settings → Environment Variables
+**Full template:** See `.env.development.example` in the repository root.
 
 ```bash
-# Database (Your Personal Supabase - Port 6543 for serverless)
+# ── Database ──
 DATABASE_URL="postgresql://postgres.[YOUR_ID]:[YOUR_PASSWORD]@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres.[YOUR_ID]:[YOUR_PASSWORD]@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
 
-# Authentication (Development URLs)
+# ── Authentication ──
 NEXTAUTH_URL="https://bcs-web2.vercel.app"
-NEXTAUTH_SECRET="[your-dev-secret-32-chars]"
+NEXTAUTH_SECRET="[your-dev-secret-32-chars]"   # Generate: openssl rand -base64 32
 
-# Email (Your Personal Resend)
-EMAIL_PROVIDER="resend"
+# ── Email (Resend) ──
+EMAIL_PROVIDER="resend"                         # Use "console" to log emails to terminal instead
 RESEND_API_KEY="re_[your_personal_dev_api_key]"
-EMAIL_FROM="noreply@[your-dev-domain].com"
+EMAIL_FROM="noreply@[your-dev-domain].com"      # Or "onboarding@resend.dev" for free Resend testing
 EMAIL_FROM_NAME="BCS E-Learning (DEV)"
 
-# Environment
-NODE_ENV="development"
+# ── Supabase File Storage ──
+NEXT_PUBLIC_SUPABASE_URL="https://[YOUR_PROJECT_ID].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="[your-supabase-anon-key]"
 
-# Canvas LMS Grade Sync (optional — only needed if testing Canvas integration)
+# ── Access Control ──
+ADMIN_EMAILS="your-email@illinois.edu"          # Comma-separated; these get auto-admin on registration
+SUPER_ADMIN_EMAIL="your-email@illinois.edu"     # Single email; can manage other admins
+
+# ── Error Tracking (Sentry — optional) ──
+NEXT_PUBLIC_SENTRY_DSN=""                        # DSN from Sentry project (public, exposed to browser)
+SENTRY_ORG=""                                    # Sentry org slug
+SENTRY_PROJECT=""                                # Sentry project slug
+SENTRY_AUTH_TOKEN=""                             # Auth token for source map uploads (sensitive)
+
+# ── Canvas LMS Grade Sync (optional) ──
 CANVAS_BASE_URL="https://canvas.illinois.edu"
 CANVAS_API_TOKEN="[your-canvas-personal-access-token]"
-CANVAS_ALLOWED_COURSE_IDS="68879"  # Comma-separated list of allowed Canvas course IDs
+CANVAS_ALLOWED_COURSE_IDS="68879"               # Comma-separated safety guard
 
-# Feature Flags (Can test experimental features)
+# ── Telemetry ──
+NEXT_TELEMETRY_DISABLED=1
+
+# ── Feature Flags ──
 NEXT_PUBLIC_ENABLE_RICH_TEXT_EDITOR=true
 NEXT_PUBLIC_ENABLE_GRAPH_VISUALIZATION=true
-NEXT_PUBLIC_ENABLE_ANALYTICS=false  # Disable analytics in dev
+NEXT_PUBLIC_ENABLE_ANALYTICS=false               # Disable analytics in dev
 ```
 
 ### Production Variables (University Vercel)
 
 **Set in:** Vercel → University Project → Settings → Environment Variables
+**Full template:** See `.env.production.example` in the repository root.
 
 ```bash
-# Database (University Supabase - Port 6543 for serverless)
+# ── Database ──
 DATABASE_URL="postgresql://postgres.[UNIV_ID]:[UNIV_PASSWORD]@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1"
+DIRECT_URL="postgresql://postgres.[UNIV_ID]:[UNIV_PASSWORD]@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
 
-# Authentication (Production URLs)
-NEXTAUTH_URL="https://brainandcognitivescience.org"
-NEXTAUTH_SECRET="[university-prod-secret-32-chars]"
+# ── Authentication ──
+NEXTAUTH_URL="https://www.brainandcognitivescience.com"
+NEXTAUTH_SECRET="[university-prod-secret-32-chars]"   # DIFFERENT from dev!
 
-# Email (University Resend)
+# ── Email (Resend) ──
 EMAIL_PROVIDER="resend"
 RESEND_API_KEY="re_[university_production_api_key]"
 EMAIL_FROM="noreply@brainandcognitivescience.org"
 EMAIL_FROM_NAME="BCS E-Learning"
 
-# Environment
-NODE_ENV="production"
+# ── Supabase File Storage ──
+NEXT_PUBLIC_SUPABASE_URL="https://[UNIV_PROJECT_ID].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="[university-supabase-anon-key]"
 
-# Canvas LMS Grade Sync (optional — only needed if using Canvas integration)
+# ── Access Control ──
+ADMIN_EMAILS="admin1@illinois.edu,admin2@illinois.edu"
+SUPER_ADMIN_EMAIL="primary-admin@illinois.edu"
+
+# ── Error Tracking (Sentry) ──
+NEXT_PUBLIC_SENTRY_DSN="https://[key]@o[id].ingest.us.sentry.io/[project]"
+SENTRY_ORG="[your-sentry-org]"
+SENTRY_PROJECT="bcs-etextbook-prod"
+SENTRY_AUTH_TOKEN="sntrys_[your-auth-token]"    # Sensitive — has write access
+
+# ── Canvas LMS Grade Sync (optional) ──
 CANVAS_BASE_URL="https://canvas.illinois.edu"
 CANVAS_API_TOKEN="[canvas-personal-access-token]"
-CANVAS_ALLOWED_COURSE_IDS="68879,73000"  # Comma-separated list of allowed Canvas course IDs
+CANVAS_ALLOWED_COURSE_IDS="68879,73000"         # Update each semester
 
-# Feature Flags (Production-ready features only)
+# ── Telemetry ──
+NEXT_TELEMETRY_DISABLED=1
+
+# ── Feature Flags ──
 NEXT_PUBLIC_ENABLE_RICH_TEXT_EDITOR=true
 NEXT_PUBLIC_ENABLE_GRAPH_VISUALIZATION=true
-NEXT_PUBLIC_ENABLE_ANALYTICS=true  # Enable analytics in prod
+NEXT_PUBLIC_ENABLE_ANALYTICS=true                # Enable analytics in prod
 ```
 
-### Local Development Variables (Rarely Used)
+### Variable Reference
 
-**File:** `.env.local` (gitignored, only if running locally)
-
-```bash
-# Database (Use port 5432 for local development - session pooler)
-DATABASE_URL="postgresql://postgres.[YOUR_ID]:[YOUR_PASSWORD]@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
-
-# Authentication
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="local-dev-secret-key"
-
-# Email (Console mode - logs to terminal, no real emails)
-EMAIL_PROVIDER="console"
-EMAIL_FROM_NAME="BCS E-Learning (LOCAL)"
-
-# Environment
-NODE_ENV="development"
-
-# Feature Flags
-NEXT_PUBLIC_ENABLE_RICH_TEXT_EDITOR=true
-NEXT_PUBLIC_ENABLE_GRAPH_VISUALIZATION=true
-NEXT_PUBLIC_ENABLE_ANALYTICS=false
-```
+| Variable | Purpose | Sensitive? |
+|----------|---------|------------|
+| `DATABASE_URL` | PostgreSQL connection (port 6543 for serverless) | Yes |
+| `DIRECT_URL` | PostgreSQL session connection (port 5432 for migrations) | Yes |
+| `NEXTAUTH_URL` | Base URL for auth callbacks and email links | No |
+| `NEXTAUTH_SECRET` | JWT signing key | Yes |
+| `EMAIL_PROVIDER` | `"resend"` or `"console"` | No |
+| `RESEND_API_KEY` | Resend API key | Yes |
+| `EMAIL_FROM` | Sender email (must match Resend verified domain) | No |
+| `EMAIL_FROM_NAME` | Sender display name | No |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL for file storage | No |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public/anon key | No |
+| `ADMIN_EMAILS` | Auto-admin on registration (comma-separated) | No |
+| `SUPER_ADMIN_EMAIL` | Primary admin with elevated privileges | No |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking DSN (exposed to browser) | No |
+| `SENTRY_ORG` | Sentry org slug | No |
+| `SENTRY_PROJECT` | Sentry project slug | No |
+| `SENTRY_AUTH_TOKEN` | Sentry auth token for source map uploads | Yes |
+| `CANVAS_BASE_URL` | Canvas LMS instance URL | No |
+| `CANVAS_API_TOKEN` | Canvas personal access token | Yes |
+| `CANVAS_ALLOWED_COURSE_IDS` | Safety guard for Canvas sync targets | No |
+| `NEXT_TELEMETRY_DISABLED` | Disable Next.js telemetry | No |
 
 **Important Notes:**
 - **Testing is done on Vercel** (bcs-web2.vercel.app), NOT locally
-- **Port 6543**: Use for Vercel (serverless) - transaction pooler
-- **Port 5432**: Use for local dev (if running locally) - session pooler
-- See `/.env.development.example` and `/.env.production.example` for templates
+- **Port 6543**: Use for `DATABASE_URL` on Vercel (transaction pooler for serverless)
+- **Port 5432**: Use for `DIRECT_URL` (session pooler, required for migrations)
+- **Sentry**: The build uploads source maps using `SENTRY_AUTH_TOKEN`. If this var is missing, source maps won't be uploaded but the build still succeeds.
+- **NEXTAUTH_URL**: Must be correct for email verification and password reset links to work
 
 ---
 
@@ -351,73 +384,28 @@ git push origin --delete feature/add-new-feature
 
 ## 🌐 Domain Migration
 
-### Current State (January 2025)
+### Current State (May 2026)
 
-- **Domain:** `brainandcognitivescience.org` and `.com`
+- **Domain:** `brainandcognitivescience.com` (production)
 - **Registered with:** GoDaddy (university account)
-- **Currently pointing to:** Your personal Vercel account
+- **Pointing to:** University Vercel account
 - **Nameservers:** Vercel nameservers (`ns1.vercel-dns.com`, `ns2.vercel-dns.com`)
+- **Production URL:** `https://www.brainandcognitivescience.com`
+- **Dev URL:** `https://bcs-web2.vercel.app` (unaffected by production domain)
 
-### Migration Plan: Move Domain to University Vercel
+### If Domain Needs to Move to a New Vercel Account
 
-#### Phase 1: Preparation
+If the production Vercel project ever needs to move to a different account:
 
-**University Vercel Setup:**
-1. University creates or logs into Vercel account
-2. Imports project from professor's GitHub repository
-3. Configures environment variables (production values)
-4. Verifies deployment works at temporary URL
-
-#### Phase 2: Remove Domain from Personal Vercel
-
-**In your personal Vercel account:**
-1. Go to: Project → Settings → Domains
-2. Remove these domains:
-   - `brainandcognitivescience.org`
-   - `www.brainandcognitivescience.org`
-   - `brainandcognitivescience.com`
-   - `www.brainandcognitivescience.com`
-
-**Expected downtime:** 5-30 minutes
-
-#### Phase 3: Add Domain to University Vercel
-
-**In university Vercel account:**
-1. Go to: Project → Settings → Domains
-2. Add domains (one at a time):
-   - `brainandcognitivescience.org`
-   - `www.brainandcognitivescience.org`
-   - `brainandcognitivescience.com`
-   - `www.brainandcognitivescience.com`
-
-**Verification:**
-- Nameservers already point to Vercel ✅
-- Should show "Valid Configuration" within minutes
-- SSL certificates issued automatically
-
-#### Phase 4: Reconfigure DNS Records
-
-**Resend DNS records need to be re-added:**
-
-1. In university Vercel: Domains → `brainandcognitivescience.org` → Edit
-2. Add 3 Resend DNS records:
+1. **Remove domains** from old Vercel: Project → Settings → Domains → remove all custom domains
+2. **Add domains** in new Vercel: Project → Settings → Domains → add `brainandcognitivescience.com` and `www.brainandcognitivescience.com`
+3. **Re-add Resend DNS records** in new Vercel for email to work:
    - TXT: `@` → `resend-domain-verify=...`
    - MX: `@` → `feedback-smtp.us-east-1.amazonses.com` (Priority: 10)
    - TXT: `resend._domainkey` → `k=rsa; p=...`
-
-**Get these values from:** University Resend account → Domains → `brainandcognitivescience.org`
-
-#### Phase 5: Testing
-
-**After migration:**
-1. Visit: `https://brainandcognitivescience.org` → Should load production site
-2. Test: Registration and email verification
-3. Test: Login and authentication
-4. Test: All major features
-
-**Your dev site:**
-- Continues to work at: `https://bcs-web2.vercel.app`
-- Completely unaffected by production domain migration
+   - Get values from: Resend → Domains → `brainandcognitivescience.org`
+4. **Expected downtime:** 5–30 minutes (Vercel nameservers are already set)
+5. **Test:** Registration, email verification, login, and all major features
 
 ---
 
@@ -469,9 +457,10 @@ git push origin --delete feature/add-new-feature
    ```bash
    # Vercel runs during deployment:
    npm run vercel:build
-   # which runs: prisma generate && prisma migrate deploy && next build
+   # which runs: prisma generate && prisma migrate deploy && seed:achievements && seed:playgrounds && next build
 
    # Migration applies to production database automatically
+   # Achievement definitions and playground templates are seeded on every deploy
    ```
 
 **❌ NEVER use `npx prisma db push` - it causes migration drift!**
@@ -510,9 +499,9 @@ npx supabase db dump > backup.sql  # If using Supabase CLI
 
 **Build Settings:**
 - Framework: Next.js (auto-detected)
-- Build Command: `npm run build`
+- Build Command: `npm run vercel:build` (includes migrations + seeding)
 - Output Directory: `.next`
-- Install Command: `npm install`
+- Install Command: `npm run vercel:install` (uses --legacy-peer-deps)
 
 ### University Vercel Configuration
 
@@ -543,7 +532,7 @@ Push to your fork → Personal Vercel deploys → bcs-web2.vercel.app updated
 
 **Production:**
 ```
-PR merged to professor's repo → University Vercel deploys → brainandcognitivescience.org updated
+PR merged to professor's repo → University Vercel deploys → brainandcognitivescience.com updated
 ```
 
 ---
@@ -601,7 +590,7 @@ Tracked in personal Resend dashboard
 
 **Production:**
 ```
-User registers on brainandcognitivescience.org
+User registers on brainandcognitivescience.com
   ↓
 Next.js sends email via Resend API (university key)
   ↓
@@ -740,9 +729,9 @@ echo $DATABASE_URL
 # Check what changed
 git log upstream/main --oneline -10
 
-# If migration needed
+# If schema changed — apply migrations (NEVER use db push)
 npx prisma generate
-npx prisma db push
+npx prisma migrate dev
 
 # If dependencies changed
 npm install
@@ -839,7 +828,7 @@ npx prisma studio
 - Resend: https://resend.com/emails
 
 **Production:**
-- Site: https://brainandcognitivescience.org
+- Site: https://www.brainandcognitivescience.com
 - Vercel: https://vercel.com/[university]/bcs-etextbook
 - Supabase: https://supabase.com/dashboard/project/[univ-project-id]
 - Resend: https://resend.com/emails
@@ -859,8 +848,14 @@ npx prisma studio
 
 - **This Guide**: Dev/prod workflow
 - **CLAUDE.md**: Project overview and commands
+- **DATABASE_MIGRATION_GUIDE.md**: Prisma migration workflow (critical)
 - **EMAIL_SETUP_GUIDE.md**: Email configuration
+- **SENTRY_SETUP_GUIDE.md**: Error tracking setup
+- **CANVAS_LMS_INTEGRATION_GUIDE.md**: Canvas grade sync
+- **ARCHITECTURE_GUIDE.md**: System architecture overview
 - **TESTING_CHECKLIST.md**: Testing procedures
+
+All guides are also browseable at `/guide` on the website (faculty login required for most).
 
 ---
 
@@ -896,7 +891,6 @@ npx prisma studio
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: January 2025
+**Document Version**: 2.0
+**Last Updated**: May 2026
 **Maintained By**: Development Team
-**Next Review**: March 2025

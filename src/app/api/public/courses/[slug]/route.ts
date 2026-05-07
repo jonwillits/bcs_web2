@@ -95,7 +95,9 @@ export async function GET(
       },
     }
 
-    return NextResponse.json({ course: transformedCourse })
+    const res = NextResponse.json({ course: transformedCourse })
+    res.headers.set('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300')
+    return res
   } catch (error) {
     console.error('Error fetching public course by slug:', error)
     return NextResponse.json(

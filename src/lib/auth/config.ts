@@ -2,6 +2,7 @@ import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../db'
+import { checkRateLimit } from '../rate-limit'
 
 export const authConfig = {
   trustHost: true, // Required for Vercel deployment
@@ -15,6 +16,13 @@ export const authConfig = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null
+        }
+
+        // Rate limit: 10 login attempts per email per 15 minutes
+        const email = (credentials.email as string).toLowerCase()
+        const { allowed } = checkRateLimit(email, 'login', 10, 15 * 60 * 1000)
+        if (!allowed) {
+          throw new Error('Too many login attempts. Please try again in a few minutes.')
         }
 
         const user = await prisma.users.findUnique({

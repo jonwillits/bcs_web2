@@ -38,7 +38,7 @@ export function QuizExportButton({ courseId, groupId = 'all' }: QuizExportButton
   const [csvDialogOpen, setCsvDialogOpen] = useState(false);
   const [csvSheet, setCsvSheet] = useState<CsvSheet>('gradebook');
 
-  const download = async (format: 'xlsx' | 'csv', sheet?: CsvSheet) => {
+  const download = async (format: 'xlsx' | 'csv' | 'canvas', sheet?: CsvSheet) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ format });
@@ -108,6 +108,14 @@ export function QuizExportButton({ courseId, groupId = 'all' }: QuizExportButton
               <span className="font-medium">CSV</span>
               <span className="text-xs text-muted-foreground">
                 Gradebook or quiz breakdown (pick one)
+              </span>
+            </div>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => download('canvas')}>
+            <div className="flex flex-col">
+              <span className="font-medium">Canvas CSV</span>
+              <span className="text-xs text-muted-foreground">
+                Import-ready for Canvas LMS gradebook
               </span>
             </div>
           </DropdownMenuItem>

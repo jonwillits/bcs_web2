@@ -8,6 +8,14 @@ const forgotPasswordSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 5 forgot-password requests per IP per 15 minutes
+  const { checkRateLimit, getClientIp, rateLimitResponse } = await import('@/lib/rate-limit')
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = checkRateLimit(ip, 'forgot-password', 5, 15 * 60 * 1000)
+  if (!allowed) {
+    return rateLimitResponse(retryAfterMs!)
+  }
+
   try {
     const body = await request.json();
     const { email } = forgotPasswordSchema.parse(body);

@@ -67,9 +67,13 @@ const generateEmailTemplate = (title: string, content: string, actionUrl?: strin
   `;
 };
 
-// Console email sending (for development)
+// Console email sending (for development only)
 const sendConsoleEmail = async (emailData: EmailData): Promise<void> => {
-  console.log('\n📧 EMAIL SENT (Development Mode)');
+  if (process.env.NODE_ENV !== 'development') {
+    console.log('Email sent (console mode) to recipient');
+    return;
+  }
+  console.log('\n EMAIL SENT (Development Mode)');
   console.log('=====================================');
   console.log(`To: ${emailData.to}`);
   console.log(`Subject: ${emailData.subject}`);

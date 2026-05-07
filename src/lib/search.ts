@@ -41,14 +41,6 @@ export async function performUniversalSearch(
   const searchTerm = query.trim().toLowerCase()
   const validLimit = Math.min(Math.max(1, limit), 50) // Max 50 results per category
 
-  // Debug logging
-  console.log('🔍 Search Query:', {
-    original: query,
-    processed: searchTerm,
-    category: category || 'all',
-    limit: validLimit
-  })
-
   const results = await withDatabaseRetry(async () => {
     const [courses, modules, people] = await Promise.all([
       // Search Courses (only published)
@@ -156,14 +148,6 @@ export async function performUniversalSearch(
 
     return { courses, modules, people }
   }, { maxAttempts: 3, baseDelayMs: 500 })
-
-  // Debug logging for results
-  console.log('📊 Search Results:', {
-    coursesFound: results.courses.length,
-    modulesFound: results.modules.length,
-    peopleFound: results.people.length,
-    peopleNames: results.people.map(p => ({ name: p.name, email: p.email }))
-  })
 
   // Calculate totals
   const totals = {

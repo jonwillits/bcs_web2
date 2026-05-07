@@ -6,16 +6,111 @@ import { withDatabaseRetry } from '@/lib/retry';
 
 async function getCourse(slug: string) {
   try {
-    const response = await fetch(`${process.env.NEXTAUTH_URL}/api/courses/by-slug/${slug}`, {
-      cache: 'no-store',
-    });
+    const course = await withDatabaseRetry(async () => {
+      return await prisma.courses.findFirst({
+        where: {
+          slug,
+          status: 'published',
+        },
+        include: {
+          users: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          course_modules: {
+            include: {
+              modules: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  description: true,
+                  content: true,
+                  status: true,
+                  parent_module_id: true,
+                  sort_order: true,
+                  created_at: true,
+                  updated_at: true,
+                  module_media: {
+                    include: {
+                      media_files: true,
+                    },
+                    orderBy: {
+                      created_at: 'desc',
+                    },
+                  },
+                },
+              },
+            },
+            where: {
+              modules: {
+                status: 'published',
+              },
+            },
+            orderBy: {
+              sort_order: 'asc',
+            },
+          },
+          _count: {
+            select: {
+              course_modules: true,
+            },
+          },
+        },
+      })
+    })
 
-    if (!response.ok) {
+    if (!course) {
       return null;
     }
 
-    const data = await response.json();
-    return data.course;
+    return {
+      id: course.id,
+      title: course.title,
+      slug: course.slug,
+      description: course.description,
+      featured: course.featured || false,
+      status: course.status,
+      createdAt: course.created_at,
+      updatedAt: course.updated_at,
+      author: {
+        name: course.users.name,
+        email: course.users.email,
+      },
+      courseModules: course.course_modules.map(cm => ({
+        sortOrder: cm.sort_order,
+        customTitle: cm.custom_title,
+        customNotes: cm.custom_notes,
+        customContext: cm.custom_context,
+        customObjectives: cm.custom_objectives,
+        module: {
+          id: cm.modules.id,
+          title: cm.modules.title,
+          slug: cm.modules.slug,
+          description: cm.modules.description,
+          content: cm.modules.content,
+          status: cm.modules.status,
+          parentModuleId: cm.modules.parent_module_id,
+          sortOrder: cm.modules.sort_order,
+          createdAt: cm.modules.created_at,
+          updatedAt: cm.modules.updated_at,
+          resources: cm.modules.module_media.map(mm => ({
+            id: mm.media_files.id,
+            name: mm.media_files.original_name,
+            filename: mm.media_files.filename,
+            size: Number(mm.media_files.file_size),
+            mimeType: mm.media_files.mime_type,
+            url: mm.media_files.storage_path,
+            uploadedAt: mm.created_at,
+          })),
+        }
+      })),
+      _count: {
+        courseModules: course._count.course_modules,
+      },
+    };
   } catch (error) {
     console.error('Error fetching course:', error);
     return null;

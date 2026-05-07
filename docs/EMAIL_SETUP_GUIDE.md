@@ -63,12 +63,11 @@ EMAIL_FROM_NAME="BCS E-Learning"
 
 ---
 
-### Step 5: Restart Your Dev Server
+### Step 5: Redeploy on Vercel
 
-```bash
-# Stop current server (Ctrl+C)
-npm run dev
-```
+After adding the environment variables, **redeploy** your Vercel project (push a commit or click Redeploy in the Vercel dashboard). The new env vars take effect on the next deployment.
+
+> **Note:** `NEXTAUTH_URL` must also be set correctly — email verification and password reset links use it to build the callback URL. If `NEXTAUTH_URL` is wrong, email links will point to the wrong domain.
 
 ---
 
@@ -76,7 +75,7 @@ npm run dev
 
 ### Test 1: Register a New User
 
-1. Go to: `http://localhost:3000/auth/register`
+1. Go to: `https://bcs-web2.vercel.app/auth/register` (or your production URL)
 2. Fill in the registration form with **your real email**
 3. Click "Create Account"
 4. Check your email inbox (and spam folder!)
@@ -84,7 +83,7 @@ npm run dev
 
 ### Test 2: Password Reset
 
-1. Go to: `http://localhost:3000/auth/forgot-password`
+1. Go to: `https://bcs-web2.vercel.app/auth/forgot-password` (or your production URL)
 2. Enter your email
 3. Click "Send Reset Link"
 4. Check your email for the password reset link

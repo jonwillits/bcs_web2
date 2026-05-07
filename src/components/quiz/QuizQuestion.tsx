@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Check } from 'lucide-react';
 import Image from 'next/image';
 
 interface QuestionOption {
@@ -121,16 +122,24 @@ export function QuizQuestion({
                 disabled ? 'cursor-default' : 'cursor-pointer'
               }`}
             >
-              {/* Radio/Checkbox indicator */}
-              <div className={`shrink-0 w-4 h-4 ${isMulti ? 'rounded-sm' : 'rounded-full'} border-2 flex items-center justify-center ${
-                isSelected
-                  ? 'bg-neural-primary border-neural-primary'
-                  : 'border-gray-300'
-              }`}>
-                {isSelected && (
-                  <div className={`${isMulti ? 'w-2 h-2 rounded-sm' : 'w-1.5 h-1.5 rounded-full'} bg-white`} />
-                )}
-              </div>
+              {/* Radio (single) / Checkbox (multi) indicator */}
+              {isMulti ? (
+                <div className={`shrink-0 w-4 h-4 rounded-[3px] border-2 flex items-center justify-center ${
+                  isSelected
+                    ? 'bg-neural-primary border-neural-primary'
+                    : 'border-gray-300'
+                }`}>
+                  {isSelected && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                </div>
+              ) : (
+                <div className={`shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                  isSelected
+                    ? 'bg-neural-primary border-neural-primary'
+                    : 'border-gray-300'
+                }`}>
+                  {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </div>
+              )}
 
               <span className="flex-1">{opt.text}</span>
 

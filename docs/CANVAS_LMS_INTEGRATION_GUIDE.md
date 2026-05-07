@@ -4,6 +4,8 @@ This guide walks you through syncing quiz grades from the BCS E-Learning Platfor
 
 For general information about course groups and grade exports, see the [User Guide](/guide) sections on Course Groups and Gradebook Export.
 
+> **Alternative: Canvas CSV Export** — If you prefer to upload grades manually instead of using the API sync, you can download a Canvas-compatible CSV from the **Export Grades** > **Canvas CSV** option on the analytics dashboard. This generates a file you can import directly into the Canvas gradebook via Canvas's built-in Import feature. No API token or environment setup is required for the CSV approach. See the [User Guide](/guide) Gradebook Export section for details.
+
 ---
 
 ## Table of Contents
@@ -20,9 +22,10 @@ For general information about course groups and grade exports, see the [User Gui
 10. [What Gets Created in Canvas](#10-what-gets-created-in-canvas)
 11. [Student Matching](#11-student-matching)
 12. [Semester Workflow](#12-semester-workflow)
-13. [Troubleshooting](#13-troubleshooting)
-14. [FAQ](#14-faq)
-15. [Security and Safety](#15-security-and-safety)
+13. [Alternative: Canvas CSV Import](#13-alternative-canvas-csv-import)
+14. [Troubleshooting](#14-troubleshooting)
+15. [FAQ](#15-faq)
+16. [Security and Safety](#16-security-and-safety)
 
 ---
 
@@ -282,7 +285,85 @@ Repeat the process with a new group and new Canvas course ID. The same BCS cours
 
 ---
 
-## 13. Troubleshooting
+## 13. Alternative: Canvas CSV Import
+
+If you do not have a Canvas API token configured, or prefer to upload grades manually, you can use the **Canvas CSV** export option. This generates a CSV file formatted to match Canvas's gradebook import format — no API token or environment setup required.
+
+### When to Use CSV Import Instead of API Sync
+
+| Use CSV Import when... | Use API Sync when... |
+|---|---|
+| No Canvas API token is configured on the server | API token is configured and working |
+| You want to review grades before they appear in Canvas | You want one-click grade pushing |
+| Your institution restricts API token generation | API access is available |
+| You need to import grades into a Canvas course not in the allowlist | The Canvas course is in the allowlist |
+
+### How to Export a Canvas CSV
+
+1. Go to your **Faculty Dashboard** and open the course's **Analytics** page
+2. (Optional) Select a **group** from the picker to scope the export to a specific set of students — recommended so the file matches a specific Canvas course section
+3. Click **Export Grades** and select **Canvas CSV**
+4. A file named `canvas-import-<course>-<date>.csv` will download
+
+### What the CSV Contains
+
+The CSV matches Canvas's own gradebook export format:
+
+| Column | Description |
+|---|---|
+| **Student** | Student's full name |
+| **ID** | Left blank (Canvas matches by SIS Login ID instead) |
+| **SIS User ID** | Student's email address |
+| **SIS Login ID** | Student's email address (Canvas uses this to match students) |
+| **Integration ID** | Left blank |
+| **Section** | Left blank |
+| *Assignment columns* | One column per quiz, named "Module Title — Quiz Title" (e.g., "Python Programming Basics — Mastery Check") |
+
+The second row is a **Points Possible** row that tells Canvas the point value of each assignment. Each student row contains their **best score** (in points) for each quiz, with blank cells for quizzes they have not attempted.
+
+### How to Import into Canvas
+
+1. In Canvas, go to your course and click **Grades** in the left sidebar
+2. Click the **Import** button in the top-right corner of the gradebook
+3. Click **Choose File** and select the downloaded CSV
+4. Canvas will show a preview of the import with the changes it will make:
+   - For quiz columns that do not match an existing Canvas assignment, Canvas will **create new assignments** automatically
+   - For quiz columns that match an existing assignment name, Canvas will **update the grades**
+   - Students are matched by their **SIS Login ID** (email address)
+5. Review the preview and click **Save Changes**
+6. The grades will appear in the Canvas gradebook
+
+### Important Notes
+
+- **New assignments are created automatically.** If Canvas does not recognize a quiz column name, it creates a new assignment with that name and the point value from the Points Possible row.
+- **Existing assignments are updated.** If the column name matches an existing assignment exactly (including the em dash —), Canvas updates the grades rather than creating a duplicate.
+- **Student matching uses email.** Canvas matches students by the SIS Login ID column. If a student's email in BCS does not match their SIS Login ID in Canvas, their row will be skipped. Canvas may also fall back to **name matching** if the email does not match — be careful, as this can cause incorrect grade assignments if two students share a name.
+- **Blank cells are ignored.** If a student has not attempted a quiz, the cell is left blank and Canvas does not post a grade for that assignment.
+- **You can re-import safely.** Importing the same CSV again (or an updated one) overwrites previous grades with the new values. Canvas does not create duplicate assignments if the column names match.
+- **Group filtering is recommended.** If you select a group before exporting, only students in that group are included. This keeps the file focused on one Canvas course section.
+
+### CSV Format Example
+
+Here is what the CSV looks like when opened in a text editor:
+
+```
+Student,ID,SIS User ID,SIS Login ID,Integration ID,Section,Module Title — Mastery Check,Module Title — Assessment
+    Points Possible,,,,,,4,3
+Ritik Hariani,,ritikh2@illinois.edu,ritikh2@illinois.edu,,,4,3
+Jane Doe,,jdoe@illinois.edu,jdoe@illinois.edu,,,3,
+```
+
+And when opened in Excel or Google Sheets:
+
+| Student | ID | SIS User ID | SIS Login ID | Integration ID | Section | Module Title — Mastery Check | Module Title — Assessment |
+|---|---|---|---|---|---|---|---|
+| Points Possible | | | | | | 4 | 3 |
+| Ritik Hariani | | ritikh2@illinois.edu | ritikh2@illinois.edu | | | 4 | 3 |
+| Jane Doe | | jdoe@illinois.edu | jdoe@illinois.edu | | | 3 | |
+
+---
+
+## 14. Troubleshooting
 
 ### "Canvas API is not configured"
 
@@ -333,7 +414,7 @@ Make sure:
 
 ---
 
-## 14. FAQ
+## 15. FAQ
 
 **Q: Does syncing delete anything in Canvas?**
 
@@ -373,7 +454,7 @@ Nothing bad. Existing assignments are reused, and grades are updated with the la
 
 ---
 
-## 15. Security and Safety
+## 16. Security and Safety
 
 ### Your API Token
 

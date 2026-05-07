@@ -6,207 +6,222 @@ import { checkAchievementsAfterModuleCompletion } from '@/lib/achievements/check
 
 /**
  * Helper: Mark a module as complete in a specific context (course or standalone)
+ * Uses $transaction + Promise.all to batch queries and reduce round-trips.
  */
 async function markModuleComplete(
   userId: string,
   moduleId: string,
   courseId: string | null
 ) {
-  return await withDatabaseRetry(async () => {
-    // Get module data
-    const moduleData = await prisma.modules.findUnique({
-      where: { id: moduleId },
-      select: {
-        id: true,
-        title: true,
-        xp_reward: true,
-        quest_type: true,
-        difficulty_level: true
-      }
-    });
-
-    if (!moduleData) {
-      return { error: 'Module not found', status: 404 };
-    }
-
-    // Upsert progress record
-    const now = new Date();
-    await prisma.module_progress.upsert({
-      where: {
-        user_id_module_id_course_id: {
-          user_id: userId,
-          module_id: moduleId,
-          course_id: courseId
-        }
-      },
-      update: {
-        status: 'completed',
-        completed_at: now,
-        xp_earned: moduleData.xp_reward,
-        updated_at: now
-      },
-      create: {
-        user_id: userId,
-        module_id: moduleId,
-        course_id: courseId,
-        status: 'completed',
-        completed_at: now,
-        started_at: now,
-        xp_earned: moduleData.xp_reward
-      }
-    });
-
-    // Update user gamification stats (XP and level)
-    const userStats = await prisma.user_gamification_stats.upsert({
-      where: { user_id: userId },
-      update: {
-        total_xp: { increment: moduleData.xp_reward },
-        last_active_date: now
-      },
-      create: {
-        user_id: userId,
-        total_xp: moduleData.xp_reward,
-        level: 1,
-        last_active_date: now
-      }
-    });
-
-    // Calculate new level
-    const newLevel = Math.floor(Math.sqrt(userStats.total_xp / 100));
-    const leveledUp = newLevel > userStats.level;
-    if (leveledUp) {
-      await prisma.user_gamification_stats.update({
-        where: { user_id: userId },
-        data: { level: newLevel }
-      });
-    }
-
-    // Update learning session for today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    await prisma.learning_sessions.upsert({
-      where: {
-        user_id_date: {
-          user_id: userId,
-          date: today
-        }
-      },
-      update: {
-        modules_completed: { increment: 1 },
-        last_activity: now
-      },
-      create: {
-        user_id: userId,
-        date: today,
-        modules_completed: 1,
-        first_activity: now,
-        last_activity: now
-      }
-    });
-
-    // Course-specific tracking (only if courseId provided)
-    let completionPct = 0;
-    let modulesCompleted = 0;
-    let totalModules = 0;
-    let newlyUnlocked: Array<{ id: string; title: string }> = [];
-    let achievements: Array<{ id: string; title: string; icon: string }> = [];
-
-    if (courseId) {
-      // Update course tracking
-      const allProgress = await prisma.module_progress.findMany({
-        where: { user_id: userId, course_id: courseId }
-      });
-
-      const completedCount = allProgress.filter(p => p.status === 'completed').length;
-
-      const courseModules = await prisma.course_modules.findMany({
-        where: { course_id: courseId },
-        select: { module_id: true }
-      });
-
-      totalModules = courseModules.length;
-      modulesCompleted = completedCount;
-      completionPct = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
-
-      await prisma.course_tracking.update({
-        where: {
-          course_id_user_id: { course_id: courseId, user_id: userId }
-        },
-        data: {
-          modules_completed: completedCount,
-          modules_total: totalModules,
-          completion_pct: completionPct,
-          last_accessed: now
+  // Step 1: Run the core completion logic inside a transaction
+  const txResult = await withDatabaseRetry(async () => {
+    return await prisma.$transaction(async (tx) => {
+      // Query 1: Get module data (must be first — need xp_reward for subsequent queries)
+      const moduleData = await tx.modules.findUnique({
+        where: { id: moduleId },
+        select: {
+          id: true,
+          title: true,
+          xp_reward: true,
+          quest_type: true,
+          difficulty_level: true
         }
       });
 
-      // Find newly unlocked modules
-      const allModulesInCourse = await prisma.course_modules.findMany({
-        where: { course_id: courseId },
-        include: {
-          modules: {
-            select: {
-              id: true,
-              title: true,
-              prerequisite_module_ids: true
+      if (!moduleData) {
+        return { error: 'Module not found' as const, status: 404 };
+      }
+
+      const now = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Queries 2-4 (parallel): upsert progress + gamification stats + learning session
+      const [, userStats] = await Promise.all([
+        tx.module_progress.upsert({
+          where: {
+            user_id_module_id_course_id: {
+              user_id: userId,
+              module_id: moduleId,
+              course_id: courseId
             }
+          },
+          update: {
+            status: 'completed',
+            completed_at: now,
+            xp_earned: moduleData.xp_reward,
+            updated_at: now
+          },
+          create: {
+            user_id: userId,
+            module_id: moduleId,
+            course_id: courseId,
+            status: 'completed',
+            completed_at: now,
+            started_at: now,
+            xp_earned: moduleData.xp_reward
           }
-        }
-      });
+        }),
+        tx.user_gamification_stats.upsert({
+          where: { user_id: userId },
+          update: {
+            total_xp: { increment: moduleData.xp_reward },
+            last_active_date: now
+          },
+          create: {
+            user_id: userId,
+            total_xp: moduleData.xp_reward,
+            level: 1,
+            last_active_date: now
+          }
+        }),
+        tx.learning_sessions.upsert({
+          where: {
+            user_id_date: {
+              user_id: userId,
+              date: today
+            }
+          },
+          update: {
+            modules_completed: { increment: 1 },
+            last_activity: now
+          },
+          create: {
+            user_id: userId,
+            date: today,
+            modules_completed: 1,
+            first_activity: now,
+            last_activity: now
+          }
+        }),
+      ]);
 
-      const completedModuleIds = new Set(
-        allProgress.filter(p => p.status === 'completed').map(p => p.module_id)
-      );
+      // Query 5 (conditional): Level-up check
+      const newLevel = Math.floor(Math.sqrt(userStats.total_xp / 100));
+      const leveledUp = newLevel > userStats.level;
+      if (leveledUp) {
+        await tx.user_gamification_stats.update({
+          where: { user_id: userId },
+          data: { level: newLevel }
+        });
+      }
 
-      newlyUnlocked = allModulesInCourse
-        .map(cm => cm.modules)
-        .filter(m => {
-          const prereqs = m.prerequisite_module_ids || [];
-          if (prereqs.length === 0) return false;
-          if (!prereqs.includes(moduleId)) return false;
-          if (completedModuleIds.has(m.id)) return false;
-          return prereqs.every(prereqId => completedModuleIds.has(prereqId));
-        })
-        .map(m => ({ id: m.id, title: m.title }));
+      // Course-specific tracking
+      let completionPct = 0;
+      let modulesCompleted = 0;
+      let totalModules = 0;
+      let newlyUnlocked: Array<{ id: string; title: string }> = [];
 
-    }
+      if (courseId) {
+        // Queries 6-7 (parallel): get all progress + all course modules (combined query with prereqs)
+        const [allProgress, allCourseModules] = await Promise.all([
+          tx.module_progress.findMany({
+            where: { user_id: userId, course_id: courseId }
+          }),
+          tx.course_modules.findMany({
+            where: { course_id: courseId },
+            include: {
+              modules: {
+                select: {
+                  id: true,
+                  title: true,
+                  prerequisite_module_ids: true
+                }
+              }
+            }
+          }),
+        ]);
 
-    // Check for achievements using the achievement system
-    const achievementResult = await checkAchievementsAfterModuleCompletion(
-      userId,
-      moduleId,
-      courseId
-    );
+        const completedCount = allProgress.filter(p => p.status === 'completed').length;
+        totalModules = allCourseModules.length;
+        modulesCompleted = completedCount;
+        completionPct = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
 
-    // Add achievement XP to total XP
-    const totalXPWithAchievements = userStats.total_xp + moduleData.xp_reward + achievementResult.totalXPAwarded;
+        // Query 8: Update course tracking
+        await tx.course_tracking.update({
+          where: {
+            course_id_user_id: { course_id: courseId, user_id: userId }
+          },
+          data: {
+            modules_completed: completedCount,
+            modules_total: totalModules,
+            completion_pct: completionPct,
+            last_accessed: now
+          }
+        });
 
-    // Recalculate level if achievement XP was awarded
-    let finalLevel = leveledUp ? newLevel : userStats.level;
-    if (achievementResult.totalXPAwarded > 0) {
-      finalLevel = Math.floor(Math.sqrt(totalXPWithAchievements / 100));
-      if (finalLevel > userStats.level) {
+        // Compute newly unlocked modules (no DB query, just logic on fetched data)
+        const completedModuleIds = new Set(
+          allProgress.filter(p => p.status === 'completed').map(p => p.module_id)
+        );
+
+        newlyUnlocked = allCourseModules
+          .map(cm => cm.modules)
+          .filter(m => {
+            const prereqs = m.prerequisite_module_ids || [];
+            if (prereqs.length === 0) return false;
+            if (!prereqs.includes(moduleId)) return false;
+            if (completedModuleIds.has(m.id)) return false;
+            return prereqs.every(prereqId => completedModuleIds.has(prereqId));
+          })
+          .map(m => ({ id: m.id, title: m.title }));
+      }
+
+      return {
+        success: true as const,
+        moduleData,
+        userStats,
+        newLevel,
+        leveledUp,
+        completionPct,
+        modulesCompleted,
+        totalModules,
+        newlyUnlocked,
+      };
+    });
+  });
+
+  // Early return on error
+  if ('error' in txResult) {
+    return txResult;
+  }
+
+  // Step 2: Achievement check OUTSIDE transaction (has its own retry logic + many queries)
+  const achievementResult = await checkAchievementsAfterModuleCompletion(
+    userId,
+    moduleId,
+    courseId
+  );
+
+  // Step 3: Update level if achievement XP was awarded
+  // userStats.total_xp already includes xp_reward (from the upsert increment)
+  const totalXPWithAchievements = txResult.userStats.total_xp + achievementResult.totalXPAwarded;
+  let finalLevel = txResult.leveledUp ? txResult.newLevel : txResult.userStats.level;
+
+  if (achievementResult.totalXPAwarded > 0) {
+    finalLevel = Math.floor(Math.sqrt(totalXPWithAchievements / 100));
+    if (finalLevel > txResult.userStats.level) {
+      await withDatabaseRetry(async () => {
         await prisma.user_gamification_stats.update({
           where: { user_id: userId },
           data: { level: finalLevel }
         });
-      }
+      });
     }
+  }
 
-    return {
-      success: true,
-      xpAwarded: moduleData.xp_reward,
-      totalXP: totalXPWithAchievements,
-      level: finalLevel,
-      leveledUp: finalLevel > userStats.level,
-      newlyUnlockedModules: newlyUnlocked,
-      completionPct,
-      modulesCompleted,
-      totalModules,
-      achievements: achievementResult.newAchievements
-    };
-  });
+  return {
+    success: true,
+    xpAwarded: txResult.moduleData.xp_reward,
+    totalXP: totalXPWithAchievements,
+    level: finalLevel,
+    leveledUp: finalLevel > txResult.userStats.level,
+    newlyUnlockedModules: txResult.newlyUnlocked,
+    completionPct: txResult.completionPct,
+    modulesCompleted: txResult.modulesCompleted,
+    totalModules: txResult.totalModules,
+    achievements: achievementResult.newAchievements
+  };
 }
 
 /**
@@ -310,8 +325,13 @@ export async function POST(request: Request) {
     } else if (unlockCondition === 'assessment' && assessmentQuiz) {
       blocked = !(await checkPassed(assessmentQuiz.id));
     } else if (unlockCondition === 'both') {
-      const masteryOk = !masteryQuiz || !!(await checkPassed(masteryQuiz.id));
-      const assessmentOk = !assessmentQuiz || !!(await checkPassed(assessmentQuiz.id));
+      // Batch both checks in parallel
+      const [masteryResult, assessmentResult] = await Promise.all([
+        masteryQuiz ? checkPassed(masteryQuiz.id) : Promise.resolve(true),
+        assessmentQuiz ? checkPassed(assessmentQuiz.id) : Promise.resolve(true),
+      ]);
+      const masteryOk = !masteryQuiz || !!masteryResult;
+      const assessmentOk = !assessmentQuiz || !!assessmentResult;
       blocked = !masteryOk || !assessmentOk;
     }
 

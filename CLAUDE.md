@@ -138,7 +138,7 @@ User roles: `student`, `faculty`, `pending_faculty`, `admin`
 ```
 src/
 ├── app/                          # Next.js 15 App Router
-│   ├── api/                      # API Routes (~65 endpoints)
+│   ├── api/                      # API Routes (~95 endpoints)
 │   │   ├── achievements/         # Achievement listing & user achievements
 │   │   ├── admin/                # User management, faculty requests, audit logs, analytics, content moderation
 │   │   ├── auth/                 # Authentication (login, register, verify-email, reset-password)
@@ -243,13 +243,15 @@ src/
 └── middleware.ts                  # NextAuth middleware (role-based route protection)
 ```
 
-### Database Schema (22 Models)
+### Database Schema (37 Models)
 
 **Core Content**: `users`, `courses`, `modules`, `course_modules`, `module_media`, `media_files`
+**Quizzes**: `question_banks`, `bank_questions`, `bank_question_options`, `question_sets`, `question_set_memberships`, `quizzes`, `quiz_blocks`, `quiz_attempts`, `quiz_attempt_answers`, `quiz_question_instances`, `quiz_response_events`
 **Playgrounds**: `playgrounds`, `playground_templates`, `playground_versions`
 **Collaboration**: `course_collaborators`, `module_collaborators`, `collaboration_activity`
 **Tracking**: `course_tracking`, `module_progress`, `learning_sessions`
 **Gamification**: `achievements`, `user_achievements`, `user_gamification_stats`
+**Groups & Canvas**: `course_groups`, `course_group_memberships`, `canvas_assignment_mappings`, `canvas_sync_logs`
 **Admin/Auth**: `sessions`, `faculty_requests`, `admin_audit_logs`
 **Learning Paths**: `learning_paths`
 

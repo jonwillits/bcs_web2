@@ -132,11 +132,11 @@ npx prisma migrate dev --name add_user_bio_field
 # 4. Updates Prisma Client
 ```
 
-#### **3. Test Locally**
+#### **3. Test on Vercel**
 ```bash
-npm run dev
-# Test that changes work correctly
-# Check database with: npx prisma studio
+# Push to your fork — Vercel auto-deploys to bcs-web2.vercel.app
+# Test that changes work correctly on the deployed site
+# You can also inspect data with: npx prisma studio
 ```
 
 #### **4. Commit Migration File**
@@ -166,11 +166,12 @@ gh pr create --repo [UNIVERSITY]/bcs-etextbook-redesigned \
 
 #### **7. Professor Merges → Production Deployment**
 ```bash
-# University Vercel automatically:
-# 1. Runs: prisma generate
-# 2. Runs: prisma migrate deploy ← Applies YOUR migration to production DB
-# 3. Runs: next build
-# 4. Deploys to: brainandcognitivescience.org
+# University Vercel automatically runs `npm run vercel:build`:
+# 1. prisma generate
+# 2. prisma migrate deploy ← Applies YOUR migration to production DB
+# 3. seed:achievements && seed:playgrounds
+# 4. next build
+# 5. Deploys to: brainandcognitivescience.com
 ```
 
 ---
@@ -225,10 +226,11 @@ npx prisma migrate reset --force
 # Step 3: Created clean baseline migration
 npx prisma migrate dev --name baseline_complete_schema
 
-# Result: ✅ Single migration (20251118211250_baseline_complete_schema)
-#         ✅ Database and code in perfect sync
+# Result: ✅ Database and code in perfect sync
 #         ✅ Clean slate for future migrations
 ```
+
+Since then, 20+ migrations have been added on top of this baseline (quizzes, course groups, Canvas sync, gamification, etc.). The migration folder now contains the full history of schema changes.
 
 ---
 
@@ -296,7 +298,7 @@ Look for:
 ### Development Workflow:
 1. ✅ Edit `schema.prisma`
 2. ✅ Run `npx prisma migrate dev --name descriptive_name`
-3. ✅ Test locally with `npm run dev`
+3. ✅ Test on Vercel dev deployment
 4. ✅ Commit migration files
 5. ✅ Push to your fork
 6. ✅ Verify dev deployment works
@@ -352,5 +354,4 @@ echo $DATABASE_URL | grep -o '@[^:]*'
 
 ---
 
-**Status:** ✅ Database migration system is now fixed and production-safe.
-**Next Migration:** Will be `20251118XXXXXX_[descriptive_name]` when you make next schema change.
+**Status:** ✅ Database migration system is production-safe. All schema changes go through `prisma migrate dev` and deploy automatically via Vercel.

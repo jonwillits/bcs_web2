@@ -21,16 +21,14 @@ function getServerlessOptimizedUrl(): string {
     url.searchParams.set('sslmode', 'require')
     url.searchParams.set('connect_timeout', '10')
     
-    const finalUrl = url.toString()
-    console.log('Database URL configured for serverless with prepared statements disabled')
-    return finalUrl
+    return url.toString()
   } catch (error) {
-    console.error('Error parsing DATABASE_URL:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error parsing DATABASE_URL:', error)
+    }
     // Fallback to simple string concatenation if URL parsing fails
     const separator = baseUrl.includes('?') ? '&' : '?'
-    const fallbackUrl = `${baseUrl}${separator}prepared=false&connection_limit=1`
-    console.log('Using fallback URL construction method')
-    return fallbackUrl
+    return `${baseUrl}${separator}prepared=false&connection_limit=1`
   }
 }
 

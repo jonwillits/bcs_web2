@@ -58,6 +58,14 @@ export async function GET(request: NextRequest) {
 
 // Reset password (POST request)
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 reset-password attempts per IP per 15 minutes
+  const { checkRateLimit, getClientIp, rateLimitResponse } = await import('@/lib/rate-limit')
+  const ip = getClientIp(request)
+  const { allowed, retryAfterMs } = checkRateLimit(ip, 'reset-password', 10, 15 * 60 * 1000)
+  if (!allowed) {
+    return rateLimitResponse(retryAfterMs!)
+  }
+
   try {
     const body = await request.json();
     const { token, password } = resetPasswordSchema.parse(body);

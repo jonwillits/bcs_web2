@@ -17,13 +17,15 @@ export async function GET(request: NextRequest) {
 
     const { results, totals } = await performUniversalSearch(query, category, limit)
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       query: query.trim().toLowerCase(),
       category,
       results,
       totals,
     })
+    res.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60')
+    return res
   } catch (error) {
     console.error('Search API error:', error)
     return NextResponse.json(

@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
           where: {
             status: 'published', // Only published modules
           },
+          take: 500, // Safety cap to prevent unbounded queries under load
           select: {
             id: true,
             title: true,
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
           where: {
             status: 'published', // Only published courses
           },
+          take: 100, // Safety cap to prevent unbounded queries under load
           include: {
             users: {
               select: {
@@ -119,9 +121,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`Public network data: ${transformedModules.length} modules, ${coursesWithModules.length} courses`)
-    
-    return NextResponse.json(response)
+    const res = NextResponse.json(response)
+    res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
+    return res
   } catch (error) {
     console.error('Error fetching public network data:', error)
     return NextResponse.json(
