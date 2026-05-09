@@ -70,7 +70,7 @@ export default auth((req) => {
   if (isAuthPage && isLoggedIn) {
     // Check if there's a callback URL to redirect to
     const callbackUrl = nextUrl.searchParams.get('callbackUrl')
-    if (callbackUrl) {
+    if (callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')) {
       return NextResponse.redirect(new URL(callbackUrl, req.url))
     }
     return NextResponse.redirect(new URL('/', req.url))

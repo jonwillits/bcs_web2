@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
+import { sanitizeHtml } from '@/lib/sanitize'
 import Link from 'next/link'
 import mediumZoom from 'medium-zoom'
 import 'medium-zoom/dist/style.css'
@@ -162,7 +163,7 @@ export function StandaloneModuleViewer({ module, userId, initialProgress = 'not_
               <div
                 ref={contentRef}
                 className="neural-content reading-interface prose prose-lg max-w-none"
-                dangerouslySetInnerHTML={{ __html: module.content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(module.content) }}
               />
             </CardContent>
           </Card>

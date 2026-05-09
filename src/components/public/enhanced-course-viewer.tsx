@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { sanitizeHtml } from '@/lib/sanitize'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -656,7 +657,7 @@ export function EnhancedCourseViewer({ course, initialModule, initialSearch = ''
                       ref={contentRef}
                       className="neural-content reading-interface prose prose-sm sm:prose-base lg:prose-lg prose-neural max-w-none mx-auto"
                       style={{ maxWidth: '90ch' }}
-                      dangerouslySetInnerHTML={{ __html: selectedModule.content }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedModule.content) }}
                     />
                   </CardContent>
                 </Card>

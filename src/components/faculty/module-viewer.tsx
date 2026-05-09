@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react'
+import { sanitizeHtml } from '@/lib/sanitize'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -399,7 +400,7 @@ export function ModuleViewer({ moduleId }: ModuleViewerProps) {
               <CardContent>
                 <div 
                   className="neural-content prose prose-lg max-w-none"
-                  dangerouslySetInnerHTML={{ __html: module.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(module.content) }}
                 />
               </CardContent>
             </Card>

@@ -16,8 +16,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Validate that the URL is from our Supabase storage
-    if (!fileUrl.includes('.supabase.co/storage/')) {
+    // Validate that the URL is from our Supabase storage (prevents SSRF)
+    let parsed: URL;
+    try {
+      parsed = new URL(fileUrl);
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid file URL' },
+        { status: 400 }
+      );
+    }
+
+    if (!parsed.hostname.endsWith('.supabase.co') || !parsed.pathname.startsWith('/storage/')) {
       return NextResponse.json(
         { error: 'Invalid file URL' },
         { status: 400 }
