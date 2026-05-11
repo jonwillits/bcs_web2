@@ -306,9 +306,44 @@ If you select a group from the picker before clicking Export, the download only 
 
 ## 10. Canvas Grade Sync
 
-If your group has a Canvas Course ID configured, a **Sync to Canvas** button appears next to "Export Grades" when that group is selected. This pushes quiz grades directly to your Canvas gradebook — one Canvas assignment per quiz, matched by student email.
+The platform can push quiz grades directly to your Canvas gradebook — one Canvas assignment per quiz, matched by student email. Setup takes about five minutes.
 
-For the complete setup walkthrough, see the dedicated [Canvas LMS Grade Sync Guide](/guide/canvas-integration).
+For the full reference (CSV alternative, troubleshooting, FAQ), see the dedicated [Canvas LMS Grade Sync Guide](/guide/canvas-integration).
+
+### 10.1 Add Your Canvas API Token
+
+Each faculty member manages their own Canvas token. Your token is encrypted at rest and is never displayed after saving.
+
+1. In **Canvas**, go to **Account** > **Settings** > **Approved Integrations** > **+ New Access Token**
+2. Enter a purpose (e.g., "BCS Grade Sync"), optionally set an expiry, and click **Generate Token**
+3. **Copy the token immediately** — Canvas will not show it again
+4. In BCS, go to your **Profile** > **Edit Profile** (or navigate to `/faculty/profile/edit` or `/admin/profile/edit`)
+5. Scroll down to the **Canvas LMS Integration** section
+6. Paste your token and click **Save Token**
+7. The platform validates the token against Canvas before saving — if it is invalid or expired, you will see an error
+
+To update or remove your token later, return to the same section on your profile edit page.
+
+> **Can't generate a token?** Some Canvas accounts have token generation disabled. If you don't see the **+ New Access Token** option, follow the instructions at [https://answers.uillinois.edu/illinois/internal/150325](https://answers.uillinois.edu/illinois/internal/150325) to request access.
+
+### 10.2 Create a Group with a Canvas Course ID
+
+1. On your course's **Analytics** page, click **Groups**
+2. Click **Create Group** and fill in a name (e.g., "Fall 2026")
+3. Enter the numeric **Canvas Course ID** (found in your Canvas course URL, e.g., `https://canvas.illinois.edu/courses/68879` → `68879`)
+4. Click **Verify** — the platform fetches the course name from Canvas so you can confirm it is the right course
+5. Once verified, click **Create**
+6. Add students to the group (Pick Enrolled or Paste Emails)
+
+### 10.3 Sync Grades
+
+1. On the **Analytics** page, select your group from the dropdown
+2. The **Sync to Canvas** button appears next to "Export Grades"
+3. Click **Sync to Canvas** — a confirmation dialog shows the group name and the Canvas course name
+4. Click **Sync Now**
+5. Review the results: quizzes synced, students synced, and any skipped students (email mismatch)
+
+You can re-sync at any time. Existing Canvas assignments are reused, and grades are updated with the latest best scores.
 
 ---
 
@@ -814,4 +849,10 @@ Faculty can create and edit learning paths from `/faculty/paths`. The Learning P
 
 ## 16. Editing Faculty Profile
 
-Navigate to your profile edit page at `/faculty/profile/edit` to update your bio, speciality, university, interested fields, avatar, and social links.
+Navigate to your profile edit page at `/faculty/profile/edit` (or `/admin/profile/edit` for admins) to update your information:
+
+- **Basic Info** — Name, About, Speciality, University
+- **Interested Fields** — Add/remove topic tags
+- **Avatar URL** — Link to your profile image
+- **Academic & Social Links** — Google Scholar, Personal Website, LinkedIn, Twitter/X, GitHub
+- **Canvas LMS Integration** — Add, update, or remove your Canvas API token for grade sync (see [Canvas Grade Sync](#10-canvas-grade-sync))

@@ -435,8 +435,7 @@ The project uses manual testing on the Vercel deployment. When adding features:
 - `EMAIL_FROM` - Verified sender email (e.g., `noreply@yourdomain.com`)
 - `EMAIL_FROM_NAME` - Sender display name (e.g., `BCS E-Learning`)
 - `CANVAS_BASE_URL` - Canvas LMS base URL (e.g., `https://canvas.illinois.edu`) — optional, for grade sync
-- `CANVAS_API_TOKEN` - Canvas personal access token — optional, for grade sync
-- `CANVAS_ALLOWED_COURSE_IDS` - Comma-separated Canvas course IDs allowed for sync — optional safety guard
+- `CANVAS_TOKEN_ENCRYPTION_KEY` - 32-byte hex key for encrypting per-faculty Canvas tokens (generate with `openssl rand -hex 32`)
 
 **Build Process**:
 1. Vercel runs `npm run vercel:build`

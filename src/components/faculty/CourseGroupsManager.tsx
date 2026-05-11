@@ -453,17 +453,68 @@ function GroupFormDialog({
   const [canvasCourseId, setCanvasCourseId] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Canvas Course ID verification state
+  const [verifying, setVerifying] = useState(false);
+  const [verifiedCourse, setVerifiedCourse] = useState<{
+    id: number;
+    name: string;
+    courseCode: string;
+  } | null>(null);
+  const [verifyError, setVerifyError] = useState('');
+
   useEffect(() => {
     if (open) {
       setName(group?.name || '');
       setDescription(group?.description || '');
       setCanvasCourseId(group?.canvasCourseId || '');
+      setVerifiedCourse(null);
+      setVerifyError('');
     }
   }, [open, group]);
+
+  // Reset verification when Canvas Course ID changes
+  const handleCanvasCourseIdChange = (value: string) => {
+    setCanvasCourseId(value);
+    setVerifiedCourse(null);
+    setVerifyError('');
+  };
+
+  const verifyCourse = async () => {
+    const id = canvasCourseId.trim();
+    if (!id) return;
+    if (!/^\d+$/.test(id)) {
+      setVerifyError('Canvas Course ID must be a number.');
+      return;
+    }
+
+    setVerifying(true);
+    setVerifyError('');
+    setVerifiedCourse(null);
+
+    try {
+      const res = await fetch(`/api/faculty/canvas-course/validate?courseId=${id}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        setVerifiedCourse(data);
+      } else {
+        setVerifyError(data.error || 'Could not verify this Canvas Course ID.');
+      }
+    } catch {
+      setVerifyError('Failed to verify. Please check your network connection.');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const save = async () => {
     if (!name.trim()) {
       toast.error('Name is required');
+      return;
+    }
+    // Require verification if a Canvas Course ID is provided
+    if (canvasCourseId.trim() && !verifiedCourse) {
+      toast.error('Please verify the Canvas Course ID before saving.');
       return;
     }
     setSaving(true);
@@ -530,15 +581,55 @@ function GroupFormDialog({
           </div>
           <div className="space-y-1">
             <Label htmlFor="group-canvas">Canvas Course ID</Label>
-            <Input
-              id="group-canvas"
-              value={canvasCourseId}
-              onChange={(e) => setCanvasCourseId(e.target.value)}
-              placeholder="Numeric Canvas course ID (optional)"
-            />
-            <p className="text-xs text-muted-foreground">
-              Used later when syncing grades to Canvas. You can leave blank for now.
-            </p>
+            <div className="flex gap-2">
+              <Input
+                id="group-canvas"
+                value={canvasCourseId}
+                onChange={(e) => handleCanvasCourseIdChange(e.target.value)}
+                placeholder="Numeric Canvas course ID (optional)"
+                className="flex-1"
+              />
+              <NeuralButton
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={verifyCourse}
+                disabled={verifying || !canvasCourseId.trim()}
+              >
+                {verifying ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Verify'
+                )}
+              </NeuralButton>
+            </div>
+
+            {verifiedCourse && (
+              <div className="mt-2 p-2.5 rounded-lg border border-green-200 bg-green-50 flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-green-800">
+                    {verifiedCourse.courseCode}: {verifiedCourse.name}
+                  </p>
+                  <p className="text-green-700 text-xs">
+                    Canvas Course ID {verifiedCourse.id} — grades will sync to this course.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {verifyError && (
+              <div className="mt-2 p-2.5 rounded-lg border border-red-200 bg-red-50 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-red-800">{verifyError}</p>
+              </div>
+            )}
+
+            {!verifiedCourse && !verifyError && (
+              <p className="text-xs text-muted-foreground">
+                Enter your Canvas course ID and click Verify to confirm it&apos;s the right course. You can find the ID in the Canvas course URL.
+              </p>
+            )}
           </div>
         </div>
 

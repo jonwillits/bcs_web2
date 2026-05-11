@@ -265,6 +265,10 @@ model users {
   // Canvas LMS integration
   canvas_sync_logs          canvas_sync_logs[]         @relation("CanvasSyncUser")
 
+  // Per-faculty Canvas API token (encrypted at rest)
+  canvas_api_token_encrypted  String?
+  canvas_token_updated_at     DateTime?
+
   @@index([role])
   @@index([account_status])
   @@index([email])

@@ -1,9 +1,13 @@
 /**
  * Canvas LMS REST API client for grade sync.
  *
- * Uses a personal access token stored in environment variables.
+ * Each faculty member stores their own encrypted Canvas API token.
  * All methods are server-side only (used in API routes).
  */
+
+import { prisma } from '@/lib/db';
+import { withDatabaseRetry } from '@/lib/retry';
+import { decrypt } from './encryption';
 
 // ---------------------------------------------------------------------------
 // Config
@@ -14,11 +18,42 @@ export interface CanvasConfig {
   token: string;
 }
 
-export function getCanvasConfig(): CanvasConfig | null {
+/**
+ * Get Canvas config for a specific faculty member.
+ * Reads their encrypted token from the database and decrypts it.
+ * Returns null if CANVAS_BASE_URL is not set or the user has no token.
+ */
+export async function getCanvasConfigForUser(userId: string): Promise<CanvasConfig | null> {
   const baseUrl = process.env.CANVAS_BASE_URL;
-  const token = process.env.CANVAS_API_TOKEN;
-  if (!baseUrl || !token) return null;
+  if (!baseUrl) return null;
+
+  const user = await withDatabaseRetry(() =>
+    prisma.users.findUnique({
+      where: { id: userId },
+      select: { canvas_api_token_encrypted: true },
+    })
+  );
+
+  if (!user?.canvas_api_token_encrypted) return null;
+
+  const token = decrypt(user.canvas_api_token_encrypted);
+  if (!token) {
+    console.warn(`Failed to decrypt Canvas token for user ${userId} — token may need to be re-entered.`);
+    return null;
+  }
+
   return { baseUrl: baseUrl.replace(/\/+$/, ''), token };
+}
+
+/**
+ * Validate a Canvas API token by calling GET /api/v1/users/self.
+ * Used to verify a token before saving it.
+ */
+export async function validateCanvasToken(
+  config: CanvasConfig
+): Promise<CanvasResult<{ id: number; name: string }>> {
+  const res = await canvasFetch(config, '/api/v1/users/self');
+  return handleResponse<{ id: number; name: string }>(res);
 }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +145,18 @@ function getNextPageUrl(linkHeader: string | null): string | null {
 // ---------------------------------------------------------------------------
 // API methods
 // ---------------------------------------------------------------------------
+
+/**
+ * Fetch basic info about a Canvas course (name, code).
+ * Used to verify a Canvas Course ID before linking or syncing.
+ */
+export async function getCanvasCourse(
+  config: CanvasConfig,
+  canvasCourseId: string
+): Promise<CanvasResult<{ id: number; name: string; course_code: string }>> {
+  const res = await canvasFetch(config, `/api/v1/courses/${canvasCourseId}`);
+  return handleResponse<{ id: number; name: string; course_code: string }>(res);
+}
 
 /**
  * List all students enrolled in a Canvas course.

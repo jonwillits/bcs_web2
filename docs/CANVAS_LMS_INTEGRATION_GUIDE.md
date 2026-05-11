@@ -53,7 +53,7 @@ Before you can sync grades, make sure you have:
 | Your **Canvas course ID** | The numeric ID from your Canvas course URL (see Step 2) |
 | **Students enrolled in both systems** | Students must be enrolled in both BCS and Canvas, using the **same email address** |
 | **Quiz attempts in BCS** | Students must have completed at least one quiz — there are no grades to sync otherwise |
-| **Admin setup complete** | Your platform administrator must have added the Canvas API token and base URL to the server environment variables |
+| **Server configuration** | Your platform administrator must have set `CANVAS_BASE_URL` and `CANVAS_TOKEN_ENCRYPTION_KEY` in the server environment variables |
 
 ### For Administrators
 
@@ -62,14 +62,13 @@ The following environment variables must be set on the server (e.g., in Vercel):
 | Variable | Value | Purpose |
 |---|---|---|
 | `CANVAS_BASE_URL` | `https://canvas.illinois.edu` (or your institution's Canvas URL) | The base URL of your Canvas instance |
-| `CANVAS_API_TOKEN` | Your personal access token | Authenticates API requests to Canvas |
-| `CANVAS_ALLOWED_COURSE_IDS` | Comma-separated list of course IDs (e.g., `68879,73000`) | Safety guard — only these Canvas courses can receive grade syncs. Prevents accidental pushes to unrelated courses. |
+| `CANVAS_TOKEN_ENCRYPTION_KEY` | 32-byte hex key (generate with `openssl rand -hex 32`) | Encrypts per-faculty Canvas tokens stored in the database. **If rotated, all faculty must re-enter their tokens.** |
 
 ---
 
 ## 3. Step 1: Get Your Canvas API Token
 
-A personal access token lets BCS communicate with Canvas on your behalf.
+A personal access token lets BCS communicate with Canvas on your behalf. Each faculty member manages their own token.
 
 1. Log in to Canvas and go to **Account** (click your profile picture in the left sidebar) then **Settings**
 2. Scroll down to the **Approved Integrations** section
@@ -77,14 +76,16 @@ A personal access token lets BCS communicate with Canvas on your behalf.
 4. Enter a purpose (e.g., "BCS Grade Sync") and optionally set an expiration date
 5. Click **Generate Token**
 6. **Copy the token immediately** — Canvas will not show it again after you close the dialog
-7. Give this token to your platform administrator to add as the `CANVAS_API_TOKEN` environment variable
+7. Go to your **BCS Profile Settings** (Faculty Profile > Edit) and paste your token in the **Canvas LMS Integration** section
+8. Click **Save Token** — the platform will validate it against Canvas before saving
 
 ### Important Notes
 
 - Your token acts with **your permissions**. It can only modify courses where you are a Teacher or TA.
-- **Do not share your token** with anyone. It should only be stored as a secure server environment variable.
-- If your institution has disabled personal token generation, contact your Canvas administrator to request one or to have it enabled for your account.
-- If your token expires or is revoked, the sync will stop working until a new token is configured.
+- Your token is **encrypted at rest** in the database using AES-256-GCM. It is never displayed after saving.
+- **Do not share your token** with anyone.
+- If your institution has disabled personal token generation, see [this guide](https://answers.uillinois.edu/illinois/internal/150325) to request access, or contact your Canvas administrator.
+- If your token expires or is revoked, the sync will stop working until you update it in your profile settings.
 
 ---
 
@@ -264,9 +265,9 @@ Since each semester has a different Canvas course, here is the recommended workf
 
 1. Note your new Canvas course ID for the semester
 2. In BCS, go to your course's Analytics page and click **Groups**
-3. Create a new group (e.g., "Fall 2027") with the new Canvas Course ID
-4. Add your students to the group (use the Paste Emails tab if you have a class roster)
-5. Update the `CANVAS_ALLOWED_COURSE_IDS` environment variable to include the new course ID
+3. Create a new group (e.g., "Fall 2027") and enter the new Canvas Course ID
+4. Click **Verify** to confirm it's the correct Canvas course before saving
+5. Add your students to the group (use the Paste Emails tab if you have a class roster)
 
 ### During the Semester
 
@@ -296,7 +297,7 @@ If you do not have a Canvas API token configured, or prefer to upload grades man
 | No Canvas API token is configured on the server | API token is configured and working |
 | You want to review grades before they appear in Canvas | You want one-click grade pushing |
 | Your institution restricts API token generation | API access is available |
-| You need to import grades into a Canvas course not in the allowlist | The Canvas course is in the allowlist |
+| You only need a one-time export | You want ongoing, repeatable syncs |
 
 ### How to Export a Canvas CSV
 
@@ -367,11 +368,7 @@ And when opened in Excel or Google Sheets:
 
 ### "Canvas API is not configured"
 
-The `CANVAS_BASE_URL` and `CANVAS_API_TOKEN` environment variables are not set on the server. Contact your platform administrator.
-
-### "Canvas course [ID] is not in the allowed list"
-
-The Canvas course ID you are trying to sync to is not in the `CANVAS_ALLOWED_COURSE_IDS` environment variable. Contact your platform administrator to add it.
+Either `CANVAS_BASE_URL` is not set on the server, or you haven't added your Canvas API token. Go to your Faculty Profile > Edit and add your token in the Canvas LMS Integration section.
 
 ### "This group has no Canvas Course ID configured"
 
@@ -438,7 +435,7 @@ Yes. Create separate groups, each with a different Canvas Course ID. Sync each g
 
 **Q: Will syncing affect my other Canvas courses?**
 
-No. The sync only touches the specific Canvas course linked to the group you selected. Additionally, a safety allowlist (`CANVAS_ALLOWED_COURSE_IDS`) prevents accidental syncs to unapproved courses.
+No. The sync only touches the specific Canvas course linked to the group you selected. Each faculty member uses their own Canvas API token, which only has access to their own courses. Additionally, Canvas Course IDs are verified against Canvas when you enter them on a group.
 
 **Q: How long does the sync take?**
 
@@ -464,13 +461,13 @@ Nothing bad. Existing assignments are reused, and grades are updated with the la
 
 ### Course Allowlist
 
-The `CANVAS_ALLOWED_COURSE_IDS` environment variable acts as a safety net. Even if someone enters a wrong Canvas Course ID on a group, the sync will be **blocked** unless that course ID is in the allowlist. This prevents accidental grade pushes to unrelated courses (e.g., courses where you are a TA).
+Each faculty member uses their own Canvas API token, which is scoped to courses where they have Teacher/TA access. When entering a Canvas Course ID on a group, the system verifies it against Canvas and shows the course name for confirmation — preventing typos or accidental links to wrong courses. The sync confirmation dialog also displays the Canvas course name so you can double-check before pushing grades.
 
 ### What the Sync Can and Cannot Do
 
 | Can Do | Cannot Do |
 |---|---|
-| Create assignments in allowed Canvas courses | Access courses not in the allowlist |
+| Create assignments in Canvas courses you have access to | Access courses where you are not a Teacher/TA |
 | Push grades for matched students | Delete assignments or grades |
 | Read the student roster of the Canvas course | Modify course settings, enrollments, or content |
 | | Access any Canvas data outside the specific course being synced |

@@ -5,7 +5,7 @@ import { withDatabaseRetry } from '@/lib/retry';
 import { hasFacultyAccess } from '@/lib/auth/utils';
 import { canEditCourseWithRetry } from '@/lib/collaboration/permissions';
 import {
-  getCanvasConfig,
+  getCanvasConfigForUser,
   getCourseStudents,
   createAssignment,
   updateSubmissionGrade,
@@ -36,12 +36,12 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Validate Canvas config
-    const canvasConfig = getCanvasConfig();
+    // Validate Canvas config (uses per-faculty encrypted token)
+    const canvasConfig = await getCanvasConfigForUser(userId);
     if (!canvasConfig) {
       return NextResponse.json(
-        { error: 'Canvas API is not configured. Set CANVAS_BASE_URL and CANVAS_API_TOKEN environment variables.' },
-        { status: 500 }
+        { error: 'Canvas API is not configured. Please add your Canvas API token in your profile settings.' },
+        { status: 400 }
       );
     }
 
@@ -80,18 +80,6 @@ export async function POST(
     }
 
     const canvasCourseId = group.canvas_course_id;
-
-    // Guard: only allow syncing to explicitly approved Canvas courses
-    const allowedIds = (process.env.CANVAS_ALLOWED_COURSE_IDS || '')
-      .split(',')
-      .map((id) => id.trim())
-      .filter(Boolean);
-    if (allowedIds.length > 0 && !allowedIds.includes(canvasCourseId)) {
-      return NextResponse.json(
-        { error: `Canvas course ${canvasCourseId} is not in the allowed list. Update CANVAS_ALLOWED_COURSE_IDS to permit it.` },
-        { status: 403 }
-      );
-    }
 
     const groupMemberIds = group.memberships.map((m) => m.user_id);
 

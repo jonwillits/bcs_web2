@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { Header } from '@/components/Header'
+import { CanvasTokenSettings } from '@/components/faculty/CanvasTokenSettings'
 
 export default function FacultyEditProfilePage() {
   const { data: session, status } = useSession()
@@ -336,6 +337,9 @@ export default function FacultyEditProfilePage() {
                 />
               </div>
             </div>
+
+            {/* Canvas Integration */}
+            <CanvasTokenSettings />
 
             {/* Actions */}
             <div className="flex gap-4 pt-4">

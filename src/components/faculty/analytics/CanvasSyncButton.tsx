@@ -40,9 +40,30 @@ export function CanvasSyncButton({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [resultOpen, setResultOpen] = useState(false);
   const [result, setResult] = useState<SyncResult | null>(null);
+  const [canvasCourseName, setCanvasCourseName] = useState<string | null>(null);
+  const [verifyingCourse, setVerifyingCourse] = useState(false);
 
   // Only show when a specific group with a Canvas ID is selected
   if (!canvasCourseId || groupId === 'all') return null;
+
+  const openConfirmDialog = async () => {
+    setConfirmOpen(true);
+    // Fetch the Canvas course name for display in the confirmation
+    if (!canvasCourseName) {
+      setVerifyingCourse(true);
+      try {
+        const res = await fetch(`/api/faculty/canvas-course/validate?courseId=${canvasCourseId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCanvasCourseName(`${data.courseCode}: ${data.name}`);
+        }
+      } catch {
+        // Non-critical — dialog still works with just the ID
+      } finally {
+        setVerifyingCourse(false);
+      }
+    }
+  };
 
   const handleSync = async () => {
     setConfirmOpen(false);
@@ -84,7 +105,7 @@ export function CanvasSyncButton({
         variant="outline"
         size="sm"
         disabled={loading}
-        onClick={() => setConfirmOpen(true)}
+        onClick={openConfirmDialog}
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin mr-1" />
@@ -100,18 +121,38 @@ export function CanvasSyncButton({
           <DialogHeader>
             <DialogTitle>Sync Grades to Canvas</DialogTitle>
             <DialogDescription>
-              This will push quiz grades for <strong>{groupName || 'this group'}</strong> to
-              Canvas course <strong>{canvasCourseId}</strong>.
+              Please confirm you want to push grades to Canvas.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 text-sm text-muted-foreground py-2">
-            <p>For each quiz in this course, the sync will:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Create a Canvas assignment (or reuse one from a previous sync)</li>
-              <li>Push each student&apos;s best score</li>
-              <li>Match students by email address</li>
-            </ul>
+          <div className="space-y-3 py-2">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-1.5">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Group: </span>
+                <strong>{groupName || 'this group'}</strong>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">Canvas Course: </span>
+                {verifyingCourse ? (
+                  <span className="text-muted-foreground inline-flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Verifying...
+                  </span>
+                ) : canvasCourseName ? (
+                  <strong>{canvasCourseName}</strong>
+                ) : (
+                  <strong>ID {canvasCourseId}</strong>
+                )}
+              </div>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              <p>For each quiz in this course, the sync will:</p>
+              <ul className="list-disc pl-5 space-y-1 mt-1">
+                <li>Create a Canvas assignment (or reuse one from a previous sync)</li>
+                <li>Push each student&apos;s best score</li>
+                <li>Match students by email address</li>
+              </ul>
+            </div>
           </div>
 
           <DialogFooter>
