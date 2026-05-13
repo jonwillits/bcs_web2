@@ -10,6 +10,7 @@
  * - UI-only edits made on the deployed site are preserved between deploys
  */
 
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { createHash } from 'crypto';
 
