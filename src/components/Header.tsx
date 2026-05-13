@@ -38,7 +38,6 @@ const navigationConfig = {
     { href: "/admin/audit-logs", label: "Audit Logs", icon: Shield },
     { href: "/admin/faculty-requests", label: "Faculty Requests", icon: FileText },
     { href: "/learning", label: "My Learning", icon: BookOpen },
-    { href: "/network", label: "Network", icon: BarChart3 },
   ],
   faculty: [
     { href: "/", label: "Home", icon: Home },
@@ -53,7 +52,6 @@ const navigationConfig = {
     { href: "/faculty/modules", label: "My Modules", icon: BookOpen },
     { href: "/faculty/courses", label: "My Courses", icon: BookOpen },
     { href: "/faculty/modules/create", label: "Create Module", icon: Plus },
-    { href: "/network", label: "Network", icon: BarChart3 },
   ],
   student: [
     { href: "/", label: "Home", icon: Home },
@@ -63,7 +61,6 @@ const navigationConfig = {
     { href: "/program/map", label: "Program", icon: BarChart3 },
     { href: "/playgrounds", label: "Playgrounds", icon: Play },
     { href: "/learning", label: "My Learning", icon: BookOpen },
-    { href: "/network", label: "Network", icon: BarChart3 },
   ]
 };
 

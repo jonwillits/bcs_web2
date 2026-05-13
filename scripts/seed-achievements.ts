@@ -5,6 +5,7 @@
  * This script can be executed via: npm run seed:achievements
  */
 
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
 // Use DIRECT_URL for seeding (like migrations) to bypass PgBouncer
